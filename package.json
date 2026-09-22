@@ -1,0 +1,23 @@
+{
+  "name": "aftergap",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Same stock, three wrappers, live gap. Built for BNB Hack: Tokenized Stocks Edition with Binance Web3 Wallet.",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=apps/web",
+    "build": "npm run build --workspaces",
+    "test:signer": "npx tsx packages/api/src/signer.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "undici": "^7.29.1"
+  }
+}
