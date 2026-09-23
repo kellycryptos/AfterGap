@@ -49,12 +49,10 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Default 'resolve': fetch platforms, search, and BSC tokens simultaneously
-    const [platformsRes, searchRes, bscTokensRes] = await Promise.all([
-      client.getPlatforms(),
-      client.search(keyword),
-      client.getTokens({ binanceChainId: 56 }),
-    ]);
+    // Fetch platforms, search, and BSC tokens sequentially to respect rate limits
+    const platformsRes = await client.getPlatforms();
+    const searchRes = await client.search(keyword);
+    const bscTokensRes = await client.getTokens({ binanceChainId: 56, size: 500 });
 
     return NextResponse.json({
       auth: authState,

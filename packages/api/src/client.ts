@@ -9,15 +9,24 @@ import {
 } from './types';
 import { signRequest } from './signer';
 
-// Setup resilient DNS dispatcher using 8.8.8.8 / 1.1.1.1 fallback
+// Setup resilient DNS and timeouts
 let dispatcherInitialized = false;
 function initDispatcher() {
   if (dispatcherInitialized) return;
   try {
+    import('dns').then((d) => {
+      try {
+        d.setServers(['8.8.8.8', '1.1.1.1']);
+        d.setDefaultResultOrder('ipv4first');
+      } catch {}
+    });
+
     const resolver = new dns.Resolver();
     resolver.setServers(['8.8.8.8', '1.1.1.1']);
 
     const agent = new Agent({
+      headersTimeout: 30000,
+      connectTimeout: 30000,
       connect: {
         lookup: (hostname, options, callback) => {
           resolver

@@ -92,9 +92,8 @@ export function signRequest(
     'Content-Type': 'application/json',
   };
 
-  if (options.recvWindow) {
-    headers['X-OC-RECV-WINDOW'] = String(options.recvWindow);
-  }
+  const recvWindow = options.recvWindow || 30000;
+  headers['X-OC-RECV-WINDOW'] = String(recvWindow);
   if (options.nonce) {
     headers['X-OC-NONCE'] = options.nonce;
   }

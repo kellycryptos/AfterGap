@@ -89,45 +89,59 @@ export default function Home() {
 
   // Helper to extract tokens from search and BSC tokens
   const allResolvedTokens: any[] = React.useMemo(() => {
-    const searchItems = Array.isArray(data?.search?.data)
-      ? data.search.data
-      : Array.isArray(data?.search?.data?.tokens)
-      ? data.search.data.tokens
-      : Array.isArray(data?.search?.data?.list)
-      ? data.search.data.list
+    const bscData = data?.bscTokens?.data;
+    const bscTokens: any[] = Array.isArray(bscData)
+      ? bscData
+      : Array.isArray(bscData?.tokens)
+      ? bscData.tokens
       : [];
 
-    const bscItems = Array.isArray(data?.bscTokens?.data)
-      ? data.bscTokens.data
-      : Array.isArray(data?.bscTokens?.data?.tokens)
-      ? data.bscTokens.data.tokens
-      : Array.isArray(data?.bscTokens?.data?.list)
-      ? data.bscTokens.data.list
-      : [];
-
-    const combined = [...searchItems, ...bscItems];
-    // deduplicate by contractAddress or tokenSymbol
-    const seen = new Set<string>();
-    const filtered: any[] = [];
-
-    for (const item of combined) {
-      const addr = String(item.contractAddress || item.tokenAddress || item.tokenSymbol || '');
-      const chainId = String(item.binanceChainId || item.chainId || '');
-      // Only keep BSC tokens (chainId 56) if specified, or relevant to current ticker
-      const sym = String(item.tokenSymbol || '').toUpperCase();
-      const matchKeyword = ticker.toUpperCase();
-
-      if (
-        (chainId === '56' || !chainId) &&
-        (sym.includes(matchKeyword) || String(item.underlyingAssetSymbol || '').toUpperCase().includes(matchKeyword))
-      ) {
-        const key = `${item.platformId}_${addr}_${sym}`;
-        if (!seen.has(key)) {
-          seen.add(key);
-          filtered.push(item);
+    const searchData = data?.search?.data;
+    const searchAssets: any[] = [];
+    if (Array.isArray(searchData)) {
+      for (const item of searchData) {
+        if (Array.isArray(item.assets)) {
+          for (const asset of item.assets) {
+            searchAssets.push({
+              ...asset,
+              underlyingTicker: item.ticker,
+              companyName: item.companyName,
+            });
+          }
         }
       }
     }
+
+    const seen = new Set<string>();
+    const filtered: any[] = [];
+    const matchKeyword = ticker.toUpperCase();
+
+    // Prioritize enriched BSC catalog tokens (has tokenPrice, referencePrice, statusInfo)
+    for (const item of bscTokens) {
+      const sym = String(item.tokenSymbol || '').toUpperCase();
+      const underlying = String(item.underlyingTicker || '').toUpperCase();
+      const chainId = String(item.binanceChainId || item.chainId || '');
+
+      if ((chainId === '56' || !chainId) && (sym.includes(matchKeyword) || underlying === matchKeyword)) {
+        const addr = String(item.tokenContractAddress || item.contractAddress || '').toLowerCase();
+        seen.add(addr);
+        seen.add(sym);
+        filtered.push(item);
+      }
+    }
+
+    // Include search assets if not present in BSC tokens
+    for (const asset of searchAssets) {
+      const chainId = String(asset.binanceChainId || '');
+      const addr = String(asset.tokenContractAddress || asset.contractAddress || '').toLowerCase();
+      const sym = String(asset.tokenSymbol || '').toUpperCase();
+      if ((chainId === '56' || !chainId) && !seen.has(addr) && !seen.has(sym)) {
+        seen.add(addr);
+        seen.add(sym);
+        filtered.push(asset);
+      }
+    }
+
     return filtered;
   }, [data, ticker]);
 
@@ -278,49 +292,59 @@ export default function Home() {
 
               <div className="mt-4 space-y-3">
                 {bstocksTokens.length > 0 ? (
-                  bstocksTokens.map((t, idx) => (
-                    <div key={idx} className="p-3 bg-[#0B0E11] rounded-lg border border-[#2B313A] space-y-2 text-xs">
-                      <div className="flex justify-between items-center">
-                        <span className="font-bold text-white font-mono text-sm">{t.tokenSymbol}</span>
-                        <span className="text-[#848E9C]">{t.tokenName || t.underlyingAssetName || 'Tokenized Stock'}</span>
-                      </div>
-                      <div className="font-mono text-[#848E9C] truncate">
-                        Contract:{' '}
-                        <a
-                          href={`https://bscscan.com/token/${t.contractAddress || t.tokenAddress}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-[#F0B90B] hover:underline"
-                        >
-                          {t.contractAddress || t.tokenAddress || 'N/A'}
-                        </a>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#2B313A]/50">
-                        <div>
-                          <span className="text-[#848E9C] block">On-Chain Price:</span>
-                          <span className="font-mono text-white font-semibold">{t.price ? `$${t.price}` : '—'}</span>
+                  bstocksTokens.map((t, idx) => {
+                    const contract = t.tokenContractAddress || t.contractAddress || t.tokenAddress || '';
+                    const onChainPrice = t.tokenPrice || t.price;
+                    const refPrice = t.referencePrice;
+                    const statusStr = t.statusInfo?.marketStatus || t.marketStatus || (t.statusInfo?.openState ? 'Trading' : 'Closed');
+                    const reasonStr = t.statusInfo?.reasonCode || t.reasonCode;
+
+                    return (
+                      <div key={idx} className="p-3 bg-[#0B0E11] rounded-lg border border-[#2B313A] space-y-2 text-xs">
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-white font-mono text-sm">{t.tokenSymbol}</span>
+                          <span className="text-[#848E9C]">{t.tokenName || t.underlyingName || 'Tokenized Stock'}</span>
                         </div>
-                        <div>
-                          <span className="text-[#848E9C] block">Ref Price (Cash):</span>
-                          <span className="font-mono text-white font-semibold">
-                            {t.referencePrice ? `$${t.referencePrice}` : '—'}
+                        <div className="font-mono text-[#848E9C] truncate">
+                          Contract:{' '}
+                          <a
+                            href={`https://bscscan.com/token/${contract}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[#F0B90B] hover:underline"
+                          >
+                            {contract || 'N/A'}
+                          </a>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#2B313A]/50">
+                          <div>
+                            <span className="text-[#848E9C] block">On-Chain Price:</span>
+                            <span className="font-mono text-white font-semibold">
+                              {onChainPrice ? `$${Number(onChainPrice).toFixed(2)}` : '—'}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-[#848E9C] block">Ref Price (Cash):</span>
+                            <span className="font-mono text-white font-semibold">
+                              {refPrice ? `$${Number(refPrice).toFixed(2)}` : '—'}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center pt-1 text-[11px]">
+                          <span className="text-[#848E9C]">Market Status:</span>
+                          <span
+                            className={`font-mono px-1.5 py-0.5 rounded ${
+                              statusStr?.toLowerCase() === 'regular' || statusStr?.toLowerCase() === 'trading'
+                                ? 'bg-green-950 text-green-400'
+                                : 'bg-[#2B313A] text-yellow-400'
+                            }`}
+                          >
+                            {statusStr} {reasonStr ? `(${reasonStr})` : ''}
                           </span>
                         </div>
                       </div>
-                      <div className="flex justify-between items-center pt-1 text-[11px]">
-                        <span className="text-[#848E9C]">Market Status:</span>
-                        <span
-                          className={`font-mono px-1.5 py-0.5 rounded ${
-                            t.marketStatus === 'regular'
-                              ? 'bg-green-950 text-green-400'
-                              : 'bg-[#2B313A] text-yellow-400'
-                          }`}
-                        >
-                          {t.marketStatus || 'unknown'} {t.reasonCode ? `(${t.reasonCode})` : ''}
-                        </span>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <div className="py-8 text-center text-xs text-[#848E9C] bg-[#0B0E11] rounded-lg border border-[#2B313A]">
                     {data?.search?.status === 200 || data?.bscTokens?.status === 200 ? (
@@ -361,49 +385,59 @@ export default function Home() {
 
               <div className="mt-4 space-y-3">
                 {ondoTokens.length > 0 ? (
-                  ondoTokens.map((t, idx) => (
-                    <div key={idx} className="p-3 bg-[#0B0E11] rounded-lg border border-[#2B313A] space-y-2 text-xs">
-                      <div className="flex justify-between items-center">
-                        <span className="font-bold text-white font-mono text-sm">{t.tokenSymbol}</span>
-                        <span className="text-[#848E9C]">{t.tokenName || t.underlyingAssetName || 'Tokenized Stock'}</span>
-                      </div>
-                      <div className="font-mono text-[#848E9C] truncate">
-                        Contract:{' '}
-                        <a
-                          href={`https://bscscan.com/token/${t.contractAddress || t.tokenAddress}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-[#F0B90B] hover:underline"
-                        >
-                          {t.contractAddress || t.tokenAddress || 'N/A'}
-                        </a>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#2B313A]/50">
-                        <div>
-                          <span className="text-[#848E9C] block">On-Chain Price:</span>
-                          <span className="font-mono text-white font-semibold">{t.price ? `$${t.price}` : '—'}</span>
+                  ondoTokens.map((t, idx) => {
+                    const contract = t.tokenContractAddress || t.contractAddress || t.tokenAddress || '';
+                    const onChainPrice = t.tokenPrice || t.price;
+                    const refPrice = t.referencePrice;
+                    const statusStr = t.statusInfo?.marketStatus || t.marketStatus || (t.statusInfo?.openState ? 'Trading' : 'Closed');
+                    const reasonStr = t.statusInfo?.reasonCode || t.reasonCode;
+
+                    return (
+                      <div key={idx} className="p-3 bg-[#0B0E11] rounded-lg border border-[#2B313A] space-y-2 text-xs">
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-white font-mono text-sm">{t.tokenSymbol}</span>
+                          <span className="text-[#848E9C]">{t.tokenName || t.underlyingName || 'Tokenized Stock'}</span>
                         </div>
-                        <div>
-                          <span className="text-[#848E9C] block">Ref Price (Cash):</span>
-                          <span className="font-mono text-white font-semibold">
-                            {t.referencePrice ? `$${t.referencePrice}` : '—'}
+                        <div className="font-mono text-[#848E9C] truncate">
+                          Contract:{' '}
+                          <a
+                            href={`https://bscscan.com/token/${contract}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[#F0B90B] hover:underline"
+                          >
+                            {contract || 'N/A'}
+                          </a>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#2B313A]/50">
+                          <div>
+                            <span className="text-[#848E9C] block">On-Chain Price:</span>
+                            <span className="font-mono text-white font-semibold">
+                              {onChainPrice ? `$${Number(onChainPrice).toFixed(2)}` : '—'}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-[#848E9C] block">Ref Price (Cash):</span>
+                            <span className="font-mono text-white font-semibold">
+                              {refPrice ? `$${Number(refPrice).toFixed(2)}` : '—'}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center pt-1 text-[11px]">
+                          <span className="text-[#848E9C]">Market Status:</span>
+                          <span
+                            className={`font-mono px-1.5 py-0.5 rounded ${
+                              statusStr?.toLowerCase() === 'regular' || statusStr?.toLowerCase() === 'trading'
+                                ? 'bg-green-950 text-green-400'
+                                : 'bg-[#2B313A] text-yellow-400'
+                            }`}
+                          >
+                            {statusStr} {reasonStr ? `(${reasonStr})` : ''}
                           </span>
                         </div>
                       </div>
-                      <div className="flex justify-between items-center pt-1 text-[11px]">
-                        <span className="text-[#848E9C]">Market Status:</span>
-                        <span
-                          className={`font-mono px-1.5 py-0.5 rounded ${
-                            t.marketStatus === 'regular'
-                              ? 'bg-green-950 text-green-400'
-                              : 'bg-[#2B313A] text-yellow-400'
-                          }`}
-                        >
-                          {t.marketStatus || 'unknown'} {t.reasonCode ? `(${t.reasonCode})` : ''}
-                        </span>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <div className="py-8 text-center text-xs text-[#848E9C] bg-[#0B0E11] rounded-lg border border-[#2B313A]">
                     {data?.search?.status === 200 || data?.bscTokens?.status === 200 ? (
