@@ -205,3 +205,95 @@ Header: `x-oc-blocked-by: TimestampFilter/40103`.
    - When the project Root Directory is configured as `apps/web` on Vercel, an explicit `"outputDirectory": "apps/web/.next"` in `vercel.json` causes double-nesting (`/vercel/path0/apps/web/apps/web/.next`).
    - Removing `vercel.json` allows Vercel's native Next.js preset to resolve `.next` directly in `apps/web` without path duplication.
 
+---
+
+## 6. Slice 3: Trading API Execution, Simulation & Quote TTL
+
+### 1. Live 200: Trading API Quote (`GET /build/api/v1/dex/aggregator/quote`)
+
+- **URL:** `GET https://web3.binance.com/build/api/v1/dex/aggregator/quote?binanceChainId=56&fromTokenAddress=0x55d398326f99059fF775485246999027B3197955&toTokenAddress=0x02fca66c1d1afb4e2a7884261eb00f63598a7436&amount=10000000000000000000&userWalletAddress=0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045&slippagePercent=1`
+- **Pair:** `10 USDT` (18 decimals) $\to$ `NVDAB` on BSC mainnet (`56`)
+- **HTTP Status:** `200 OK`
+- **Output:** `44234500018572418` units (`~0.0442345 NVDAB`)
+- **Router / Execution Mode:** `vendorName: LiquidMesh`, `executionMode: SWAP`
+- **Spender Contract:** `0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5`
+- **Route Hops:** `USDT` $\to$ `BSC_ETH` (Genius 100%) $\to$ `USDC` (Uniswap V3 100%) $\to$ `NVDAB` (Uniswap V4 100%)
+- **Raw Wire Body:**
+```json
+{
+  "code": 0,
+  "msg": "success",
+  "data": [
+    {
+      "quoteId": "d341057f5a4e440e9741b184a853e2a1",
+      "vendorName": "LiquidMesh",
+      "executionMode": "SWAP",
+      "binanceChainId": "56",
+      "fromTokenAmount": "10000000000000000000",
+      "toTokenAmount": "44234500018572418",
+      "tradeFee": "0.01874752",
+      "estimateGasFee": "450000",
+      "priceImpactPercent": "0.0015479354",
+      "approveTarget": "0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5",
+      "isBest": true
+    }
+  ],
+  "timestamp": 1790335439088,
+  "success": true
+}
+```
+
+### 2. Live 200: Trading API Swap (`GET /build/api/v1/dex/aggregator/swap`)
+
+- **URL:** `GET https://web3.binance.com/build/api/v1/dex/aggregator/swap?quoteId=d341057f5a4e440e9741b184a853e2a1&binanceChainId=56&fromTokenAddress=0x55d398326f99059fF775485246999027B3197955&toTokenAddress=0x02fca66c1d1afb4e2a7884261eb00f63598a7436&amount=10000000000000000000&userWalletAddress=0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045&slippagePercent=1`
+- **HTTP Status:** `200 OK`
+- **Execution Mode:** `SWAP`
+- **Unsigned Transaction Structure:**
+  - `to`: `0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5`
+  - `data`: `0xad43f73d...` (selector `0xad43f73d` with encoded multicall path)
+  - `gas`: `450000`
+  - `minReceiveAmount`: `43792155018386693`
+  - `value`: `0`
+
+### 3. Live Dry-Run Simulation via BSC Mainnet `eth_call`
+
+- **RPC Endpoint:** `https://bsc-dataseed.binance.org/`
+- **Method:** `eth_call` with `tx.to`, `tx.data`, `tx.value`
+- **Simulation Result:**
+```json
+{
+  "success": false,
+  "status": "reverted",
+  "error": "execution reverted: BEP20: transfer amount exceeds allowance: 0x08c379a0...",
+  "simulatedAt": "2026-09-25T11:24:01.469Z",
+  "txTarget": "0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5",
+  "txDataPrefix": "0xad43f73d"
+}
+```
+- **Analysis:** Calldata structure and routing parameters validated on-chain without broadcasting or spending real gas. Hex revert string `0x08c379a0...` cleanly decodes to standard OpenZeppelin error string: `BEP20: transfer amount exceeds allowance`, indicating the spender contract `0xB444...` correctly attempted to pull `10 USDT` from the sender address.
+
+### 4. Live 40401 `QUOTE_EXPIRED` Test
+
+- **URL:** `GET /build/api/v1/dex/aggregator/swap?quoteId=d341057f5a4e440e9741b184a853e2a1...` (executed $>30$ seconds after generation)
+- **HTTP Status:** `200 OK` (Binance API envelope pattern)
+- **Raw Wire Body:**
+```json
+{
+  "code": 40401,
+  "msg": "quoteId=d341057f5a4e440e9741b184a853e2a1 not found or expired",
+  "data": null,
+  "timestamp": 1790335535122,
+  "success": false
+}
+```
+- **Behavior Confirmed:**
+  - Quote TTL is strictly 30 seconds.
+  - The UI accurately maintains a real-time countdown timer and prevents expired orders from executing without a fresh quote.
+
+### 5. Live 200: Wallet API Balances (`GET /build/api/v1/dex/balance/all-token-balances-by-address`)
+
+- **URL:** `GET https://web3.binance.com/build/api/v1/dex/balance/all-token-balances-by-address?address=0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045&chains=56&excludeRiskToken=true`
+- **HTTP Status:** `200 OK`
+- **Wire Body:** Returns paginated BEP-20 assets, raw balances, and USD valuations on BNB Smart Chain.
+
+

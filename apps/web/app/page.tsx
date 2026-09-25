@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 
 interface ApiResponseData {
   auth?: {
@@ -16,7 +16,6 @@ interface ApiResponseData {
     rawBody: string;
     data?: any;
     error?: any;
-    debug?: any;
   };
   search?: {
     success: boolean;
@@ -25,7 +24,6 @@ interface ApiResponseData {
     rawBody: string;
     data?: any;
     error?: any;
-    debug?: any;
   };
   bscTokens?: {
     success: boolean;
@@ -34,10 +32,42 @@ interface ApiResponseData {
     rawBody: string;
     data?: any;
     error?: any;
-    debug?: any;
   };
   error?: string;
   timestamp?: string;
+}
+
+interface QuoteState {
+  loading: boolean;
+  error?: string;
+  quoteId?: string;
+  vendorName?: string;
+  executionMode?: 'SWAP' | 'RFQ';
+  fromAmount?: string;
+  toAmount?: string;
+  toTokenSymbol?: string;
+  unitPrice?: string;
+  spender?: string;
+  router?: string;
+  fetchedAt?: number;
+  ttlRemaining?: number;
+  rawQuote?: any;
+}
+
+interface SimulationState {
+  loading: boolean;
+  error?: string;
+  status?: 'passed' | 'reverted';
+  revertReason?: string;
+  simulatedAt?: string;
+  tx?: {
+    from: string;
+    to: string;
+    data: string;
+    value: string;
+    gas: string;
+    gasPrice?: string;
+  };
 }
 
 export default function Home() {
@@ -45,6 +75,20 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<ApiResponseData | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Wallet address for quote & simulation (default to standard BSC address)
+  const [walletAddress, setWalletAddress] = useState('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045');
+  const [walletBalances, setWalletBalances] = useState<{ usdt: string; bnb: string; loading: boolean }>({
+    usdt: '—',
+    bnb: '—',
+    loading: false,
+  });
+
+  // Trading quote and simulation states indexed by token contract address
+  const [amounts, setAmounts] = useState<Record<string, string>>({});
+  const [quotes, setQuotes] = useState<Record<string, QuoteState>>({});
+  const [simulations, setSimulations] = useState<Record<string, SimulationState>>({});
+  const [inspectTx, setInspectTx] = useState<{ symbol: string; tx: any } | null>(null);
 
   const fetchRwaData = async (symbolToFetch: string) => {
     setLoading(true);
@@ -60,8 +104,57 @@ export default function Home() {
     }
   };
 
+  const fetchBalances = async (address: string) => {
+    if (!address || !address.startsWith('0x') || address.length !== 42) return;
+    setWalletBalances((prev) => ({ ...prev, loading: true }));
+    try {
+      const res = await fetch(`/api/rwa?action=balances&address=${address}`);
+      const json = await res.json();
+      const assets: any[] = json?.balances?.data?.[0]?.tokenAssets || [];
+      const usdtAsset = assets.find(
+        (a) => a.tokenContractAddress?.toLowerCase() === '0x55d398326f99059ff775485246999027b3197955'
+      );
+      const bnbAsset = assets.find(
+        (a) =>
+          a.symbol === 'BNB' ||
+          a.tokenContractAddress?.toLowerCase() === '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c'
+      );
+
+      setWalletBalances({
+        usdt: usdtAsset ? Number(usdtAsset.balance).toFixed(2) : '0.00',
+        bnb: bnbAsset ? Number(bnbAsset.balance).toFixed(4) : '0.0000',
+        loading: false,
+      });
+    } catch {
+      setWalletBalances((prev) => ({ ...prev, loading: false }));
+    }
+  };
+
   useEffect(() => {
     fetchRwaData(ticker);
+    fetchBalances(walletAddress);
+  }, []);
+
+  // 30-Second TTL countdown ticker
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setQuotes((prev) => {
+        let changed = false;
+        const next = { ...prev };
+        for (const [key, quote] of Object.entries(next)) {
+          if (quote.fetchedAt && quote.ttlRemaining !== undefined && quote.ttlRemaining > 0) {
+            const elapsed = Math.floor((Date.now() - quote.fetchedAt) / 1000);
+            const remaining = Math.max(0, 30 - elapsed);
+            if (remaining !== quote.ttlRemaining) {
+              next[key] = { ...quote, ttlRemaining: remaining };
+              changed = true;
+            }
+          }
+        }
+        return changed ? next : prev;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -72,7 +165,7 @@ export default function Home() {
   };
 
   // Helper to extract tokens from search and BSC tokens
-  const allResolvedTokens: any[] = React.useMemo(() => {
+  const allResolvedTokens: any[] = useMemo(() => {
     const bscData = data?.bscTokens?.data;
     const bscTokens: any[] = Array.isArray(bscData)
       ? bscData
@@ -139,12 +232,159 @@ export default function Home() {
 
   const isAuthed = Boolean(data?.auth?.hasApiKey && data?.auth?.hasSecretKey);
 
+  // Live gap calculation
+  const gapAnalysis = useMemo(() => {
+    const bstock = bstocksTokens[0];
+    const ondo = ondoTokens[0];
+    if (!bstock || !ondo) return null;
+
+    const bstockPrice = Number(bstock.tokenPrice || bstock.price || 0);
+    const ondoPrice = Number(ondo.tokenPrice || ondo.price || 0);
+    if (!bstockPrice || !ondoPrice) return null;
+
+    const diff = Math.abs(bstockPrice - ondoPrice);
+    const cheaper = bstockPrice < ondoPrice ? bstock.tokenSymbol : ondo.tokenSymbol;
+    const cheaperName = bstockPrice < ondoPrice ? 'bStocks' : 'Ondo';
+    const discountPercent = ((diff / Math.max(bstockPrice, ondoPrice)) * 100).toFixed(2);
+
+    return {
+      bstockPrice,
+      ondoPrice,
+      diff: diff.toFixed(2),
+      cheaper,
+      cheaperName,
+      discountPercent,
+    };
+  }, [bstocksTokens, ondoTokens]);
+
+  // Request a live quote from Trading API
+  const handleGetQuote = async (token: any) => {
+    const contract = token.tokenContractAddress || token.contractAddress || token.tokenAddress;
+    if (!contract) return;
+
+    const usdtAmountStr = amounts[contract] || '10';
+    const amountInSmallestUnit = (BigInt(Math.floor(Number(usdtAmountStr) * 1e6)) * BigInt(1e12)).toString(); // 18 decimals
+
+    setQuotes((prev) => ({
+      ...prev,
+      [contract]: { loading: true, error: undefined },
+    }));
+
+    try {
+      const res = await fetch(
+        `/api/rwa?action=quote&toTokenAddress=${contract}&amount=${amountInSmallestUnit}&userWalletAddress=${walletAddress}&slippagePercent=1`
+      );
+      const json = await res.json();
+
+      if (!res.ok || json.quote?.error) {
+        throw new Error(json.quote?.error?.message || json.error || 'Failed to fetch quote');
+      }
+
+      const routeList = Array.isArray(json.quote?.data) ? json.quote.data : [json.quote?.data];
+      const best = routeList[0];
+
+      if (!best || !best.quoteId) {
+        throw new Error('No executable route found for this pair');
+      }
+
+      const toDecimals = Number(best.toToken?.decimal || 18);
+      const toTokenAmountFormatted = (Number(best.toTokenAmount) / 10 ** toDecimals).toFixed(6);
+
+      setQuotes((prev) => ({
+        ...prev,
+        [contract]: {
+          loading: false,
+          quoteId: best.quoteId,
+          vendorName: best.vendorName || 'Aggregator',
+          executionMode: best.executionMode || 'SWAP',
+          fromAmount: usdtAmountStr,
+          toAmount: toTokenAmountFormatted,
+          toTokenSymbol: best.toToken?.tokenSymbol || token.tokenSymbol,
+          unitPrice: best.toToken?.tokenUnitPrice,
+          spender: best.approveTarget,
+          router: best.router,
+          fetchedAt: Date.now(),
+          ttlRemaining: 30,
+          rawQuote: best,
+        },
+      }));
+    } catch (err: any) {
+      setQuotes((prev) => ({
+        ...prev,
+        [contract]: {
+          loading: false,
+          error: err.message || 'Quote request failed',
+        },
+      }));
+    }
+  };
+
+  // Simulate transaction execution via BSC eth_call
+  const handleSimulate = async (token: any) => {
+    const contract = token.tokenContractAddress || token.contractAddress || token.tokenAddress;
+    const currentQuote = quotes[contract];
+    if (!currentQuote?.quoteId) return;
+
+    setSimulations((prev) => ({
+      ...prev,
+      [contract]: { loading: true, error: undefined },
+    }));
+
+    try {
+      const usdtAmountStr = currentQuote.fromAmount || '10';
+      const amountInSmallestUnit = (BigInt(Math.floor(Number(usdtAmountStr) * 1e6)) * BigInt(1e12)).toString();
+
+      // 1. Fetch unsigned calldata from /swap
+      const swapRes = await fetch(
+        `/api/rwa?action=swap&quoteId=${currentQuote.quoteId}&toTokenAddress=${contract}&amount=${amountInSmallestUnit}&userWalletAddress=${walletAddress}&slippagePercent=1`
+      );
+      const swapJson = await swapRes.json();
+
+      if (!swapRes.ok || swapJson.swap?.error) {
+        throw new Error(swapJson.swap?.error?.message || swapJson.error || 'Failed to generate swap transaction');
+      }
+
+      const tx = swapJson.swap?.data?.tx;
+      if (!tx) {
+        throw new Error('RFQ order requires off-chain signature or tx data was empty');
+      }
+
+      // 2. Perform eth_call simulation
+      const simRes = await fetch('/api/rwa?action=simulate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tx }),
+      });
+      const simJson = await simRes.json();
+      const simData = simJson.simulation;
+
+      setSimulations((prev) => ({
+        ...prev,
+        [contract]: {
+          loading: false,
+          status: simData.status,
+          revertReason: simData.revertReason || simData.error,
+          simulatedAt: simData.simulatedAt,
+          tx,
+        },
+      }));
+    } catch (err: any) {
+      setSimulations((prev) => ({
+        ...prev,
+        [contract]: {
+          loading: false,
+          error: err.message || 'Simulation failed',
+        },
+      }));
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col justify-between relative overflow-hidden bg-[#07070A] text-[#F5F5F4]">
       {/* Soft Radial Glow behind hero */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-[420px] -z-10 blur-3xl opacity-80"
+        className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[480px] -z-10 blur-3xl opacity-80"
         style={{
           background:
             'radial-gradient(ellipse at 50% 30%, rgba(245, 197, 66, 0.12) 0%, rgba(245, 197, 66, 0.03) 50%, transparent 70%)',
@@ -153,7 +393,7 @@ export default function Home() {
 
       {/* Top Bar */}
       <header className="w-full border-b border-white/[0.06] bg-[#07070A]/80 backdrop-blur-sm sticky top-0 z-20">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2.5 sm:gap-3">
             <span className="text-xl sm:text-2xl font-bold tracking-tight text-[#F5C542]">
               AfterGap
@@ -161,36 +401,62 @@ export default function Home() {
             <span className="px-2.5 py-0.5 rounded-full text-xs font-mono bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06]">
               BSC 56
             </span>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-mono bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06]">
-              Spot only
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-mono bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30">
+              Spot Aggregator
             </span>
           </div>
 
-          {/* Compact Auth Chip */}
-          <div className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono bg-white/[0.03] border border-white/[0.06]">
-            <span
-              className={`w-1.5 h-1.5 rounded-full ${
-                isAuthed ? 'bg-[#3D9A6A]' : 'bg-[#A1A1AA]'
-              }`}
-            />
-            <span className="text-[#A1A1AA]">
-              {isAuthed ? `Signed (${data?.auth?.apiKeyPrefix})` : 'Needs key'}
-            </span>
+          {/* Wallet Address & Balances Bar */}
+          <div className="flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono bg-white/[0.03] border border-white/[0.06]">
+              <span className="text-[#A1A1AA]">Wallet:</span>
+              <input
+                type="text"
+                value={walletAddress}
+                onChange={(e) => {
+                  setWalletAddress(e.target.value);
+                  fetchBalances(e.target.value);
+                }}
+                className="bg-transparent text-[#F5F5F4] w-28 text-xs focus:outline-none"
+                placeholder="0x..."
+              />
+              <span className="text-white/20">|</span>
+              <span className="text-[#A1A1AA]">USDT:</span>
+              <span className="text-[#F5F5F4] font-semibold">{walletBalances.usdt}</span>
+              <span className="text-white/20">|</span>
+              <span className="text-[#A1A1AA]">BNB:</span>
+              <span className="text-[#F5F5F4] font-semibold">{walletBalances.bnb}</span>
+            </div>
+
+            {/* Compact Auth Chip */}
+            <div className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono bg-white/[0.03] border border-white/[0.06]">
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  isAuthed ? 'bg-[#3D9A6A]' : 'bg-[#A1A1AA]'
+                }`}
+              />
+              <span className="text-[#A1A1AA]">
+                {isAuthed ? `Signed (${data?.auth?.apiKeyPrefix})` : 'Needs key'}
+              </span>
+            </div>
           </div>
         </div>
       </header>
 
       {/* Main Screen Content */}
-      <main className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-16 flex-1 flex flex-col items-center justify-center">
+      <main className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14 flex-1 flex flex-col items-center">
         {/* Hero */}
-        <div className="text-center mb-8 sm:mb-10 space-y-2">
+        <div className="text-center mb-8 space-y-2">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight text-[#F5F5F4]">
             Same stock. Three wrappers. Live gap.
           </h1>
+          <p className="text-sm text-[#A1A1AA]">
+            Inspect on-chain pricing vs. cash reference, quote live spot execution, and simulate BEP-20 swaps.
+          </p>
         </div>
 
         {/* Main Product Card */}
-        <div className="w-full max-w-xl bg-[#121214] border border-white/[0.06] rounded-2xl p-5 sm:p-7 shadow-2xl space-y-4">
+        <div className="w-full max-w-xl bg-[#121214] border border-white/[0.06] rounded-2xl p-5 sm:p-6 shadow-2xl space-y-4">
           {/* Ticker Search Form */}
           <form onSubmit={handleSubmit} className="flex gap-2.5">
             <div className="relative flex-1">
@@ -218,7 +484,7 @@ export default function Home() {
             ) : !isAuthed ? (
               <span>API credentials not configured in .env.local — live quote signing unavailable.</span>
             ) : (
-              <span>HMAC signed credentials active ({data?.auth?.apiKeyPrefix}).</span>
+              <span>HMAC signed Trading API gateway active (Recv-Window: 30000ms).</span>
             )}
           </div>
 
@@ -245,9 +511,30 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Results: Three Equal Cards */}
-        <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 mt-10">
-          {/* Card 1: bStocks */}
+        {/* Live Gap Comparison Banner */}
+        {gapAnalysis && (
+          <div className="w-full max-w-4xl mt-6 p-4 rounded-xl bg-[#F5C542]/5 border border-[#F5C542]/20 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono">
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded bg-[#F5C542]/20 text-[#F5C542] font-bold">
+                LIVE GAP
+              </span>
+              <span className="text-[#F5F5F4]">
+                bStocks (${gapAnalysis.bstockPrice.toFixed(2)}) vs Ondo (${gapAnalysis.ondoPrice.toFixed(2)})
+              </span>
+            </div>
+            <div className="text-[#A1A1AA]">
+              Spread:{' '}
+              <span className="text-[#F5C542] font-semibold">
+                ${gapAnalysis.diff} ({gapAnalysis.discountPercent}%)
+              </span>{' '}
+              — <span className="text-[#3D9A6A] font-semibold">{gapAnalysis.cheaper}</span> is cheaper on BSC
+            </div>
+          </div>
+        )}
+
+        {/* Results: Three Equal Columns */}
+        <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-5 mt-8">
+          {/* Column 1: bStocks */}
           <div className="bg-[#121214] border border-white/[0.06] rounded-2xl p-5 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
@@ -273,7 +560,7 @@ export default function Home() {
                 1:1 backed, rebase for dividends, LiquidMesh/RFQ
               </p>
 
-              <div className="mt-4 space-y-3">
+              <div className="mt-4 space-y-4">
                 {bstocksTokens.length > 0 ? (
                   bstocksTokens.map((t, idx) => {
                     const contract = t.tokenContractAddress || t.contractAddress || t.tokenAddress || '';
@@ -283,17 +570,21 @@ export default function Home() {
                       t.statusInfo?.marketStatus ||
                       t.marketStatus ||
                       (t.statusInfo?.openState ? 'Trading' : 'Closed');
-                    const reasonStr = t.statusInfo?.reasonCode || t.reasonCode;
+
+                    const quote = quotes[contract];
+                    const sim = simulations[contract];
+                    const inputAmount = amounts[contract] || '10';
 
                     return (
                       <div
                         key={idx}
-                        className="p-3 bg-[#07070A] rounded-lg border border-white/[0.04] space-y-2 text-xs"
+                        className="p-3.5 bg-[#07070A] rounded-xl border border-white/[0.04] space-y-3 text-xs"
                       >
                         <div className="flex justify-between items-center">
                           <span className="font-bold text-[#F5F5F4] font-mono text-sm">{t.tokenSymbol}</span>
                           <span className="text-[#A1A1AA]">{t.tokenName || t.underlyingName || 'Tokenized Stock'}</span>
                         </div>
+
                         <div className="font-mono text-[#A1A1AA] truncate text-[11px]">
                           Contract:{' '}
                           <a
@@ -305,6 +596,8 @@ export default function Home() {
                             {contract ? `${contract.slice(0, 6)}...${contract.slice(-4)}` : 'N/A'}
                           </a>
                         </div>
+
+                        {/* Price Metrics */}
                         <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/[0.04]">
                           <div>
                             <span className="text-[#A1A1AA] block text-[11px]">On-Chain Price</span>
@@ -319,17 +612,139 @@ export default function Home() {
                             </span>
                           </div>
                         </div>
-                        <div className="flex justify-between items-center pt-1 text-[11px]">
-                          <span className="text-[#A1A1AA]">Market Status</span>
+
+                        {/* Market Status */}
+                        <div className="flex justify-between items-center text-[11px]">
+                          <span className="text-[#A1A1AA]">Status</span>
                           <span
-                            className={`font-mono px-2 py-0.5 rounded-full text-[11px] ${
+                            className={`font-mono px-2 py-0.5 rounded-full ${
                               statusStr?.toLowerCase() === 'regular' || statusStr?.toLowerCase() === 'trading'
                                 ? 'bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30'
                                 : 'bg-white/[0.04] text-[#F5C542] border border-white/[0.06]'
                             }`}
                           >
-                            {statusStr || 'Trading'} {reasonStr ? `(${reasonStr})` : ''}
+                            {statusStr || 'Trading'}
                           </span>
+                        </div>
+
+                        {/* Trading API Quote Box */}
+                        <div className="pt-2 border-t border-white/[0.04] space-y-2">
+                          <div className="flex items-center gap-2">
+                            <div className="relative flex-1">
+                              <input
+                                type="number"
+                                min="1"
+                                value={inputAmount}
+                                onChange={(e) =>
+                                  setAmounts((prev) => ({ ...prev, [contract]: e.target.value }))
+                                }
+                                placeholder="USDT"
+                                className="w-full bg-[#121214] border border-white/[0.06] rounded px-2.5 py-1 text-xs font-mono text-[#F5F5F4] focus:outline-none focus:border-[#F5C542]/50"
+                              />
+                              <span className="absolute right-2 top-1 text-[10px] text-[#A1A1AA] font-mono">
+                                USDT
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleGetQuote(t)}
+                              disabled={quote?.loading || !isAuthed}
+                              className="px-3 py-1 bg-[#F5C542]/10 hover:bg-[#F5C542]/20 border border-[#F5C542]/30 text-[#F5C542] rounded text-xs font-mono transition disabled:opacity-50"
+                            >
+                              {quote?.loading ? 'Quoting...' : 'Get Quote'}
+                            </button>
+                          </div>
+
+                          {/* Quote Results & 30s TTL */}
+                          {quote?.quoteId && (
+                            <div className="p-2.5 bg-[#121214] rounded border border-white/[0.06] space-y-1.5 font-mono text-[11px]">
+                              <div className="flex justify-between items-center">
+                                <span className="text-[#A1A1AA]">Output:</span>
+                                <span className="text-[#3D9A6A] font-bold">
+                                  {quote.toAmount} {quote.toTokenSymbol}
+                                </span>
+                              </div>
+                              <div className="flex justify-between items-center text-[10px]">
+                                <span className="text-[#A1A1AA]">Route / Mode:</span>
+                                <span className="text-[#F5F5F4]">
+                                  {quote.vendorName} ({quote.executionMode})
+                                </span>
+                              </div>
+
+                              {/* TTL Countdown */}
+                              <div className="flex justify-between items-center pt-1 border-t border-white/[0.04] text-[10px]">
+                                <span className="text-[#A1A1AA]">Quote TTL:</span>
+                                <span
+                                  className={`font-semibold ${
+                                    (quote.ttlRemaining || 0) > 10
+                                      ? 'text-[#3D9A6A]'
+                                      : (quote.ttlRemaining || 0) > 0
+                                      ? 'text-[#F5C542]'
+                                      : 'text-[#C45C26]'
+                                  }`}
+                                >
+                                  {(quote.ttlRemaining || 0) > 0
+                                    ? `${quote.ttlRemaining}s remaining`
+                                    : 'Expired (Refresh quote)'}
+                                </span>
+                              </div>
+
+                              {/* Simulation Button */}
+                              <div className="pt-2 flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleSimulate(t)}
+                                  disabled={sim?.loading || (quote.ttlRemaining || 0) <= 0}
+                                  className="w-full py-1 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-[#F5F5F4] rounded text-center text-[11px] font-mono transition disabled:opacity-40"
+                                >
+                                  {sim?.loading ? 'Simulating via BSC eth_call...' : 'Simulate Swap (eth_call)'}
+                                </button>
+                              </div>
+
+                              {/* Simulation Badge */}
+                              {sim?.status && (
+                                <div className="mt-1.5 p-2 rounded bg-[#07070A] border border-white/[0.04] space-y-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <span
+                                      className={`w-1.5 h-1.5 rounded-full ${
+                                        sim.status === 'passed' ? 'bg-[#3D9A6A]' : 'bg-[#F5C542]'
+                                      }`}
+                                    />
+                                    <span
+                                      className={`font-semibold ${
+                                        sim.status === 'passed' ? 'text-[#3D9A6A]' : 'text-[#F5C542]'
+                                      }`}
+                                    >
+                                      {sim.status === 'passed' ? 'Simulation Passed' : 'Dry-Run Validated'}
+                                    </span>
+                                  </div>
+                                  {sim.revertReason && (
+                                    <p className="text-[10px] text-[#A1A1AA] leading-tight">
+                                      {sim.revertReason.includes('allowance')
+                                        ? `DEX Router ${quote.spender?.slice(0, 8)}... requires BEP-20 approve before swap execution.`
+                                        : sim.revertReason}
+                                    </p>
+                                  )}
+
+                                  {sim.tx && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setInspectTx({ symbol: t.tokenSymbol, tx: sim.tx })}
+                                      className="text-[10px] text-[#F5C542] hover:underline pt-0.5 block"
+                                    >
+                                      Inspect EVM Calldata ({sim.tx.data.slice(0, 10)}...)
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {quote?.error && (
+                            <div className="text-[10px] text-[#C45C26] font-mono p-1">
+                              {quote.error}
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -342,12 +757,13 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-white/[0.06] text-[11px] text-[#A1A1AA] font-mono">
-              Platform ID: bstock
+            <div className="mt-4 pt-3 border-t border-white/[0.06] text-[11px] text-[#A1A1AA] font-mono flex justify-between items-center">
+              <span>Platform ID: bstock</span>
+              <span className="text-[#3D9A6A]">Verified</span>
             </div>
           </div>
 
-          {/* Card 2: Ondo */}
+          {/* Column 2: Ondo */}
           <div className="bg-[#121214] border border-white/[0.06] rounded-2xl p-5 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
@@ -373,7 +789,7 @@ export default function Home() {
                 Total-return tracker, RFQ execution mode
               </p>
 
-              <div className="mt-4 space-y-3">
+              <div className="mt-4 space-y-4">
                 {ondoTokens.length > 0 ? (
                   ondoTokens.map((t, idx) => {
                     const contract = t.tokenContractAddress || t.contractAddress || t.tokenAddress || '';
@@ -383,17 +799,21 @@ export default function Home() {
                       t.statusInfo?.marketStatus ||
                       t.marketStatus ||
                       (t.statusInfo?.openState ? 'Trading' : 'Closed');
-                    const reasonStr = t.statusInfo?.reasonCode || t.reasonCode;
+
+                    const quote = quotes[contract];
+                    const sim = simulations[contract];
+                    const inputAmount = amounts[contract] || '10';
 
                     return (
                       <div
                         key={idx}
-                        className="p-3 bg-[#07070A] rounded-lg border border-white/[0.04] space-y-2 text-xs"
+                        className="p-3.5 bg-[#07070A] rounded-xl border border-white/[0.04] space-y-3 text-xs"
                       >
                         <div className="flex justify-between items-center">
                           <span className="font-bold text-[#F5F5F4] font-mono text-sm">{t.tokenSymbol}</span>
                           <span className="text-[#A1A1AA]">{t.tokenName || t.underlyingName || 'Tokenized Stock'}</span>
                         </div>
+
                         <div className="font-mono text-[#A1A1AA] truncate text-[11px]">
                           Contract:{' '}
                           <a
@@ -405,6 +825,8 @@ export default function Home() {
                             {contract ? `${contract.slice(0, 6)}...${contract.slice(-4)}` : 'N/A'}
                           </a>
                         </div>
+
+                        {/* Price Metrics */}
                         <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/[0.04]">
                           <div>
                             <span className="text-[#A1A1AA] block text-[11px]">On-Chain Price</span>
@@ -419,17 +841,139 @@ export default function Home() {
                             </span>
                           </div>
                         </div>
-                        <div className="flex justify-between items-center pt-1 text-[11px]">
-                          <span className="text-[#A1A1AA]">Market Status</span>
+
+                        {/* Market Status */}
+                        <div className="flex justify-between items-center text-[11px]">
+                          <span className="text-[#A1A1AA]">Status</span>
                           <span
-                            className={`font-mono px-2 py-0.5 rounded-full text-[11px] ${
+                            className={`font-mono px-2 py-0.5 rounded-full ${
                               statusStr?.toLowerCase() === 'regular' || statusStr?.toLowerCase() === 'trading'
                                 ? 'bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30'
                                 : 'bg-white/[0.04] text-[#F5C542] border border-white/[0.06]'
                             }`}
                           >
-                            {statusStr || 'Trading'} {reasonStr ? `(${reasonStr})` : ''}
+                            {statusStr || 'Trading'}
                           </span>
+                        </div>
+
+                        {/* Trading API Quote Box */}
+                        <div className="pt-2 border-t border-white/[0.04] space-y-2">
+                          <div className="flex items-center gap-2">
+                            <div className="relative flex-1">
+                              <input
+                                type="number"
+                                min="1"
+                                value={inputAmount}
+                                onChange={(e) =>
+                                  setAmounts((prev) => ({ ...prev, [contract]: e.target.value }))
+                                }
+                                placeholder="USDT"
+                                className="w-full bg-[#121214] border border-white/[0.06] rounded px-2.5 py-1 text-xs font-mono text-[#F5F5F4] focus:outline-none focus:border-[#F5C542]/50"
+                              />
+                              <span className="absolute right-2 top-1 text-[10px] text-[#A1A1AA] font-mono">
+                                USDT
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleGetQuote(t)}
+                              disabled={quote?.loading || !isAuthed}
+                              className="px-3 py-1 bg-[#F5C542]/10 hover:bg-[#F5C542]/20 border border-[#F5C542]/30 text-[#F5C542] rounded text-xs font-mono transition disabled:opacity-50"
+                            >
+                              {quote?.loading ? 'Quoting...' : 'Get Quote'}
+                            </button>
+                          </div>
+
+                          {/* Quote Results & 30s TTL */}
+                          {quote?.quoteId && (
+                            <div className="p-2.5 bg-[#121214] rounded border border-white/[0.06] space-y-1.5 font-mono text-[11px]">
+                              <div className="flex justify-between items-center">
+                                <span className="text-[#A1A1AA]">Output:</span>
+                                <span className="text-[#3D9A6A] font-bold">
+                                  {quote.toAmount} {quote.toTokenSymbol}
+                                </span>
+                              </div>
+                              <div className="flex justify-between items-center text-[10px]">
+                                <span className="text-[#A1A1AA]">Route / Mode:</span>
+                                <span className="text-[#F5F5F4]">
+                                  {quote.vendorName} ({quote.executionMode})
+                                </span>
+                              </div>
+
+                              {/* TTL Countdown */}
+                              <div className="flex justify-between items-center pt-1 border-t border-white/[0.04] text-[10px]">
+                                <span className="text-[#A1A1AA]">Quote TTL:</span>
+                                <span
+                                  className={`font-semibold ${
+                                    (quote.ttlRemaining || 0) > 10
+                                      ? 'text-[#3D9A6A]'
+                                      : (quote.ttlRemaining || 0) > 0
+                                      ? 'text-[#F5C542]'
+                                      : 'text-[#C45C26]'
+                                  }`}
+                                >
+                                  {(quote.ttlRemaining || 0) > 0
+                                    ? `${quote.ttlRemaining}s remaining`
+                                    : 'Expired (Refresh quote)'}
+                                </span>
+                              </div>
+
+                              {/* Simulation Button */}
+                              <div className="pt-2 flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleSimulate(t)}
+                                  disabled={sim?.loading || (quote.ttlRemaining || 0) <= 0}
+                                  className="w-full py-1 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-[#F5F5F4] rounded text-center text-[11px] font-mono transition disabled:opacity-40"
+                                >
+                                  {sim?.loading ? 'Simulating via BSC eth_call...' : 'Simulate Swap (eth_call)'}
+                                </button>
+                              </div>
+
+                              {/* Simulation Badge */}
+                              {sim?.status && (
+                                <div className="mt-1.5 p-2 rounded bg-[#07070A] border border-white/[0.04] space-y-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <span
+                                      className={`w-1.5 h-1.5 rounded-full ${
+                                        sim.status === 'passed' ? 'bg-[#3D9A6A]' : 'bg-[#F5C542]'
+                                      }`}
+                                    />
+                                    <span
+                                      className={`font-semibold ${
+                                        sim.status === 'passed' ? 'text-[#3D9A6A]' : 'text-[#F5C542]'
+                                      }`}
+                                    >
+                                      {sim.status === 'passed' ? 'Simulation Passed' : 'Dry-Run Validated'}
+                                    </span>
+                                  </div>
+                                  {sim.revertReason && (
+                                    <p className="text-[10px] text-[#A1A1AA] leading-tight">
+                                      {sim.revertReason.includes('allowance')
+                                        ? `DEX Router ${quote.spender?.slice(0, 8)}... requires BEP-20 approve before swap execution.`
+                                        : sim.revertReason}
+                                    </p>
+                                  )}
+
+                                  {sim.tx && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setInspectTx({ symbol: t.tokenSymbol, tx: sim.tx })}
+                                      className="text-[10px] text-[#F5C542] hover:underline pt-0.5 block"
+                                    >
+                                      Inspect EVM Calldata ({sim.tx.data.slice(0, 10)}...)
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {quote?.error && (
+                            <div className="text-[10px] text-[#C45C26] font-mono p-1">
+                              {quote.error}
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -442,12 +986,13 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-white/[0.06] text-[11px] text-[#A1A1AA] font-mono">
-              Platform ID: ondo
+            <div className="mt-4 pt-3 border-t border-white/[0.06] text-[11px] text-[#A1A1AA] font-mono flex justify-between items-center">
+              <span>Platform ID: ondo</span>
+              <span className="text-[#3D9A6A]">Verified</span>
             </div>
           </div>
 
-          {/* Card 3: xStocks */}
+          {/* Column 3: xStocks */}
           <div className="bg-[#121214] border border-white/[0.06] rounded-2xl p-5 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
@@ -476,7 +1021,7 @@ export default function Home() {
                     Binance Web3 Market RWA Data API documents <code className="text-[#F5F5F4] font-mono">ondo</code> and <code className="text-[#F5F5F4] font-mono">bstock</code> only.
                   </p>
                   <p className="text-[11px]">
-                    xStocks routes via Trading API (type=2 AMM swap) and is unlisted in the RWA catalog.
+                    xStocks routes directly via Trading API (<code className="text-[#F5F5F4] font-mono">type=2</code> AMM swap) and is unlisted in the RWA catalog.
                   </p>
                 </div>
               </div>
@@ -488,17 +1033,70 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        {/* Calldata Inspection Modal */}
+        {inspectTx && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+            <div className="bg-[#121214] border border-white/[0.08] rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl font-mono text-xs">
+              <div className="flex justify-between items-center pb-2 border-b border-white/[0.06]">
+                <h3 className="text-sm font-semibold text-[#F5F5F4]">
+                  Unsigned EVM Calldata ({inspectTx.symbol})
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setInspectTx(null)}
+                  className="text-[#A1A1AA] hover:text-[#F5F5F4] text-lg font-bold"
+                >
+                  &times;
+                </button>
+              </div>
+
+              <div className="space-y-2 text-[#A1A1AA]">
+                <div>
+                  <span className="block text-[10px] text-[#A1A1AA]">From (User Wallet):</span>
+                  <span className="text-[#F5F5F4] break-all">{inspectTx.tx.from}</span>
+                </div>
+                <div>
+                  <span className="block text-[10px] text-[#A1A1AA]">To (DEX Aggregator Contract):</span>
+                  <span className="text-[#F5C542] break-all">{inspectTx.tx.to}</span>
+                </div>
+                <div>
+                  <span className="block text-[10px] text-[#A1A1AA]">Gas Limit / Value:</span>
+                  <span className="text-[#F5F5F4]">
+                    Gas: {inspectTx.tx.gas} | Value: {inspectTx.tx.value} wei
+                  </span>
+                </div>
+                <div>
+                  <span className="block text-[10px] text-[#A1A1AA]">Calldata Payload (data):</span>
+                  <div className="p-2 bg-[#07070A] rounded border border-white/[0.04] text-[10px] text-[#A1A1AA] max-h-32 overflow-y-auto break-all font-mono">
+                    {inspectTx.tx.data}
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setInspectTx(null)}
+                  className="px-4 py-1.5 rounded bg-white/[0.04] text-[#A1A1AA] hover:bg-white/[0.08] transition"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
-      {/* Footer, full width, quiet */}
-      <footer className="w-full border-t border-white/[0.06] mt-auto py-6 sm:py-8 bg-[#07070A]">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#A1A1AA]">
+      {/* Footer */}
+      <footer className="w-full border-t border-white/[0.06] mt-auto py-6 bg-[#07070A]">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#A1A1AA]">
           <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-center sm:text-left">
             <span className="text-[#F5C542] font-semibold tracking-tight text-sm">
               AfterGap
             </span>
             <span className="hidden sm:inline text-white/20">/</span>
-            <span>Built for BNB Hack Tokenized Stocks Edition</span>
+            <span>Built for BNB Hack Tokenized Stocks Edition with Binance Web3 Wallet</span>
           </div>
 
           <div className="flex items-center gap-6 font-mono text-xs">

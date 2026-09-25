@@ -6,6 +6,12 @@ import {
   RwaPlatformsResponse,
   RwaSearchResponse,
   RwaTokensResponse,
+  TradingQuoteRequest,
+  TradingQuoteResponse,
+  TradingSwapRequest,
+  TradingSwapResponse,
+  WalletBalancesResponse,
+  SimulationResult,
 } from './types';
 import { signRequest } from './signer';
 
@@ -51,9 +57,7 @@ function initDispatcher() {
 
     setGlobalDispatcher(agent);
     dispatcherInitialized = true;
-  } catch {
-    // If undici/dns cannot be set, proceed with native fetch
-  }
+  } catch {}
 }
 
 initDispatcher();
@@ -91,7 +95,7 @@ export class BinanceRwaClient {
   }
 
   /**
-   * Helper to perform an HTTP GET request (signed if keys provided, or raw for diagnostics)
+   * Helper to perform an HTTP GET request (signed if keys provided)
    */
   public async get<T>(pathWithQuery: string): Promise<ApiResponseWrapper<T>> {
     initDispatcher();
@@ -138,16 +142,14 @@ export class BinanceRwaClient {
       let parsedJson: any = null;
       try {
         parsedJson = JSON.parse(rawBody);
-      } catch {
-        // Not JSON
-      }
+      } catch {}
 
       const responseHeaders: Record<string, string> = {};
       response.headers.forEach((val, key) => {
         responseHeaders[key] = val;
       });
 
-      const isOk = response.ok && parsedJson && parsedJson.code === '000000';
+      const isOk = response.ok && parsedJson && (parsedJson.code === 0 || parsedJson.code === '000000');
 
       return {
         success: Boolean(isOk || (response.ok && !parsedJson?.code)),
@@ -155,7 +157,7 @@ export class BinanceRwaClient {
         statusText: response.statusText,
         data: (parsedJson as BinanceApiResponse<T>)?.data ?? (parsedJson as T),
         rawBody,
-        error: !response.ok || (parsedJson && parsedJson.code !== '000000')
+        error: !response.ok || (parsedJson && parsedJson.code !== 0 && parsedJson.code !== '000000')
           ? {
               code: parsedJson?.code ?? response.status,
               message: parsedJson?.msg ?? parsedJson?.message ?? response.statusText,
@@ -170,7 +172,7 @@ export class BinanceRwaClient {
           hasAuth,
           sentHeaders: {
             ...headers,
-            'X-OC-SIGN': headers['X-OC-SIGN'] ? `${headers['X-OC-SIGN'].slice(0, 8)}...` : undefined as any,
+            'X-OC-SIGN': headers['X-OC-SIGN'] ? `${headers['X-OC-SIGN'].slice(0, 8)}...` : (undefined as any),
           },
         },
       };
@@ -197,26 +199,122 @@ export class BinanceRwaClient {
   }
 
   /**
-   * 1. GET /api/v1/dex/market/rwa/platforms
-   * Returns list of all supported RWA token issuance platforms (e.g. 'ondo', 'bstock')
+   * Helper to perform an HTTP POST request (signed if keys provided)
    */
+  public async post<T>(pathWithQuery: string, bodyString: string = ''): Promise<ApiResponseWrapper<T>> {
+    initDispatcher();
+
+    const timestamp = new Date().toISOString();
+    const hasAuth = Boolean(this.apiKey && this.secretKey);
+
+    let headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    };
+
+    let requestUrl: string;
+
+    if (hasAuth) {
+      const signed = signRequest(
+        {
+          method: 'POST',
+          pathWithQuery,
+          body: bodyString,
+          timestamp,
+        },
+        this.apiKey,
+        this.secretKey
+      );
+      headers = { ...headers, ...signed.headers };
+      requestUrl = signed.fullUrl;
+    } else {
+      const cleanPath = pathWithQuery.startsWith('/') ? pathWithQuery : `/${pathWithQuery}`;
+      const normalizedPath = cleanPath.startsWith('/build') ? cleanPath : `/build${cleanPath}`;
+      requestUrl = `https://web3.binance.com${normalizedPath}`;
+      if (this.apiKey) {
+        headers['X-OC-APIKEY'] = this.apiKey;
+      }
+      headers['X-OC-TIMESTAMP'] = timestamp;
+    }
+
+    try {
+      const response = await fetch(requestUrl, {
+        method: 'POST',
+        headers,
+        body: bodyString,
+      });
+
+      const rawBody = await response.text();
+      let parsedJson: any = null;
+      try {
+        parsedJson = JSON.parse(rawBody);
+      } catch {}
+
+      const responseHeaders: Record<string, string> = {};
+      response.headers.forEach((val, key) => {
+        responseHeaders[key] = val;
+      });
+
+      const isOk = response.ok && parsedJson && (parsedJson.code === 0 || parsedJson.code === '000000');
+
+      return {
+        success: Boolean(isOk || (response.ok && !parsedJson?.code)),
+        status: response.status,
+        statusText: response.statusText,
+        data: (parsedJson as BinanceApiResponse<T>)?.data ?? (parsedJson as T),
+        rawBody,
+        error: !response.ok || (parsedJson && parsedJson.code !== 0 && parsedJson.code !== '000000')
+          ? {
+              code: parsedJson?.code ?? response.status,
+              message: parsedJson?.msg ?? parsedJson?.message ?? response.statusText,
+              details: parsedJson,
+            }
+          : undefined,
+        headers: responseHeaders,
+        debug: {
+          requestUrl,
+          method: 'POST',
+          requestTimestamp: timestamp,
+          hasAuth,
+          sentHeaders: {
+            ...headers,
+            'X-OC-SIGN': headers['X-OC-SIGN'] ? `${headers['X-OC-SIGN'].slice(0, 8)}...` : (undefined as any),
+          },
+        },
+      };
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      return {
+        success: false,
+        status: 0,
+        statusText: 'Network Error',
+        rawBody: errorMessage,
+        error: {
+          code: 'NETWORK_ERROR',
+          message: errorMessage,
+        },
+        headers: {},
+        debug: {
+          requestUrl,
+          method: 'POST',
+          requestTimestamp: timestamp,
+          hasAuth,
+        },
+      };
+    }
+  }
+
+  // --- Market RWA Methods ---
+
   public async getPlatforms(): Promise<ApiResponseWrapper<RwaPlatformsResponse>> {
     return this.get<RwaPlatformsResponse>('/api/v1/dex/market/rwa/platforms');
   }
 
-  /**
-   * 2. GET /api/v1/dex/market/rwa/search?keyword=...
-   * Search RWA tokens by keyword (ticker/company) or contract address
-   */
   public async search(keyword: string): Promise<ApiResponseWrapper<RwaSearchResponse>> {
     const encoded = encodeURIComponent(keyword.trim());
     return this.get<RwaSearchResponse>(`/api/v1/dex/market/rwa/search?keyword=${encoded}`);
   }
 
-  /**
-   * 3. GET /api/v1/dex/market/rwa/tokens?binanceChainId=56&platformId=...
-   * Filtered list of RWA tokens on BNB Smart Chain
-   */
   public async getTokens(options: {
     binanceChainId?: string | number;
     platformId?: string;
@@ -236,5 +334,116 @@ export class BinanceRwaClient {
     }
 
     return this.get<RwaTokensResponse>(`/api/v1/dex/market/rwa/tokens?${params.toString()}`);
+  }
+
+  // --- Trading API Methods ---
+
+  public async getQuote(req: TradingQuoteRequest): Promise<ApiResponseWrapper<TradingQuoteResponse>> {
+    const params = new URLSearchParams();
+    params.set('binanceChainId', String(req.binanceChainId || 56));
+    params.set('fromTokenAddress', req.fromTokenAddress);
+    params.set('toTokenAddress', req.toTokenAddress);
+    params.set('amount', req.amount);
+    if (req.userWalletAddress) {
+      params.set('userWalletAddress', req.userWalletAddress);
+    }
+    if (req.slippagePercent !== undefined) {
+      params.set('slippagePercent', String(req.slippagePercent));
+    }
+    if (req.autoSlippage) {
+      params.set('autoSlippage', 'true');
+    }
+
+    return this.get<TradingQuoteResponse>(`/api/v1/dex/aggregator/quote?${params.toString()}`);
+  }
+
+  public async getSwap(req: TradingSwapRequest): Promise<ApiResponseWrapper<TradingSwapResponse>> {
+    const params = new URLSearchParams();
+    params.set('quoteId', req.quoteId);
+    params.set('binanceChainId', String(req.binanceChainId || 56));
+    params.set('fromTokenAddress', req.fromTokenAddress);
+    params.set('toTokenAddress', req.toTokenAddress);
+    params.set('amount', req.amount);
+    params.set('userWalletAddress', req.userWalletAddress);
+    if (req.slippagePercent !== undefined) {
+      params.set('slippagePercent', String(req.slippagePercent));
+    }
+    if (req.autoSlippage) {
+      params.set('autoSlippage', 'true');
+    }
+
+    return this.get<TradingSwapResponse>(`/api/v1/dex/aggregator/swap?${params.toString()}`);
+  }
+
+  // --- Wallet API Methods ---
+
+  public async getBalances(address: string, chainId: string | number = 56): Promise<ApiResponseWrapper<WalletBalancesResponse>> {
+    const params = new URLSearchParams();
+    params.set('address', address);
+    params.set('chains', String(chainId));
+    params.set('excludeRiskToken', 'true');
+
+    return this.get<WalletBalancesResponse>(`/api/v1/dex/balance/all-token-balances-by-address?${params.toString()}`);
+  }
+
+  // --- Transaction Dry-Run / Simulation ---
+
+  public async simulateSwap(
+    tx: { from: string; to: string; data: string; value?: string },
+    bscRpcUrl: string = 'https://bsc-dataseed.binance.org/'
+  ): Promise<SimulationResult> {
+    const timestamp = new Date().toISOString();
+    try {
+      const response = await fetch(bscRpcUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'eth_call',
+          params: [
+            {
+              from: tx.from,
+              to: tx.to,
+              data: tx.data,
+              value: tx.value ? (tx.value.startsWith('0x') ? tx.value : `0x${BigInt(tx.value).toString(16)}`) : '0x0',
+            },
+            'latest',
+          ],
+        }),
+      });
+
+      const resJson: any = await response.json();
+
+      if (resJson.error) {
+        return {
+          success: false,
+          status: 'reverted',
+          error: resJson.error.message || 'Simulation reverted',
+          revertReason: resJson.error.data || resJson.error.message,
+          simulatedAt: timestamp,
+          txTarget: tx.to,
+          txDataPrefix: tx.data?.slice(0, 10),
+        };
+      }
+
+      return {
+        success: true,
+        status: 'passed',
+        simulatedAt: timestamp,
+        txTarget: tx.to,
+        txDataPrefix: tx.data?.slice(0, 10),
+      };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return {
+        success: false,
+        status: 'reverted',
+        error: msg,
+        simulatedAt: timestamp,
+        txTarget: tx.to,
+        txDataPrefix: tx.data?.slice(0, 10),
+      };
+    }
   }
 }
