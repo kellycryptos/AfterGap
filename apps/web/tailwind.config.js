@@ -8,13 +8,16 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        brand: {
-          yellow: '#F0B90B',
-          dark: '#0B0E11',
-          card: '#181A20',
-          border: '#2B313A',
-          muted: '#848E9C',
+        canvas: '#07070A',
+        card: '#121214',
+        accent: {
+          DEFAULT: '#F5C542',
+          hover: '#E0B02E',
         },
+        primary: '#F5F5F4',
+        mute: '#A1A1AA',
+        danger: '#C45C26',
+        success: '#3D9A6A',
       },
     },
   },

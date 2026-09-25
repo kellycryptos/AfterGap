@@ -71,22 +71,6 @@ export default function Home() {
     }
   };
 
-  // Helper to extract platforms list
-  const platformsList: any[] = React.useMemo(() => {
-    if (!data?.platforms?.data) return [];
-    if (Array.isArray(data.platforms.data)) return data.platforms.data;
-    if (Array.isArray(data.platforms.data?.platforms)) return data.platforms.data.platforms;
-    if (Array.isArray(data.platforms.data?.list)) return data.platforms.data.list;
-    return [];
-  }, [data]);
-
-  // Check if xstocks exists in platforms
-  const hasXStocksInPlatforms = platformsList.some(
-    (p: any) =>
-      String(p?.platformId).toLowerCase().includes('xstock') ||
-      String(p?.name).toLowerCase().includes('xstock')
-  );
-
   // Helper to extract tokens from search and BSC tokens
   const allResolvedTokens: any[] = React.useMemo(() => {
     const bscData = data?.bscTokens?.data;
@@ -153,142 +137,141 @@ export default function Home() {
     (t) => String(t.platformId).toLowerCase() === 'ondo' || String(t.tokenSymbol).endsWith('on')
   );
 
+  const isAuthed = Boolean(data?.auth?.hasApiKey && data?.auth?.hasSecretKey);
+
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* Header */}
-      <div className="border-b border-[#2B313A] pb-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-black tracking-tight text-[#F0B90B]">AfterGap</h1>
-              <span className="bg-[#181A20] border border-[#2B313A] text-xs font-mono text-[#F0B90B] px-2.5 py-1 rounded">
-                BNB Smart Chain (Chain ID: 56)
-              </span>
-              <span className="bg-blue-900/30 border border-blue-700/50 text-xs font-mono text-blue-400 px-2 py-0.5 rounded">
-                Spot Only
-              </span>
-            </div>
-            <p className="text-[#848E9C] text-sm mt-1">
-              Same stock, three wrappers, live gap. Built for BNB Hack: Tokenized Stocks Edition with Binance Web3 Wallet.
-            </p>
+    <div className="min-h-screen flex flex-col justify-between relative overflow-hidden bg-[#07070A] text-[#F5F5F4]">
+      {/* Soft Radial Glow behind hero */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-[420px] -z-10 blur-3xl opacity-80"
+        style={{
+          background:
+            'radial-gradient(ellipse at 50% 30%, rgba(245, 197, 66, 0.12) 0%, rgba(245, 197, 66, 0.03) 50%, transparent 70%)',
+        }}
+      />
+
+      {/* Top Bar */}
+      <header className="w-full border-b border-white/[0.06] bg-[#07070A]/80 backdrop-blur-sm sticky top-0 z-20">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <span className="text-xl sm:text-2xl font-bold tracking-tight text-[#F5C542]">
+              AfterGap
+            </span>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-mono bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06]">
+              BSC 56
+            </span>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-mono bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06]">
+              Spot only
+            </span>
           </div>
 
-          {/* Auth indicator */}
-          <div className="flex items-center gap-2 bg-[#181A20] border border-[#2B313A] px-3 py-2 rounded-lg text-xs">
-            <div
-              className={`w-2 h-2 rounded-full ${
-                data?.auth?.hasApiKey && data?.auth?.hasSecretKey ? 'bg-green-400' : 'bg-yellow-400 animate-pulse'
+          {/* Compact Auth Chip */}
+          <div className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono bg-white/[0.03] border border-white/[0.06]">
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                isAuthed ? 'bg-[#3D9A6A]' : 'bg-[#A1A1AA]'
               }`}
             />
-            <span className="text-[#848E9C]">Auth Status:</span>
-            <span className="font-mono text-white">
-              {data?.auth?.hasApiKey && data?.auth?.hasSecretKey ? (
-                `Signed (${data.auth.apiKeyPrefix})`
-              ) : (
-                <span className="text-yellow-400">Keys Unset in .env.local</span>
-              )}
+            <span className="text-[#A1A1AA]">
+              {isAuthed ? `Signed (${data?.auth?.apiKeyPrefix})` : 'Needs key'}
             </span>
           </div>
         </div>
+      </header>
 
-        {/* Search Bar */}
-        <form onSubmit={handleSubmit} className="mt-6 flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <input
-              type="text"
-              value={ticker}
-              onChange={(e) => setTicker(e.target.value.toUpperCase())}
-              placeholder="Search ticker e.g. NVDA, TSLA, AAPL, QQQ"
-              className="w-full bg-[#181A20] border border-[#2B313A] rounded-lg px-4 py-2.5 text-white placeholder-[#848E9C] font-mono text-sm focus:outline-none focus:border-[#F0B90B]"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-[#F0B90B] hover:bg-[#dfaa09] disabled:opacity-50 text-black font-semibold px-6 py-2.5 rounded-lg text-sm transition"
-          >
-            {loading ? 'Resolving BSC Wrappers...' : 'Inspect & Resolve'}
-          </button>
-        </form>
-
-        {/* Quick Ticker Chips */}
-        <div className="mt-3 flex items-center gap-2 text-xs text-[#848E9C]">
-          <span>Presets:</span>
-          {['NVDA', 'TSLA', 'AAPL', 'MSFT', 'COIN', 'QQQ'].map((sym) => (
-            <button
-              key={sym}
-              type="button"
-              onClick={() => {
-                setTicker(sym);
-                fetchRwaData(sym);
-              }}
-              className="hover:text-white bg-[#181A20] border border-[#2B313A] px-2 py-1 rounded font-mono transition"
-            >
-              {sym}
-            </button>
-          ))}
+      {/* Main Screen Content */}
+      <main className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-16 flex-1 flex flex-col items-center justify-center">
+        {/* Hero */}
+        <div className="text-center mb-8 sm:mb-10 space-y-2">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight text-[#F5F5F4]">
+            Same stock. Three wrappers. Live gap.
+          </h1>
         </div>
-      </div>
 
-      {/* Auth / Error banner if key missing or call failed */}
-      {(!data?.auth?.hasApiKey || !data?.auth?.hasSecretKey) && (
-        <div className="bg-[#2B2313] border border-[#785E1A] p-4 rounded-lg text-sm text-[#F0B90B] flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center">
-          <div>
-            <div className="font-semibold flex items-center gap-2">
-              <span>⚠️ API Credentials Not Configured in .env.local</span>
+        {/* Main Product Card */}
+        <div className="w-full max-w-xl bg-[#121214] border border-white/[0.06] rounded-2xl p-5 sm:p-7 shadow-2xl space-y-4">
+          {/* Ticker Search Form */}
+          <form onSubmit={handleSubmit} className="flex gap-2.5">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={ticker}
+                onChange={(e) => setTicker(e.target.value.toUpperCase())}
+                placeholder="Ticker e.g. NVDA"
+                className="w-full bg-[#07070A] border border-white/[0.06] rounded-lg px-4 py-2.5 text-[#F5F5F4] placeholder-[#A1A1AA]/50 font-mono text-sm uppercase focus:outline-none focus:border-[#F5C542]/60 transition"
+              />
             </div>
-            <p className="text-xs text-[#d1b369] mt-1">
-              Add your <code className="bg-[#181A20] px-1 py-0.5 rounded">BINANCE_WEB3_API_KEY</code> and{' '}
-              <code className="bg-[#181A20] px-1 py-0.5 rounded">BINANCE_WEB3_API_SECRET</code> to{' '}
-              <code className="bg-[#181A20] px-1 py-0.5 rounded">.env.local</code> to execute live signed HMAC requests.
-              The app is currently displaying raw unauthenticated response bodies and DEVEX diagnostics.
-            </p>
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-[#F5C542] hover:bg-[#E0B02E] disabled:opacity-50 text-[#07070A] font-semibold px-5 py-2.5 rounded-lg text-sm transition"
+            >
+              {loading ? 'Inspecting...' : 'Inspect'}
+            </button>
+          </form>
+
+          {/* One-Line Mute Status */}
+          <div className="text-xs text-[#A1A1AA] font-mono pt-0.5 min-h-[1.25rem]">
+            {error ? (
+              <span className="text-[#C45C26]">{error}</span>
+            ) : !isAuthed ? (
+              <span>API credentials not configured in .env.local — live quote signing unavailable.</span>
+            ) : (
+              <span>HMAC signed credentials active ({data?.auth?.apiKeyPrefix}).</span>
+            )}
           </div>
-          <a
-            href="https://web3.binance.com/en/dev-portal"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="whitespace-nowrap text-xs bg-[#F0B90B] text-black font-medium px-3 py-1.5 rounded hover:bg-[#dfaa09]"
-          >
-            Get Keys from Portal →
-          </a>
-        </div>
-      )}
 
-      {error && (
-        <div className="bg-red-950/50 border border-red-800 p-4 rounded-lg text-sm text-red-300">
-          <strong>Fetch Error:</strong> {error}
-        </div>
-      )}
-
-      {/* Section 1: Resolved BSC Rows Grouped by Platform */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <span>Resolved BSC Wrappers</span>
-            <span className="text-xs font-normal text-[#848E9C]">(Chain 56: bStocks, Ondo, xStocks)</span>
-          </h2>
-          <span className="text-xs text-[#848E9C] font-mono">Query: {ticker}</span>
+          {/* Preset Chips */}
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/[0.04]">
+            <span className="text-xs text-[#A1A1AA] mr-1">Presets:</span>
+            {['NVDA', 'TSLA', 'AAPL', 'MSFT', 'COIN', 'QQQ'].map((sym) => (
+              <button
+                key={sym}
+                type="button"
+                onClick={() => {
+                  setTicker(sym);
+                  fetchRwaData(sym);
+                }}
+                className={`px-3 py-1 rounded-full text-xs font-mono transition border ${
+                  ticker === sym
+                    ? 'bg-[#F5C542]/10 text-[#F5C542] border-[#F5C542]/40'
+                    : 'bg-white/[0.04] text-[#A1A1AA] border-white/[0.06] hover:bg-white/[0.08] hover:text-[#F5F5F4]'
+                }`}
+              >
+                {sym}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* 1. bStocks */}
-          <div className="bg-[#181A20] border border-[#2B313A] rounded-xl p-5 flex flex-col justify-between">
+        {/* Results: Three Equal Cards */}
+        <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 mt-10">
+          {/* Card 1: bStocks */}
+          <div className="bg-[#121214] border border-white/[0.06] rounded-2xl p-5 flex flex-col justify-between">
             <div>
-              <div className="flex items-center justify-between pb-3 border-b border-[#2B313A]">
-                <div>
-                  <h3 className="text-base font-bold text-white flex items-center gap-2">
-                    <span>bStocks</span>
-                    <span className="text-xs bg-[#2B313A] text-[#F0B90B] px-2 py-0.5 rounded font-mono">
-                      Type 3 • Suffix B
-                    </span>
-                  </h3>
-                  <p className="text-xs text-[#848E9C] mt-0.5">1:1 backed, rebase for dividends, LiquidMesh/RFQ</p>
+              <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base font-semibold text-[#F5F5F4]">bStocks</h2>
+                  <span className="px-2 py-0.5 rounded-full text-[11px] font-mono bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06]">
+                    Type 3
+                  </span>
                 </div>
-                <span className="text-xs font-mono px-2 py-0.5 rounded bg-green-950 text-green-400 border border-green-800">
-                  RWA Native
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[11px] font-mono border ${
+                    bstocksTokens.length > 0
+                      ? 'bg-[#3D9A6A]/10 text-[#3D9A6A] border-[#3D9A6A]/30'
+                      : !isAuthed
+                      ? 'bg-white/[0.04] text-[#A1A1AA] border-white/[0.06]'
+                      : 'bg-[#C45C26]/10 text-[#C45C26] border-[#C45C26]/30'
+                  }`}
+                >
+                  {bstocksTokens.length > 0 ? 'Live' : !isAuthed ? 'Needs key' : 'Not in catalog'}
                 </span>
               </div>
+              <p className="text-xs text-[#A1A1AA] mt-2">
+                1:1 backed, rebase for dividends, LiquidMesh/RFQ
+              </p>
 
               <div className="mt-4 space-y-3">
                 {bstocksTokens.length > 0 ? (
@@ -296,92 +279,99 @@ export default function Home() {
                     const contract = t.tokenContractAddress || t.contractAddress || t.tokenAddress || '';
                     const onChainPrice = t.tokenPrice || t.price;
                     const refPrice = t.referencePrice;
-                    const statusStr = t.statusInfo?.marketStatus || t.marketStatus || (t.statusInfo?.openState ? 'Trading' : 'Closed');
+                    const statusStr =
+                      t.statusInfo?.marketStatus ||
+                      t.marketStatus ||
+                      (t.statusInfo?.openState ? 'Trading' : 'Closed');
                     const reasonStr = t.statusInfo?.reasonCode || t.reasonCode;
 
                     return (
-                      <div key={idx} className="p-3 bg-[#0B0E11] rounded-lg border border-[#2B313A] space-y-2 text-xs">
+                      <div
+                        key={idx}
+                        className="p-3 bg-[#07070A] rounded-lg border border-white/[0.04] space-y-2 text-xs"
+                      >
                         <div className="flex justify-between items-center">
-                          <span className="font-bold text-white font-mono text-sm">{t.tokenSymbol}</span>
-                          <span className="text-[#848E9C]">{t.tokenName || t.underlyingName || 'Tokenized Stock'}</span>
+                          <span className="font-bold text-[#F5F5F4] font-mono text-sm">{t.tokenSymbol}</span>
+                          <span className="text-[#A1A1AA]">{t.tokenName || t.underlyingName || 'Tokenized Stock'}</span>
                         </div>
-                        <div className="font-mono text-[#848E9C] truncate">
+                        <div className="font-mono text-[#A1A1AA] truncate text-[11px]">
                           Contract:{' '}
                           <a
                             href={`https://bscscan.com/token/${contract}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-[#F0B90B] hover:underline"
+                            className="text-[#F5C542] hover:underline"
                           >
-                            {contract || 'N/A'}
+                            {contract ? `${contract.slice(0, 6)}...${contract.slice(-4)}` : 'N/A'}
                           </a>
                         </div>
-                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#2B313A]/50">
+                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/[0.04]">
                           <div>
-                            <span className="text-[#848E9C] block">On-Chain Price:</span>
-                            <span className="font-mono text-white font-semibold">
+                            <span className="text-[#A1A1AA] block text-[11px]">On-Chain Price</span>
+                            <span className="font-mono text-[#F5F5F4] font-semibold text-sm">
                               {onChainPrice ? `$${Number(onChainPrice).toFixed(2)}` : '—'}
                             </span>
                           </div>
                           <div>
-                            <span className="text-[#848E9C] block">Ref Price (Cash):</span>
-                            <span className="font-mono text-white font-semibold">
+                            <span className="text-[#A1A1AA] block text-[11px]">Ref Price (Cash)</span>
+                            <span className="font-mono text-[#F5F5F4] font-semibold text-sm">
                               {refPrice ? `$${Number(refPrice).toFixed(2)}` : '—'}
                             </span>
                           </div>
                         </div>
                         <div className="flex justify-between items-center pt-1 text-[11px]">
-                          <span className="text-[#848E9C]">Market Status:</span>
+                          <span className="text-[#A1A1AA]">Market Status</span>
                           <span
-                            className={`font-mono px-1.5 py-0.5 rounded ${
+                            className={`font-mono px-2 py-0.5 rounded-full text-[11px] ${
                               statusStr?.toLowerCase() === 'regular' || statusStr?.toLowerCase() === 'trading'
-                                ? 'bg-green-950 text-green-400'
-                                : 'bg-[#2B313A] text-yellow-400'
+                                ? 'bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30'
+                                : 'bg-white/[0.04] text-[#F5C542] border border-white/[0.06]'
                             }`}
                           >
-                            {statusStr} {reasonStr ? `(${reasonStr})` : ''}
+                            {statusStr || 'Trading'} {reasonStr ? `(${reasonStr})` : ''}
                           </span>
                         </div>
                       </div>
                     );
                   })
                 ) : (
-                  <div className="py-8 text-center text-xs text-[#848E9C] bg-[#0B0E11] rounded-lg border border-[#2B313A]">
-                    {data?.search?.status === 200 || data?.bscTokens?.status === 200 ? (
-                      <p>No bStocks tokens returned for ticker &quot;{ticker}&quot; on BSC.</p>
-                    ) : (
-                      <p className="font-mono">
-                        Awaiting live response (HTTP {data?.search?.status || '---'} /{' '}
-                        {data?.bscTokens?.status || '---'})
-                      </p>
-                    )}
+                  <div className="py-6 text-center text-xs font-mono text-[#A1A1AA] bg-[#07070A] rounded-lg border border-white/[0.04]">
+                    {loading ? 'Resolving...' : !isAuthed ? 'Needs key' : 'Not in catalog'}
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-[#2B313A] text-[11px] text-[#848E9C]">
-              Platform ID: <code className="text-white">bstock</code>
+            <div className="mt-4 pt-3 border-t border-white/[0.06] text-[11px] text-[#A1A1AA] font-mono">
+              Platform ID: bstock
             </div>
           </div>
 
-          {/* 2. Ondo */}
-          <div className="bg-[#181A20] border border-[#2B313A] rounded-xl p-5 flex flex-col justify-between">
+          {/* Card 2: Ondo */}
+          <div className="bg-[#121214] border border-white/[0.06] rounded-2xl p-5 flex flex-col justify-between">
             <div>
-              <div className="flex items-center justify-between pb-3 border-b border-[#2B313A]">
-                <div>
-                  <h3 className="text-base font-bold text-white flex items-center gap-2">
-                    <span>Ondo</span>
-                    <span className="text-xs bg-[#2B313A] text-[#F0B90B] px-2 py-0.5 rounded font-mono">
-                      Type 1 • Suffix on
-                    </span>
-                  </h3>
-                  <p className="text-xs text-[#848E9C] mt-0.5">Total-return tracker, RFQ execution mode</p>
+              <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base font-semibold text-[#F5F5F4]">Ondo</h2>
+                  <span className="px-2 py-0.5 rounded-full text-[11px] font-mono bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06]">
+                    Type 1
+                  </span>
                 </div>
-                <span className="text-xs font-mono px-2 py-0.5 rounded bg-green-950 text-green-400 border border-green-800">
-                  RWA Native
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[11px] font-mono border ${
+                    ondoTokens.length > 0
+                      ? 'bg-[#3D9A6A]/10 text-[#3D9A6A] border-[#3D9A6A]/30'
+                      : !isAuthed
+                      ? 'bg-white/[0.04] text-[#A1A1AA] border-white/[0.06]'
+                      : 'bg-[#C45C26]/10 text-[#C45C26] border-[#C45C26]/30'
+                  }`}
+                >
+                  {ondoTokens.length > 0 ? 'Live' : !isAuthed ? 'Needs key' : 'Not in catalog'}
                 </span>
               </div>
+              <p className="text-xs text-[#A1A1AA] mt-2">
+                Total-return tracker, RFQ execution mode
+              </p>
 
               <div className="mt-4 space-y-3">
                 {ondoTokens.length > 0 ? (
@@ -389,237 +379,148 @@ export default function Home() {
                     const contract = t.tokenContractAddress || t.contractAddress || t.tokenAddress || '';
                     const onChainPrice = t.tokenPrice || t.price;
                     const refPrice = t.referencePrice;
-                    const statusStr = t.statusInfo?.marketStatus || t.marketStatus || (t.statusInfo?.openState ? 'Trading' : 'Closed');
+                    const statusStr =
+                      t.statusInfo?.marketStatus ||
+                      t.marketStatus ||
+                      (t.statusInfo?.openState ? 'Trading' : 'Closed');
                     const reasonStr = t.statusInfo?.reasonCode || t.reasonCode;
 
                     return (
-                      <div key={idx} className="p-3 bg-[#0B0E11] rounded-lg border border-[#2B313A] space-y-2 text-xs">
+                      <div
+                        key={idx}
+                        className="p-3 bg-[#07070A] rounded-lg border border-white/[0.04] space-y-2 text-xs"
+                      >
                         <div className="flex justify-between items-center">
-                          <span className="font-bold text-white font-mono text-sm">{t.tokenSymbol}</span>
-                          <span className="text-[#848E9C]">{t.tokenName || t.underlyingName || 'Tokenized Stock'}</span>
+                          <span className="font-bold text-[#F5F5F4] font-mono text-sm">{t.tokenSymbol}</span>
+                          <span className="text-[#A1A1AA]">{t.tokenName || t.underlyingName || 'Tokenized Stock'}</span>
                         </div>
-                        <div className="font-mono text-[#848E9C] truncate">
+                        <div className="font-mono text-[#A1A1AA] truncate text-[11px]">
                           Contract:{' '}
                           <a
                             href={`https://bscscan.com/token/${contract}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-[#F0B90B] hover:underline"
+                            className="text-[#F5C542] hover:underline"
                           >
-                            {contract || 'N/A'}
+                            {contract ? `${contract.slice(0, 6)}...${contract.slice(-4)}` : 'N/A'}
                           </a>
                         </div>
-                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#2B313A]/50">
+                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/[0.04]">
                           <div>
-                            <span className="text-[#848E9C] block">On-Chain Price:</span>
-                            <span className="font-mono text-white font-semibold">
+                            <span className="text-[#A1A1AA] block text-[11px]">On-Chain Price</span>
+                            <span className="font-mono text-[#F5F5F4] font-semibold text-sm">
                               {onChainPrice ? `$${Number(onChainPrice).toFixed(2)}` : '—'}
                             </span>
                           </div>
                           <div>
-                            <span className="text-[#848E9C] block">Ref Price (Cash):</span>
-                            <span className="font-mono text-white font-semibold">
+                            <span className="text-[#A1A1AA] block text-[11px]">Ref Price (Cash)</span>
+                            <span className="font-mono text-[#F5F5F4] font-semibold text-sm">
                               {refPrice ? `$${Number(refPrice).toFixed(2)}` : '—'}
                             </span>
                           </div>
                         </div>
                         <div className="flex justify-between items-center pt-1 text-[11px]">
-                          <span className="text-[#848E9C]">Market Status:</span>
+                          <span className="text-[#A1A1AA]">Market Status</span>
                           <span
-                            className={`font-mono px-1.5 py-0.5 rounded ${
+                            className={`font-mono px-2 py-0.5 rounded-full text-[11px] ${
                               statusStr?.toLowerCase() === 'regular' || statusStr?.toLowerCase() === 'trading'
-                                ? 'bg-green-950 text-green-400'
-                                : 'bg-[#2B313A] text-yellow-400'
+                                ? 'bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30'
+                                : 'bg-white/[0.04] text-[#F5C542] border border-white/[0.06]'
                             }`}
                           >
-                            {statusStr} {reasonStr ? `(${reasonStr})` : ''}
+                            {statusStr || 'Trading'} {reasonStr ? `(${reasonStr})` : ''}
                           </span>
                         </div>
                       </div>
                     );
                   })
                 ) : (
-                  <div className="py-8 text-center text-xs text-[#848E9C] bg-[#0B0E11] rounded-lg border border-[#2B313A]">
-                    {data?.search?.status === 200 || data?.bscTokens?.status === 200 ? (
-                      <p>No Ondo tokens returned for ticker &quot;{ticker}&quot; on BSC.</p>
-                    ) : (
-                      <p className="font-mono">
-                        Awaiting live response (HTTP {data?.search?.status || '---'} /{' '}
-                        {data?.bscTokens?.status || '---'})
-                      </p>
-                    )}
+                  <div className="py-6 text-center text-xs font-mono text-[#A1A1AA] bg-[#07070A] rounded-lg border border-white/[0.04]">
+                    {loading ? 'Resolving...' : !isAuthed ? 'Needs key' : 'Not in catalog'}
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-[#2B313A] text-[11px] text-[#848E9C]">
-              Platform ID: <code className="text-white">ondo</code>
+            <div className="mt-4 pt-3 border-t border-white/[0.06] text-[11px] text-[#A1A1AA] font-mono">
+              Platform ID: ondo
             </div>
           </div>
 
-          {/* 3. xStocks */}
-          <div className="bg-[#181A20] border border-dashed border-[#404652] rounded-xl p-5 flex flex-col justify-between">
+          {/* Card 3: xStocks */}
+          <div className="bg-[#121214] border border-white/[0.06] rounded-2xl p-5 flex flex-col justify-between">
             <div>
-              <div className="flex items-center justify-between pb-3 border-b border-[#2B313A]">
-                <div>
-                  <h3 className="text-base font-bold text-[#848E9C] flex items-center gap-2">
-                    <span>xStocks</span>
-                    <span className="text-xs bg-[#2B313A] text-gray-400 px-2 py-0.5 rounded font-mono">
-                      Type 2 • Suffix x
-                    </span>
-                  </h3>
-                  <p className="text-xs text-[#848E9C] mt-0.5">AMM SWAP (No RFQ)</p>
+              <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base font-semibold text-[#F5F5F4]">xStocks</h2>
+                  <span className="px-2 py-0.5 rounded-full text-[11px] font-mono bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06]">
+                    Type 2
+                  </span>
                 </div>
-                <span className="text-xs font-mono px-2 py-0.5 rounded bg-amber-950 text-amber-400 border border-amber-800">
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-mono bg-[#C45C26]/10 text-[#C45C26] border border-[#C45C26]/30">
                   Not in RWA Data
                 </span>
               </div>
+              <p className="text-xs text-[#A1A1AA] mt-2">
+                AMM SWAP (No RFQ)
+              </p>
 
-              {/* Explicit 'not in RWA Data' state callout */}
-              <div className="mt-4 p-4 rounded-lg bg-[#0B0E11] border border-[#2B313A] space-y-3">
-                <div className="flex items-center gap-2 text-amber-400 font-semibold text-xs">
-                  <span>ℹ️ Catalog Discrepancy Documented</span>
+              <div className="mt-4 space-y-3">
+                <div className="py-4 text-center text-xs font-mono text-[#A1A1AA] bg-[#07070A] rounded-lg border border-white/[0.04]">
+                  <span className="text-[#C45C26] font-medium block">Not in catalog</span>
+                  <span className="text-[11px] text-[#A1A1AA] block mt-0.5">Absent from /rwa/platforms</span>
                 </div>
-                <p className="text-xs text-[#848E9C] leading-relaxed">
-                  Binance Web3 Market RWA Data API currently documents <code className="text-white font-mono">platformId</code> as{' '}
-                  <code className="text-[#F0B90B] font-mono">ondo</code> and{' '}
-                  <code className="text-[#F0B90B] font-mono">bstock</code> only.
-                </p>
-                <div className="bg-[#181A20] p-2.5 rounded border border-[#2B313A] text-[11px] font-mono text-[#848E9C] space-y-1">
-                  <div>• RWA Data enum: [ondo, bstock]</div>
-                  <div>• xStocks status: Absent from /rwa/platforms</div>
-                  <div>• Trading API: type=2 (AMM Swap)</div>
+
+                <div className="p-3 bg-[#07070A] rounded-lg border border-white/[0.04] text-xs text-[#A1A1AA] space-y-2 leading-relaxed">
+                  <p>
+                    Binance Web3 Market RWA Data API documents <code className="text-[#F5F5F4] font-mono">ondo</code> and <code className="text-[#F5F5F4] font-mono">bstock</code> only.
+                  </p>
+                  <p className="text-[11px]">
+                    xStocks routes via Trading API (type=2 AMM swap) and is unlisted in the RWA catalog.
+                  </p>
                 </div>
-                <p className="text-xs text-[#848E9C]">
-                  Per design brief: No fake xStocks rows are inserted into the RWA table. In v1 execution, xStocks will be resolved directly through Trading API contract search.
-                </p>
               </div>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-[#2B313A] text-[11px] text-[#848E9C] flex justify-between items-center">
-              <span>Platform ID: <code className="text-gray-400 font-mono">xstocks (unlisted)</code></span>
-              <span className="text-amber-400 font-mono text-[10px]">Documented in DEVEX.md</span>
+            <div className="mt-4 pt-3 border-t border-white/[0.06] text-[11px] text-[#A1A1AA] font-mono flex justify-between items-center">
+              <span>Platform ID: xstocks</span>
+              <span className="text-[#C45C26]">Unlisted</span>
             </div>
           </div>
         </div>
-      </section>
+      </main>
 
-      {/* Section 2: Platforms Raw JSON */}
-      <section className="bg-[#181A20] border border-[#2B313A] rounded-xl p-5 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#2B313A] pb-3">
-          <div>
-            <h2 className="text-lg font-bold text-white flex items-center gap-2 font-mono">
-              GET /api/v1/dex/market/rwa/platforms
-            </h2>
-            <p className="text-xs text-[#848E9C]">
-              Raw response from Binance Web3 Market RWA platform discovery endpoint
-            </p>
+      {/* Footer, full width, quiet */}
+      <footer className="w-full border-t border-white/[0.06] mt-auto py-6 sm:py-8 bg-[#07070A]">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#A1A1AA]">
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-center sm:text-left">
+            <span className="text-[#F5C542] font-semibold tracking-tight text-sm">
+              AfterGap
+            </span>
+            <span className="hidden sm:inline text-white/20">/</span>
+            <span>Built for BNB Hack Tokenized Stocks Edition</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span
-              className={`text-xs font-mono px-2.5 py-1 rounded font-semibold ${
-                data?.platforms?.status === 200
-                  ? 'bg-green-950 text-green-400 border border-green-800'
-                  : 'bg-red-950 text-red-400 border border-red-800'
-              }`}
+
+          <div className="flex items-center gap-6 font-mono text-xs">
+            <a
+              href="https://github.com/kellycryptos/AfterGap"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-[#F5F5F4] transition"
             >
-              HTTP {data?.platforms?.status ?? '---'} {data?.platforms?.statusText ?? ''}
-            </span>
-          </div>
-        </div>
-
-        {/* Platforms Inspection Summary */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-          <div className="bg-[#0B0E11] p-3 rounded-lg border border-[#2B313A]">
-            <span className="text-[#848E9C] block">Platforms Found:</span>
-            <span className="font-mono text-base font-bold text-white mt-1 block">
-              {platformsList.length}
-            </span>
-          </div>
-          <div className="bg-[#0B0E11] p-3 rounded-lg border border-[#2B313A]">
-            <span className="text-[#848E9C] block">Platform IDs in Response:</span>
-            <span className="font-mono text-xs text-[#F0B90B] mt-1 block truncate">
-              {platformsList.map((p) => p.platformId || p.name).join(', ') || 'None / Not Authenticated'}
-            </span>
-          </div>
-          <div className="bg-[#0B0E11] p-3 rounded-lg border border-[#2B313A]">
-            <span className="text-[#848E9C] block">xStocks in /rwa/platforms:</span>
-            <span
-              className={`font-mono text-xs font-bold mt-1 block ${
-                hasXStocksInPlatforms ? 'text-green-400' : 'text-amber-400'
-              }`}
+              GitHub
+            </a>
+            <a
+              href="https://x.com/kellycryptos"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-[#F5F5F4] transition"
             >
-              {hasXStocksInPlatforms ? 'YES (Present)' : 'NO (Missing as expected)'}
-            </span>
+              X
+            </a>
           </div>
         </div>
-
-        {/* Raw JSON Code Viewer */}
-        <div className="space-y-2">
-          <div className="flex justify-between text-xs text-[#848E9C]">
-            <span>Raw Response Body (Exact Wire Output):</span>
-            <span className="font-mono text-[11px]">{data?.platforms?.debug?.requestUrl || ''}</span>
-          </div>
-          <pre className="bg-[#0B0E11] p-4 rounded-lg border border-[#2B313A] overflow-x-auto text-xs font-mono text-gray-300 max-h-72">
-            {data?.platforms?.rawBody
-              ? (() => {
-                  try {
-                    return JSON.stringify(JSON.parse(data.platforms.rawBody), null, 2);
-                  } catch {
-                    return data.platforms.rawBody;
-                  }
-                })()
-              : loading
-              ? 'Fetching platforms response...'
-              : 'No response received yet.'}
-          </pre>
-        </div>
-      </section>
-
-      {/* Section 3: Diagnostic & Raw Wire Inspector (Search & Tokens) */}
-      <section className="bg-[#181A20] border border-[#2B313A] rounded-xl p-5 space-y-4">
-        <h2 className="text-lg font-bold text-white">Wire Diagnostics & DevEx Logging</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-          {/* Search Endpoint */}
-          <div className="bg-[#0B0E11] p-4 rounded-lg border border-[#2B313A] space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="font-mono text-[#F0B90B] font-semibold">GET /rwa/search?keyword={ticker}</span>
-              <span className="font-mono text-[#848E9C]">HTTP {data?.search?.status ?? '---'}</span>
-            </div>
-            <pre className="p-2.5 bg-[#181A20] rounded text-[11px] font-mono text-gray-300 overflow-x-auto max-h-48">
-              {data?.search?.rawBody
-                ? (() => {
-                    try {
-                      return JSON.stringify(JSON.parse(data.search.rawBody), null, 2);
-                    } catch {
-                      return data.search.rawBody;
-                    }
-                  })()
-                : 'Awaiting call...'}
-            </pre>
-          </div>
-
-          {/* Tokens Endpoint */}
-          <div className="bg-[#0B0E11] p-4 rounded-lg border border-[#2B313A] space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="font-mono text-[#F0B90B] font-semibold">GET /rwa/tokens?binanceChainId=56</span>
-              <span className="font-mono text-[#848E9C]">HTTP {data?.bscTokens?.status ?? '---'}</span>
-            </div>
-            <pre className="p-2.5 bg-[#181A20] rounded text-[11px] font-mono text-gray-300 overflow-x-auto max-h-48">
-              {data?.bscTokens?.rawBody
-                ? (() => {
-                    try {
-                      return JSON.stringify(JSON.parse(data.bscTokens.rawBody), null, 2);
-                    } catch {
-                      return data.bscTokens.rawBody;
-                    }
-                  })()
-                : 'Awaiting call...'}
-            </pre>
-          </div>
-        </div>
-      </section>
-    </main>
+      </footer>
+    </div>
   );
 }
