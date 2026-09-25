@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { BinanceRwaClient } from '@aftergap/api';
 
-export const preferredRegion = ['fra1', 'sin1', 'lhr1', 'cdg1'];
 export const dynamic = 'force-dynamic';
 
 const BENCHMARK_PLATFORMS = [
