@@ -201,3 +201,7 @@ Header: `x-oc-blocked-by: TimestampFilter/40103`.
    - `xStocks` is **100% absent** from both `/rwa/platforms` and `/rwa/search`.
    - Verified that neither `xstock`, `xstocks`, nor any `...x` token appears in RWA Data.
    - The UI correctly maintains an explicit empty state badge for xStocks ("Not in RWA Data catalog") and does not invent or fake a row.
+3. **Vercel Monorepo Deployment:**
+   - When the project Root Directory is configured as `apps/web` on Vercel, an explicit `"outputDirectory": "apps/web/.next"` in `vercel.json` causes double-nesting (`/vercel/path0/apps/web/apps/web/.next`).
+   - Removing `vercel.json` allows Vercel's native Next.js preset to resolve `.next` directly in `apps/web` without path duplication.
+
