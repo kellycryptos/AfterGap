@@ -70,6 +70,22 @@ interface SimulationState {
   };
 }
 
+interface WalletState {
+  connected: boolean;
+  connecting: boolean;
+  address: string | null;
+  chainId: string | null;
+  error: string | null;
+}
+
+interface TxBroadcastState {
+  loading: boolean;
+  step: 'idle' | 'approving' | 'approved' | 'swapping' | 'done' | 'error';
+  approveTxHash?: string;
+  swapTxHash?: string;
+  error?: string;
+}
+
 const DEFAULT_BENCHMARK_TOKENS: Record<string, any[]> = {
   NVDA: [
     {
@@ -453,6 +469,159 @@ export default function Home() {
   const [simulations, setSimulations] = useState<Record<string, SimulationState>>({});
   const [inspectTx, setInspectTx] = useState<{ symbol: string; tx: any } | null>(null);
   const [selectedBasket, setSelectedBasket] = useState<string | null>(null);
+  const [wallet, setWallet] = useState<WalletState>({
+    connected: false,
+    connecting: false,
+    address: null,
+    chainId: null,
+    error: null,
+  });
+  // Per-token broadcast state (approve + swap)
+  const [broadcasts, setBroadcasts] = useState<Record<string, TxBroadcastState>>({});
+
+  // --- Wallet Connect ---
+  const connectWallet = async () => {
+    const eth = (window as any).ethereum;
+    if (!eth) {
+      setWallet((w) => ({ ...w, error: 'No Web3 wallet found. Install MetaMask or Binance Web3 Wallet.' }));
+      return;
+    }
+    setWallet((w) => ({ ...w, connecting: true, error: null }));
+    try {
+      const accounts: string[] = await eth.request({ method: 'eth_requestAccounts' });
+      const chainIdHex: string = await eth.request({ method: 'eth_chainId' });
+      const address = accounts[0];
+      const chainId = parseInt(chainIdHex, 16).toString();
+
+      // Auto switch to BSC mainnet (chainId 56) if needed
+      if (chainId !== '56') {
+        try {
+          await eth.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: '0x38' }],
+          });
+        } catch (switchErr: any) {
+          // Chain not added — add it
+          if (switchErr.code === 4902) {
+            await eth.request({
+              method: 'wallet_addEthereumChain',
+              params: [{
+                chainId: '0x38',
+                chainName: 'BNB Smart Chain',
+                nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
+                rpcUrls: ['https://bsc-dataseed.binance.org/'],
+                blockExplorerUrls: ['https://bscscan.com'],
+              }],
+            });
+          }
+        }
+      }
+
+      setWallet({ connected: true, connecting: false, address, chainId: '56', error: null });
+      setWalletAddress(address);
+      fetchBalances(address);
+
+      // Listen for account / chain changes
+      eth.on('accountsChanged', (accs: string[]) => {
+        if (accs.length === 0) {
+          setWallet({ connected: false, connecting: false, address: null, chainId: null, error: null });
+        } else {
+          setWallet((w) => ({ ...w, address: accs[0] }));
+          setWalletAddress(accs[0]);
+          fetchBalances(accs[0]);
+        }
+      });
+      eth.on('chainChanged', () => window.location.reload());
+    } catch (err: any) {
+      setWallet({ connected: false, connecting: false, address: null, chainId: null, error: err.message || 'Connection rejected' });
+    }
+  };
+
+  // --- USDT Approve + Swap Execute ---
+  const handleApproveAndExecute = async (token: any) => {
+    const contract = token.tokenContractAddress || token.contractAddress || token.tokenAddress;
+    if (!contract) return;
+    const currentQuote = quotes[contract];
+    if (!currentQuote?.quoteId || !currentQuote?.rawQuote) return;
+    if (!wallet.connected || !wallet.address) {
+      setWallet((w) => ({ ...w, error: 'Connect your wallet first.' }));
+      return;
+    }
+
+    const eth = (window as any).ethereum;
+    if (!eth) return;
+
+    const spender = currentQuote.spender || currentQuote.rawQuote?.approveTarget || '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5';
+    const usdtContract = '0x55d398326f99059fF775485246999027B3197955';
+    const usdtAmountStr = currentQuote.fromAmount || '10';
+    const amountInSmallestUnit = (BigInt(Math.floor(Number(usdtAmountStr) * 1e6)) * BigInt(1e12)).toString();
+
+    setBroadcasts((prev) => ({ ...prev, [contract]: { loading: true, step: 'approving' } }));
+
+    try {
+      // Step 1: USDT ERC-20 approve calldata
+      // approve(address spender, uint256 amount) = 0x095ea7b3
+      const approveAmount = '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'; // MaxUint256
+      const spenderPadded = spender.toLowerCase().replace('0x', '').padStart(64, '0');
+      const approveData = '0x095ea7b3' + spenderPadded + approveAmount.replace('0x', '');
+
+      const approveTxHash: string = await eth.request({
+        method: 'eth_sendTransaction',
+        params: [{
+          from: wallet.address,
+          to: usdtContract,
+          data: approveData,
+          gas: '0xC350', // 50000
+        }],
+      });
+
+      setBroadcasts((prev) => ({ ...prev, [contract]: { loading: true, step: 'approved', approveTxHash } }));
+
+      // Step 2: Fetch live swap calldata from our API (uses /swap endpoint)
+      const swapRes = await fetch(
+        `/api/rwa?action=swap&quoteId=${currentQuote.quoteId}&toTokenAddress=${contract}&amount=${amountInSmallestUnit}&userWalletAddress=${wallet.address}&slippagePercent=1`
+      );
+      const swapJson = await swapRes.json();
+      const swapTx = swapJson?.swap?.data?.tx;
+
+      if (!swapTx) {
+        // For RFQ mode or if swap calldata unavailable, use the simulation tx as fallback
+        const fallbackTx = simulations[contract]?.tx;
+        if (!fallbackTx) throw new Error('Swap calldata not available — run Simulate first to generate tx data.');
+
+        setBroadcasts((prev) => ({ ...prev, [contract]: { loading: true, step: 'swapping', approveTxHash } }));
+        const swapTxHash: string = await eth.request({
+          method: 'eth_sendTransaction',
+          params: [{
+            from: wallet.address,
+            to: fallbackTx.to,
+            data: fallbackTx.data,
+            value: '0x0',
+            gas: '0x' + parseInt(fallbackTx.gas || '210000').toString(16),
+          }],
+        });
+        setBroadcasts((prev) => ({ ...prev, [contract]: { loading: false, step: 'done', approveTxHash, swapTxHash } }));
+        return;
+      }
+
+      setBroadcasts((prev) => ({ ...prev, [contract]: { loading: true, step: 'swapping', approveTxHash } }));
+      const swapTxHash: string = await eth.request({
+        method: 'eth_sendTransaction',
+        params: [{
+          from: wallet.address,
+          to: swapTx.to,
+          data: swapTx.data,
+          value: swapTx.value ? '0x' + parseInt(swapTx.value).toString(16) : '0x0',
+          gas: swapTx.gas ? '0x' + parseInt(swapTx.gas).toString(16) : '0x33450',
+        }],
+      });
+
+      setBroadcasts((prev) => ({ ...prev, [contract]: { loading: false, step: 'done', approveTxHash, swapTxHash } }));
+    } catch (err: any) {
+      const msg = err?.message?.includes('User denied') ? 'Transaction rejected in wallet.' : (err?.message || 'Transaction failed.');
+      setBroadcasts((prev) => ({ ...prev, [contract]: { loading: false, step: 'error', error: msg } }));
+    }
+  };
 
   const fetchRwaData = async (symbolToFetch: string) => {
     setLoading(true);
@@ -936,29 +1105,52 @@ export default function Home() {
             </span>
           </div>
 
-          {/* Wallet Address & Balances Bar */}
+          {/* Wallet Connect Button */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono bg-white/[0.03] border border-white/[0.06]">
-              <span className="text-[#A1A1AA]">Wallet:</span>
-              <input
-                type="text"
-                value={walletAddress}
-                onChange={(e) => {
-                  setWalletAddress(e.target.value);
-                  fetchBalances(e.target.value);
-                }}
-                className="bg-transparent text-[#F5F5F4] w-28 text-xs focus:outline-none"
-                placeholder="0x..."
-              />
-              <span className="text-white/20">|</span>
-              <span className="text-[#A1A1AA]">USDT:</span>
-              <span className="text-[#F5F5F4] font-semibold">{walletBalances.usdt}</span>
-              <span className="text-white/20">|</span>
-              <span className="text-[#A1A1AA]">BNB:</span>
-              <span className="text-[#F5F5F4] font-semibold">{walletBalances.bnb}</span>
-            </div>
+            {wallet.connected && wallet.address ? (
+              <div className="flex items-center gap-2">
+                {/* Balances (desktop only) */}
+                <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono bg-white/[0.03] border border-white/[0.06]">
+                  <span className="text-[#A1A1AA]">USDT:</span>
+                  <span className="text-[#F5F5F4] font-semibold">{walletBalances.usdt}</span>
+                  <span className="text-white/20">|</span>
+                  <span className="text-[#A1A1AA]">BNB:</span>
+                  <span className="text-[#F5F5F4] font-semibold">{walletBalances.bnb}</span>
+                </div>
+                {/* Connected address chip */}
+                <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-xs font-mono bg-[#3D9A6A]/10 border border-[#3D9A6A]/30 whitespace-nowrap shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#3D9A6A] animate-pulse shrink-0" />
+                  <span className="text-[#3D9A6A] font-semibold hidden sm:inline">BSC 56</span>
+                  <span className="text-[#A1A1AA]">
+                    {wallet.address.slice(0, 6)}…{wallet.address.slice(-4)}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={connectWallet}
+                disabled={wallet.connecting}
+                className="flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold font-mono transition-all border border-[#F5C542]/50 bg-[#F5C542]/10 text-[#F5C542] hover:bg-[#F5C542]/20 hover:border-[#F5C542] disabled:opacity-60 disabled:cursor-not-allowed shadow-sm shadow-[#F5C542]/10 shrink-0"
+              >
+                {wallet.connecting ? (
+                  <>
+                    <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
+                    <span>Connecting…</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-base">🔗</span>
+                    <span>Connect Wallet</span>
+                  </>
+                )}
+              </button>
+            )}
 
-            {/* Compact Auth Chip */}
+            {/* Compact Auth Chip (Public Gateway status) */}
             <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full text-xs font-mono bg-white/[0.03] border border-white/[0.06] whitespace-nowrap shrink-0">
               <span className="w-1.5 h-1.5 rounded-full bg-[#3D9A6A] shrink-0" />
               <span className="text-[#A1A1AA] hidden sm:inline">
@@ -971,6 +1163,22 @@ export default function Home() {
           </div>
         </div>
       </header>
+
+      {/* Wallet Error Banner */}
+      {wallet.error && (
+        <div className="w-full border-b border-[#C45C26]/30 bg-[#C45C26]/10 px-4 py-2 flex items-center justify-between gap-3">
+          <p className="text-xs font-mono text-[#C45C26] flex items-center gap-2">
+            <span>⚠️</span> {wallet.error}
+          </p>
+          <button
+            type="button"
+            onClick={() => setWallet((w) => ({ ...w, error: null }))}
+            className="text-[#C45C26] text-xs hover:opacity-70 shrink-0"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Main Screen Content */}
       <main className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-14 flex-1 flex flex-col items-center">
@@ -1515,6 +1723,72 @@ export default function Home() {
                                       Inspect EVM Calldata ({sim.tx.data.slice(0, 10)}...)
                                     </button>
                                   )}
+
+                                  {/* Execute Swap Button */}
+                                  {(() => {
+                                    const bc = broadcasts[contract];
+                                    return (
+                                      <div className="pt-1.5 border-t border-white/[0.04] mt-1">
+                                        {bc?.step === 'done' ? (
+                                          <div className="space-y-1">
+                                            <div className="flex items-center gap-1.5">
+                                              <span className="w-1.5 h-1.5 rounded-full bg-[#3D9A6A]" />
+                                              <span className="text-[#3D9A6A] font-semibold text-[10px]">🎉 Swap Executed Live on BSC!</span>
+                                            </div>
+                                            {bc.approveTxHash && (
+                                              <a
+                                                href={`https://bscscan.com/tx/${bc.approveTxHash}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="block text-[10px] text-[#F5C542] hover:underline truncate"
+                                              >
+                                                ✅ Approve tx: {bc.approveTxHash.slice(0, 16)}...
+                                              </a>
+                                            )}
+                                            {bc.swapTxHash && (
+                                              <a
+                                                href={`https://bscscan.com/tx/${bc.swapTxHash}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="block text-[10px] text-[#3D9A6A] hover:underline truncate"
+                                              >
+                                                🚀 Swap tx: {bc.swapTxHash.slice(0, 16)}...
+                                              </a>
+                                            )}
+                                          </div>
+                                        ) : bc?.step === 'error' ? (
+                                          <p className="text-[10px] text-[#C45C26]">{bc.error}</p>
+                                        ) : (
+                                          <button
+                                            type="button"
+                                            onClick={() => wallet.connected ? handleApproveAndExecute(t) : connectWallet()}
+                                            disabled={bc?.loading || (quote.ttlRemaining || 0) <= 0}
+                                            className={`w-full py-1.5 rounded text-[11px] font-mono font-semibold transition disabled:opacity-40 flex items-center justify-center gap-1.5 ${
+                                              wallet.connected
+                                                ? 'bg-[#3D9A6A]/15 hover:bg-[#3D9A6A]/25 border border-[#3D9A6A]/40 text-[#3D9A6A]'
+                                                : 'bg-[#F5C542]/10 hover:bg-[#F5C542]/20 border border-[#F5C542]/30 text-[#F5C542]'
+                                            }`}
+                                          >
+                                            {bc?.loading ? (
+                                              <>
+                                                <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
+                                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                                                </svg>
+                                                <span>
+                                                  {bc.step === 'approving' ? 'Approving USDT...' : bc.step === 'approved' ? 'Approved! Swapping...' : 'Broadcasting...'}
+                                                </span>
+                                              </>
+                                            ) : wallet.connected ? (
+                                              '🚀 Execute Live Swap on BSC'
+                                            ) : (
+                                              '🔗 Connect Wallet to Execute'
+                                            )}
+                                          </button>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
                                 </div>
                               )}
                             </div>
