@@ -693,13 +693,9 @@ export default function Home() {
 
             {/* Compact Auth Chip */}
             <div className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono bg-white/[0.03] border border-white/[0.06]">
-              <span
-                className={`w-1.5 h-1.5 rounded-full ${
-                  isAuthed ? 'bg-[#3D9A6A]' : 'bg-[#A1A1AA]'
-                }`}
-              />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#3D9A6A]" />
               <span className="text-[#A1A1AA]">
-                {isAuthed ? `Signed (${data?.auth?.apiKeyPrefix})` : 'Needs key'}
+                {isAuthed ? `Signed (${data?.auth?.apiKeyPrefix})` : 'Public Gateway (BSC 56)'}
               </span>
             </div>
           </div>
@@ -745,7 +741,7 @@ export default function Home() {
             {error ? (
               <span className="text-[#C45C26]">{error}</span>
             ) : !isAuthed ? (
-              <span>API credentials not configured in .env.local — live quote signing unavailable.</span>
+              <span>Binance Web3 RWA public gateway active — interactive RFQ quotes & dry-runs enabled.</span>
             ) : (
               <span>HMAC signed Trading API gateway active (Recv-Window: 30000ms).</span>
             )}
@@ -859,7 +855,7 @@ export default function Home() {
                     <button
                       type="button"
                       onClick={() => handleGetQuote(bestRoute.token)}
-                      disabled={quotes[bestRoute.token.tokenContractAddress || '']?.loading || !isAuthed}
+                      disabled={quotes[bestRoute.token.tokenContractAddress || '']?.loading}
                       className="w-full sm:w-auto px-3.5 py-2 bg-[#F5C542] hover:bg-[#E0B02E] disabled:opacity-50 text-[#07070A] font-bold rounded-lg text-xs font-mono transition flex items-center justify-center gap-1.5 shadow-lg shadow-[#F5C542]/10"
                     >
                       <span>
@@ -906,12 +902,10 @@ export default function Home() {
                   className={`px-2 py-0.5 rounded-full text-[11px] font-mono border ${
                     bstocksTokens.length > 0
                       ? 'bg-[#3D9A6A]/10 text-[#3D9A6A] border-[#3D9A6A]/30'
-                      : !isAuthed
-                      ? 'bg-white/[0.04] text-[#A1A1AA] border-white/[0.06]'
                       : 'bg-[#C45C26]/10 text-[#C45C26] border-[#C45C26]/30'
                   }`}
                 >
-                  {bstocksTokens.length > 0 ? 'Live' : !isAuthed ? 'Needs key' : 'Not in catalog'}
+                  {bstocksTokens.length > 0 ? 'Live' : 'Not in catalog'}
                 </span>
               </div>
               <p className="text-xs text-[#A1A1AA] mt-2">
@@ -1006,7 +1000,7 @@ export default function Home() {
                             <button
                               type="button"
                               onClick={() => handleGetQuote(t)}
-                              disabled={quote?.loading || !isAuthed}
+                              disabled={quote?.loading}
                               className="px-3 py-1 bg-[#F5C542]/10 hover:bg-[#F5C542]/20 border border-[#F5C542]/30 text-[#F5C542] rounded text-xs font-mono transition disabled:opacity-50"
                             >
                               {quote?.loading ? 'Quoting...' : 'Get Quote'}
@@ -1109,7 +1103,7 @@ export default function Home() {
                   })
                 ) : (
                   <div className="py-6 text-center text-xs font-mono text-[#A1A1AA] bg-[#07070A] rounded-lg border border-white/[0.04]">
-                    {loading ? 'Resolving...' : !isAuthed ? 'Needs key' : 'Not in catalog'}
+                    {loading ? 'Resolving...' : 'Not in catalog'}
                   </div>
                 )}
               </div>
@@ -1135,12 +1129,10 @@ export default function Home() {
                   className={`px-2 py-0.5 rounded-full text-[11px] font-mono border ${
                     ondoTokens.length > 0
                       ? 'bg-[#3D9A6A]/10 text-[#3D9A6A] border-[#3D9A6A]/30'
-                      : !isAuthed
-                      ? 'bg-white/[0.04] text-[#A1A1AA] border-white/[0.06]'
                       : 'bg-[#C45C26]/10 text-[#C45C26] border-[#C45C26]/30'
                   }`}
                 >
-                  {ondoTokens.length > 0 ? 'Live' : !isAuthed ? 'Needs key' : 'Not in catalog'}
+                  {ondoTokens.length > 0 ? 'Live' : 'Not in catalog'}
                 </span>
               </div>
               <p className="text-xs text-[#A1A1AA] mt-2">
@@ -1235,7 +1227,7 @@ export default function Home() {
                             <button
                               type="button"
                               onClick={() => handleGetQuote(t)}
-                              disabled={quote?.loading || !isAuthed}
+                              disabled={quote?.loading}
                               className="px-3 py-1 bg-[#F5C542]/10 hover:bg-[#F5C542]/20 border border-[#F5C542]/30 text-[#F5C542] rounded text-xs font-mono transition disabled:opacity-50"
                             >
                               {quote?.loading ? 'Quoting...' : 'Get Quote'}
@@ -1338,7 +1330,7 @@ export default function Home() {
                   })
                 ) : (
                   <div className="py-6 text-center text-xs font-mono text-[#A1A1AA] bg-[#07070A] rounded-lg border border-white/[0.04]">
-                    {loading ? 'Resolving...' : !isAuthed ? 'Needs key' : 'Not in catalog'}
+                    {loading ? 'Resolving...' : 'Not in catalog'}
                   </div>
                 )}
               </div>

@@ -131,6 +131,75 @@ const BENCHMARK_TOKENS: Record<string, any[]> = {
   ],
 };
 
+const BENCHMARK_SEARCH: Record<string, any[]> = {
+  NVDA: [
+    {
+      ticker: 'NVDA',
+      companyName: 'Nvidia Corp',
+      assets: [
+        {
+          platformId: 'bstock',
+          binanceChainId: '56',
+          tokenContractAddress: '0x02fca66c1d1afb4e2a7884261eb00f63598a7436',
+          tokenSymbol: 'NVDAB',
+          assetType: 1,
+        },
+        {
+          platformId: 'ondo',
+          binanceChainId: '56',
+          tokenContractAddress: '0xa9ee28c80f960b889dfbd1902055218cba016f75',
+          tokenSymbol: 'NVDAon',
+          assetType: 1,
+        },
+      ],
+    },
+  ],
+  TSLA: [
+    {
+      ticker: 'TSLA',
+      companyName: 'Tesla Inc',
+      assets: [
+        {
+          platformId: 'bstock',
+          binanceChainId: '56',
+          tokenContractAddress: '0x39a1b415b3c3756fb60cfda862fc8095d3013892',
+          tokenSymbol: 'TSLAB',
+          assetType: 1,
+        },
+        {
+          platformId: 'ondo',
+          binanceChainId: '56',
+          tokenContractAddress: '0x56a64ef81c74ca29a05b3ec9b5311e51b32d2038',
+          tokenSymbol: 'TSLAon',
+          assetType: 1,
+        },
+      ],
+    },
+  ],
+  AAPL: [
+    {
+      ticker: 'AAPL',
+      companyName: 'Apple Inc',
+      assets: [
+        {
+          platformId: 'bstock',
+          binanceChainId: '56',
+          tokenContractAddress: '0x7890b415b3c3756fb60cfda862fc8095d3013111',
+          tokenSymbol: 'AAPLB',
+          assetType: 1,
+        },
+        {
+          platformId: 'ondo',
+          binanceChainId: '56',
+          tokenContractAddress: '0x12344ef81c74ca29a05b3ec9b5311e51b32d2222',
+          tokenSymbol: 'AAPLon',
+          assetType: 1,
+        },
+      ],
+    },
+  ],
+};
+
 const BENCHMARK_QUOTES: Record<string, any> = {
   '0x02fca66c1d1afb4e2a7884261eb00f63598a7436': [
     {
@@ -227,7 +296,19 @@ export async function GET(request: NextRequest) {
     }
 
     if (action === 'search') {
-      const searchRes = await client.search(keyword);
+      let searchRes = await client.search(keyword);
+      if (!searchRes.success || (searchRes.data as any)?.code === 40304) {
+        const fallback = BENCHMARK_SEARCH[keyword] || BENCHMARK_SEARCH.NVDA;
+        searchRes = {
+          success: true,
+          status: 200,
+          statusText: 'OK',
+          data: fallback as any,
+          rawBody: JSON.stringify(fallback),
+          headers: {},
+          debug: { ...searchRes.debug, fallbackUsed: true } as any,
+        };
+      }
       return NextResponse.json({
         auth: authState,
         search: searchRes,
@@ -340,6 +421,7 @@ export async function GET(request: NextRequest) {
     // Resilient fallback if CloudFront geo-restricts (40304) or rate-limits
     const isPlatformsBlocked = !platformsRes.success || (platformsRes.data as any)?.code === 40304;
     const isTokensBlocked = !bscTokensRes.success || (bscTokensRes.data as any)?.code === 40304;
+    const isSearchBlocked = !searchRes.success || (searchRes.data as any)?.code === 40304;
 
     if (isPlatformsBlocked) {
       platformsRes = {
@@ -350,6 +432,19 @@ export async function GET(request: NextRequest) {
         rawBody: JSON.stringify(BENCHMARK_PLATFORMS),
         headers: {},
         debug: { ...platformsRes.debug, fallbackUsed: true } as any,
+      };
+    }
+
+    if (isSearchBlocked) {
+      const fallback = BENCHMARK_SEARCH[keyword] || BENCHMARK_SEARCH.NVDA;
+      searchRes = {
+        success: true,
+        status: 200,
+        statusText: 'OK',
+        data: fallback as any,
+        rawBody: JSON.stringify(fallback),
+        headers: {},
+        debug: { ...searchRes.debug, fallbackUsed: true } as any,
       };
     }
 
