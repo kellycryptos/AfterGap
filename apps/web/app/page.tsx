@@ -977,7 +977,7 @@ export default function Home() {
         {/* Hero */}
         <div className="text-center mb-6 sm:mb-8 space-y-1.5 sm:space-y-2">
           <h1 className="text-xl sm:text-3xl md:text-4xl font-semibold tracking-tight text-[#F5F5F4]">
-            Same stock. Three wrappers. Live gap.
+            Same stock. Dual wrappers. Live gap.
           </h1>
           <p className="text-xs sm:text-sm text-[#A1A1AA] max-w-lg mx-auto">
             Inspect on-chain pricing vs. cash reference, quote live spot execution, and simulate BEP-20 swaps.
@@ -1314,8 +1314,8 @@ export default function Home() {
           </div>
         )}
 
-        {/* Results: Three Equal Columns */}
-        <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 mt-6 sm:mt-8">
+        {/* Results: Dual Wrapper Comparison (bStocks vs Ondo) */}
+        <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 mt-6 sm:mt-8">
           {/* Column 1: bStocks */}
           <div className="bg-[#121214] border border-white/[0.06] rounded-2xl p-4 sm:p-5 flex flex-col justify-between">
             <div>
@@ -1767,47 +1767,6 @@ export default function Home() {
             <div className="mt-4 pt-3 border-t border-white/[0.06] text-[11px] text-[#A1A1AA] font-mono flex justify-between items-center">
               <span>Platform ID: ondo</span>
               <span className="text-[#3D9A6A]">Verified</span>
-            </div>
-          </div>
-
-          {/* Column 3: xStocks */}
-          <div className="bg-[#121214] border border-white/[0.06] rounded-2xl p-4 sm:p-5 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-base font-semibold text-[#F5F5F4]">xStocks</h2>
-                  <span className="px-2 py-0.5 rounded-full text-[11px] font-mono bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06]">
-                    Type 2
-                  </span>
-                </div>
-                <span className="px-2 py-0.5 rounded-full text-[11px] font-mono bg-[#C45C26]/10 text-[#C45C26] border border-[#C45C26]/30">
-                  Not in RWA Data
-                </span>
-              </div>
-              <p className="text-xs text-[#A1A1AA] mt-2">
-                AMM SWAP (No RFQ)
-              </p>
-
-              <div className="mt-4 space-y-3">
-                <div className="py-4 text-center text-xs font-mono text-[#A1A1AA] bg-[#07070A] rounded-lg border border-white/[0.04]">
-                  <span className="text-[#C45C26] font-medium block">Not in catalog</span>
-                  <span className="text-[11px] text-[#A1A1AA] block mt-0.5">Absent from /rwa/platforms</span>
-                </div>
-
-                <div className="p-3 bg-[#07070A] rounded-lg border border-white/[0.04] text-xs text-[#A1A1AA] space-y-2 leading-relaxed">
-                  <p>
-                    Binance Web3 Market RWA Data API documents <code className="text-[#F5F5F4] font-mono">ondo</code> and <code className="text-[#F5F5F4] font-mono">bstock</code> only.
-                  </p>
-                  <p className="text-[11px]">
-                    xStocks routes directly via Trading API (<code className="text-[#F5F5F4] font-mono">type=2</code> AMM swap) and is unlisted in the RWA catalog.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4 pt-3 border-t border-white/[0.06] text-[11px] text-[#A1A1AA] font-mono flex justify-between items-center">
-              <span>Platform ID: xstocks</span>
-              <span className="text-[#C45C26]">Unlisted</span>
             </div>
           </div>
         </div>

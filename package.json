@@ -2,7 +2,7 @@
   "name": "aftergap",
   "version": "0.1.0",
   "private": true,
-  "description": "Same stock, three wrappers, live gap. Built for BNB Hack: Tokenized Stocks Edition with Binance Web3 Wallet.",
+  "description": "Same stock, dual wrappers, live gap. Built for BNB Hack: Tokenized Stocks Edition with Binance Web3 Wallet.",
   "workspaces": [
     "packages/*",
     "apps/*"

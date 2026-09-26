@@ -8,9 +8,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'AfterGap | Same stock, three wrappers, live gap.',
+  title: 'AfterGap | Same stock, dual wrappers, live gap.',
   description:
-    'Compare the same US name across bStocks, Ondo, and xStocks on BSC, show the cash-hours vs overnight gap, and let a user buy the best live spot route in plain English.',
+    'Compare the same US name across bStocks and Ondo on BSC, show the cash-hours vs overnight gap, and let a user buy the best live spot route in plain English.',
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },

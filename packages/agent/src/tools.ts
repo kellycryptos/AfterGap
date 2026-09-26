@@ -4,7 +4,7 @@ export interface TokenPriceInfo {
   tokenSymbol: string;
   tokenName: string;
   contractAddress: string;
-  platformId: 'bstock' | 'ondo' | 'xstocks';
+  platformId: 'bstock' | 'ondo';
   onChainPrice: number;
   referencePrice: number;
   marketStatus: string;

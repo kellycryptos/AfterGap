@@ -1,7 +1,7 @@
 # Developer Experience Report (DEVEX.md)
 
 **Product:** AfterGap  
-**Tagline:** Same stock, three wrappers, live gap.  
+**Tagline:** Same stock, dual wrappers, live gap.  
 **Event:** BNB Hack: Tokenized Stocks Edition with Binance Web3 Wallet  
 **Chain:** BNB Smart Chain Mainnet (`binanceChainId=56`)
 
@@ -197,10 +197,11 @@ Header: `x-oc-blocked-by: TimestampFilter/40103`.
 
 1. **`platformId` in `/rwa/platforms`:**
    - Real response returns strictly two platforms: `ondo` (458 BSC tokens) and `bstock` (77 BSC tokens).
-2. **xStocks status confirmed:**
+2. **xStocks Evaluation & Scope Pruning Decision:**
    - `xStocks` is **100% absent** from both `/rwa/platforms` and `/rwa/search`.
-   - Verified that neither `xstock`, `xstocks`, nor any `...x` token appears in RWA Data.
-   - The UI correctly maintains an explicit empty state badge for xStocks ("Not in RWA Data catalog") and does not invent or fake a row.
+   - Verified that neither `xstock`, `xstocks`, nor any `...x` token appears in Binance Web3 RWA Data or has active spot liquidity on BSC mainnet.
+   - The hackathon rules specify: *"Submissions must feature at least one of the following: bStocks, Ondo, or xStocks."*
+   - Because xStocks does not practically function in the ecosystem APIs, we pruned xStocks completely from active trading and user-facing views to focus strictly on the two verified, fully operational protocols: **bStocks** and **Ondo**.
 3. **Vercel Monorepo Deployment:**
    - When the project Root Directory is configured as `apps/web` on Vercel, an explicit `"outputDirectory": "apps/web/.next"` in `vercel.json` causes double-nesting (`/vercel/path0/apps/web/apps/web/.next`).
    - Removing `vercel.json` allows Vercel's native Next.js preset to resolve `.next` directly in `apps/web` without path duplication.
@@ -295,5 +296,38 @@ Header: `x-oc-blocked-by: TimestampFilter/40103`.
 - **URL:** `GET https://web3.binance.com/build/api/v1/dex/balance/all-token-balances-by-address?address=0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045&chains=56&excludeRiskToken=true`
 - **HTTP Status:** `200 OK`
 - **Wire Body:** Returns paginated BEP-20 assets, raw balances, and USD valuations on BNB Smart Chain.
+
+---
+
+## 7. AI Stack Developer Experience & Agentic Architecture
+
+### 1. AI Execution Layer Overview
+To compete for the **Best Use of Agentic Wallet / Wallet Skills** and **Best Use of BNB Agent Studio** special prizes ($2,000 each), AfterGap provides a fully autonomous agent package (`@aftergap/agent`) adhering to:
+1. **Model Context Protocol (MCP):** JSON-RPC 2.0 stdio transport protocol (`packages/agent/src/server.ts`).
+2. **Binance Skills Hub Standard:** Manifest specification declaring tools, permissions, and network bindings for BSC (`packages/agent/src/skill.json`).
+3. **Interactive Agent CLI:** Standalone CLI interface for immediate terminal testing and agent script integration (`packages/agent/src/cli.ts`).
+
+### 2. Autonomous Tool Schema Design
+The agent exposes four composable tools:
+- **`inspect_gap({ ticker })`**: Compares on-chain pricing between `bStocks` and `Ondo` against the Friday 4:00 PM US cash reference price, returning the cheapest wrapper, basis spread, and exact dollar savings.
+- **`scan_thematic_basket({ basket })`**: Ranks entire stock clusters (`mag7`, `ai_semis`, `buffett`) by weekend/overnight basis spread, directing the agent toward the most lucrative arbitrage opportunities.
+- **`quote_best_route({ ticker, amountUsdt, userWalletAddress? })`**: Fetches signed executable spot quotes from the Binance Web3 Trading API aggregator (LiquidMesh / RFQ).
+- **`simulate_swap({ quoteId, toTokenAddress, amountUsdt })`**: Runs gasless `eth_call` simulations on BNB Smart Chain mainnet (`56`) to verify calldata integrity before broadcasting.
+
+### 3. Developer Gotchas in Agent Integration
+1. **Zero-Downtime Fallback Architecture:**
+   - *Problem:* Autonomous LLM agents fail abruptly if an API gateway throttles or times out during multi-step reasoning loops.
+   - *Fix:* Built benchmark fallback profiles for core tickers (`NVDA`, `TSLA`, `AAPL`, `MSFT`, `COIN`, `QQQ`) and baskets into `packages/agent/src/tools.ts`, ensuring agent conversations never throw unhandled runtime exceptions.
+2. **Deterministic Output Formatting:**
+   - LLMs require structured numeric outputs rather than free-form text to perform deterministic trade sizing. All tools output strict JSON with explicit fields (`spreadToCashPercent`, `directSavingsUsdt`, `recommendedAction`, `cheapestWrapper`).
+3. **Quote TTL Synchronization:**
+   - Because Binance Web3 quotes have a strict 30-second TTL, agent tools return both the `quoteId` and timestamp so the agent execution layer can prompt for refreshed quotes if reasoning steps exceed the 30-second window.
+
+### 4. Integration Verification
+Tested and validated against:
+- **Cursor / Claude Code (MCP Client):** Successfully executed prompts such as:
+  > *"Scan the Magnificent 7 basket on BNB Smart Chain, find the constituent with the highest weekend spread to cash, and fetch a quote for 50 USDT into the cheapest wrapper."*
+- **BNB Agent Studio / Binance Skills Hub:** Verified manifest compatibility under `binanceChainId: 56`.
+
 
 

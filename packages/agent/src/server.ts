@@ -64,7 +64,7 @@ rl.on('line', async (line) => {
           {
             name: 'inspect_gap',
             description:
-              'Compare on-chain prices of a tokenized stock across bStocks, Ondo, and xStocks on BSC against the Friday cash reference price. Returns the cheapest wrapper, basis spread, and direct dollar savings.',
+              'Compare on-chain prices of a tokenized stock across bStocks and Ondo on BSC against the Friday cash reference price. Returns the cheapest wrapper, basis spread, and direct dollar savings.',
             inputSchema: {
               type: 'object',
               properties: {

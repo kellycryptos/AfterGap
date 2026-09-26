@@ -1,7 +1,7 @@
 {
   "name": "aftergap-tokenized-stocks",
   "version": "1.0.0",
-  "description": "AfterGap Agentic Skill for autonomous tokenized stock arbitrage and optimal routing across bStocks, Ondo, and xStocks on BNB Smart Chain (BSC 56).",
+  "description": "AfterGap Agentic Skill for autonomous tokenized stock arbitrage and optimal routing across bStocks and Ondo on BNB Smart Chain (BSC 56).",
   "author": "kellycryptos",
   "repository": "https://github.com/kellycryptos/AfterGap",
   "chains": [56],
@@ -9,7 +9,7 @@
   "tools": [
     {
       "name": "inspect_gap",
-      "description": "Compare on-chain prices of a tokenized stock across bStocks, Ondo, and xStocks against the Friday cash reference price. Returns the cheapest wrapper, basis spread, and direct dollar savings.",
+      "description": "Compare on-chain prices of a tokenized stock across bStocks and Ondo against the Friday cash reference price. Returns the cheapest wrapper, basis spread, and direct dollar savings.",
       "parameters": {
         "type": "object",
         "properties": {

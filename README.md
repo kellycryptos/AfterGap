@@ -1,8 +1,8 @@
 # AfterGap
 
-> Same stock, three wrappers, live gap.
+> Same stock, dual wrappers, live gap.
 
-Compare the same US stock name across **bStocks**, **Ondo**, and **xStocks** on BNB Smart Chain mainnet (`binanceChainId=56`), show the cash-hours vs overnight reference gap, and route the best live spot quote in plain English.
+Compare the same US stock name across **bStocks** and **Ondo** on BNB Smart Chain mainnet (`binanceChainId=56`), show the cash-hours vs overnight reference gap, and route the best live spot quote in plain English.
 
 Built for **BNB Hack: Tokenized Stocks Edition** with **Binance Web3 Wallet**.
 
@@ -22,7 +22,8 @@ Built for **BNB Hack: Tokenized Stocks Edition** with **Binance Web3 Wallet**.
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **bStocks** | `B` (e.g. `NVDAB`) | `3` | Mixed `SWAP` (LiquidMesh) + `RFQ` (PcsXRfq) | 1:1 backed, rebase for dividends | Supported (`platformId=bstock`) |
 | **Ondo** | `on` (e.g. `NVDAon`) | `1` | `RFQ` (Always quote $\to$ swap $\to$ typedData $\to$ submit) | Total-return tracker, can drift from cash | Supported (`platformId=ondo`) |
-| **xStocks** | `x` (e.g. `NVDAx`) | `2` | `SWAP` (AMM Swap, no RFQ) | Synthetic tracker / pool liquidity | **Absent from `/rwa/platforms`** (documented gap) |
+
+> **Note on Protocol Scope:** The hackathon rules require featuring at least one of bStocks, Ondo, or xStocks. During DEVEX discovery, **xStocks** was found to be 100% absent from the Binance Web3 Market RWA Data catalog (`/rwa/platforms`) and lacks active spot liquidity on BSC mainnet. AfterGap focuses exclusively on the two verified, fully operational protocols: **bStocks** and **Ondo**.
 
 ---
 
