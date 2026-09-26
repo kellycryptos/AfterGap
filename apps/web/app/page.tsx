@@ -658,9 +658,16 @@ export default function Home() {
       <header className="w-full border-b border-white/[0.06] bg-[#07070A]/80 backdrop-blur-sm sticky top-0 z-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <span className="text-lg sm:text-2xl font-bold tracking-tight text-[#F5C542] shrink-0">
-              AfterGap
-            </span>
+            <div className="flex items-center gap-2">
+              <img
+                src="/icon.png"
+                alt="AfterGap AG Logo"
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg shadow-md shadow-[#F5C542]/20 border border-[#F5C542]/30 shrink-0 object-cover"
+              />
+              <span className="text-lg sm:text-2xl font-bold tracking-tight text-[#F5C542] shrink-0">
+                AfterGap
+              </span>
+            </div>
             <span className="hidden sm:inline-flex px-2.5 py-0.5 rounded-full text-xs font-mono bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06]">
               BSC 56
             </span>
