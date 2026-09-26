@@ -167,6 +167,219 @@ const DEFAULT_BENCHMARK_TOKENS: Record<string, any[]> = {
       underlyingName: 'Apple Inc',
     },
   ],
+  MSFT: [
+    {
+      tokenSymbol: 'MSFTB',
+      tokenName: 'Microsoft bStock',
+      tokenContractAddress: '0x4433b415b3c3756fb60cfda862fc8095d3013999',
+      binanceChainId: '56',
+      platformId: 'bstock',
+      tokenPrice: '428.10',
+      price: '428.10',
+      referencePrice: '427.60',
+      marketStatus: 'TRADING',
+      reasonCode: 'TRADING',
+      statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
+      underlyingTicker: 'MSFT',
+      underlyingName: 'Microsoft Corp',
+    },
+    {
+      tokenSymbol: 'MSFTon',
+      tokenName: 'Microsoft Ondo',
+      tokenContractAddress: '0x99884ef81c74ca29a05b3ec9b5311e51b32d8888',
+      binanceChainId: '56',
+      platformId: 'ondo',
+      tokenPrice: '429.35',
+      price: '429.35',
+      referencePrice: '428.20',
+      marketStatus: 'premarket',
+      reasonCode: 'TRADING',
+      statusInfo: { openState: true, marketStatus: 'premarket', reasonCode: 'TRADING' },
+      underlyingTicker: 'MSFT',
+      underlyingName: 'Microsoft Corp',
+    },
+  ],
+  AMZN: [
+    {
+      tokenSymbol: 'AMZNB',
+      tokenName: 'Amazon bStock',
+      tokenContractAddress: '0x5511b415b3c3756fb60cfda862fc8095d3013777',
+      binanceChainId: '56',
+      platformId: 'bstock',
+      tokenPrice: '189.60',
+      price: '189.60',
+      referencePrice: '189.25',
+      marketStatus: 'TRADING',
+      reasonCode: 'TRADING',
+      statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
+      underlyingTicker: 'AMZN',
+      underlyingName: 'Amazon.com Inc',
+    },
+    {
+      tokenSymbol: 'AMZNon',
+      tokenName: 'Amazon Ondo',
+      tokenContractAddress: '0x77224ef81c74ca29a05b3ec9b5311e51b32d5555',
+      binanceChainId: '56',
+      platformId: 'ondo',
+      tokenPrice: '190.25',
+      price: '190.25',
+      referencePrice: '189.70',
+      marketStatus: 'premarket',
+      reasonCode: 'TRADING',
+      statusInfo: { openState: true, marketStatus: 'premarket', reasonCode: 'TRADING' },
+      underlyingTicker: 'AMZN',
+      underlyingName: 'Amazon.com Inc',
+    },
+  ],
+  GOOGL: [
+    {
+      tokenSymbol: 'GOOGLB',
+      tokenName: 'Alphabet bStock',
+      tokenContractAddress: '0x3344b415b3c3756fb60cfda862fc8095d3013666',
+      binanceChainId: '56',
+      platformId: 'bstock',
+      tokenPrice: '165.20',
+      price: '165.20',
+      referencePrice: '164.90',
+      marketStatus: 'TRADING',
+      reasonCode: 'TRADING',
+      statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
+      underlyingTicker: 'GOOGL',
+      underlyingName: 'Alphabet Inc',
+    },
+    {
+      tokenSymbol: 'GOOGLon',
+      tokenName: 'Alphabet Ondo',
+      tokenContractAddress: '0x66554ef81c74ca29a05b3ec9b5311e51b32d4444',
+      binanceChainId: '56',
+      platformId: 'ondo',
+      tokenPrice: '165.80',
+      price: '165.80',
+      referencePrice: '165.20',
+      marketStatus: 'premarket',
+      reasonCode: 'TRADING',
+      statusInfo: { openState: true, marketStatus: 'premarket', reasonCode: 'TRADING' },
+      underlyingTicker: 'GOOGL',
+      underlyingName: 'Alphabet Inc',
+    },
+  ],
+  META: [
+    {
+      tokenSymbol: 'METAB',
+      tokenName: 'Meta bStock',
+      tokenContractAddress: '0x2211b415b3c3756fb60cfda862fc8095d3013555',
+      binanceChainId: '56',
+      platformId: 'bstock',
+      tokenPrice: '568.40',
+      price: '568.40',
+      referencePrice: '567.50',
+      marketStatus: 'TRADING',
+      reasonCode: 'TRADING',
+      statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
+      underlyingTicker: 'META',
+      underlyingName: 'Meta Platforms Inc',
+    },
+    {
+      tokenSymbol: 'METAon',
+      tokenName: 'Meta Ondo',
+      tokenContractAddress: '0x88994ef81c74ca29a05b3ec9b5311e51b32d3333',
+      binanceChainId: '56',
+      platformId: 'ondo',
+      tokenPrice: '570.10',
+      price: '570.10',
+      referencePrice: '568.60',
+      marketStatus: 'premarket',
+      reasonCode: 'TRADING',
+      statusInfo: { openState: true, marketStatus: 'premarket', reasonCode: 'TRADING' },
+      underlyingTicker: 'META',
+      underlyingName: 'Meta Platforms Inc',
+    },
+  ],
+  AMD: [
+    {
+      tokenSymbol: 'AMDB',
+      tokenName: 'AMD bStock',
+      tokenContractAddress: '0x1199b415b3c3756fb60cfda862fc8095d3013444',
+      binanceChainId: '56',
+      platformId: 'bstock',
+      tokenPrice: '156.30',
+      price: '156.30',
+      referencePrice: '155.90',
+      marketStatus: 'TRADING',
+      reasonCode: 'TRADING',
+      statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
+      underlyingTicker: 'AMD',
+      underlyingName: 'Advanced Micro Devices',
+    },
+    {
+      tokenSymbol: 'AMDon',
+      tokenName: 'AMD Ondo',
+      tokenContractAddress: '0x33114ef81c74ca29a05b3ec9b5311e51b32d2222',
+      binanceChainId: '56',
+      platformId: 'ondo',
+      tokenPrice: '156.95',
+      price: '156.95',
+      referencePrice: '156.20',
+      marketStatus: 'premarket',
+      reasonCode: 'TRADING',
+      statusInfo: { openState: true, marketStatus: 'premarket', reasonCode: 'TRADING' },
+      underlyingTicker: 'AMD',
+      underlyingName: 'Advanced Micro Devices',
+    },
+  ],
+  TSM: [
+    {
+      tokenSymbol: 'TSMB',
+      tokenName: 'TSMC bStock',
+      tokenContractAddress: '0x7788b415b3c3756fb60cfda862fc8095d3013333',
+      binanceChainId: '56',
+      platformId: 'bstock',
+      tokenPrice: '178.50',
+      price: '178.50',
+      referencePrice: '178.10',
+      marketStatus: 'TRADING',
+      reasonCode: 'TRADING',
+      statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
+      underlyingTicker: 'TSM',
+      underlyingName: 'Taiwan Semiconductor',
+    },
+    {
+      tokenSymbol: 'TSMon',
+      tokenName: 'TSMC Ondo',
+      tokenContractAddress: '0x22334ef81c74ca29a05b3ec9b5311e51b32d1111',
+      binanceChainId: '56',
+      platformId: 'ondo',
+      tokenPrice: '179.20',
+      price: '179.20',
+      referencePrice: '178.40',
+      marketStatus: 'premarket',
+      reasonCode: 'TRADING',
+      statusInfo: { openState: true, marketStatus: 'premarket', reasonCode: 'TRADING' },
+      underlyingTicker: 'TSM',
+      underlyingName: 'Taiwan Semiconductor',
+    },
+  ],
+};
+
+const THEMATIC_BASKETS: Record<string, { name: string; icon: string; description: string; tickers: string[] }> = {
+  mag7: {
+    name: 'Magnificent 7 Basket',
+    icon: '🌟',
+    description: 'Mega-cap technology leaders dominating global on-chain equity trading on BNB Smart Chain.',
+    tickers: ['NVDA', 'AAPL', 'MSFT', 'TSLA', 'AMZN', 'GOOGL', 'META'],
+  },
+  ai_semis: {
+    name: 'AI & Semiconductor Chips',
+    icon: '⚡',
+    description: 'Hardware compute and semiconductor giants powering decentralized AI agent infrastructure.',
+    tickers: ['NVDA', 'AMD', 'TSM'],
+  },
+  buffett: {
+    name: 'Buffett Value Portfolio',
+    icon: '🏛️',
+    description: 'High-cashflow dividend compounders with 1:1 backing and automated rebasing on BSC.',
+    tickers: ['AAPL', 'MSFT', 'AMZN'],
+  },
 };
 
 const DEFAULT_BENCHMARK_QUOTES: Record<string, any> = {
@@ -239,6 +452,7 @@ export default function Home() {
   const [quotes, setQuotes] = useState<Record<string, QuoteState>>({});
   const [simulations, setSimulations] = useState<Record<string, SimulationState>>({});
   const [inspectTx, setInspectTx] = useState<{ symbol: string; tx: any } | null>(null);
+  const [selectedBasket, setSelectedBasket] = useState<string | null>(null);
 
   const fetchRwaData = async (symbolToFetch: string) => {
     setLoading(true);
@@ -486,6 +700,52 @@ export default function Home() {
 
     return null;
   }, [bstocksTokens, ondoTokens, quotes, ticker]);
+
+  // Computed Thematic Basket data
+  const currentBasketData = useMemo(() => {
+    if (!selectedBasket) return null;
+    const basketConfig = THEMATIC_BASKETS[selectedBasket];
+    if (!basketConfig) return null;
+
+    const list = basketConfig.tickers.map((sym) => {
+      const tokens = DEFAULT_BENCHMARK_TOKENS[sym] || [];
+      const bstock = tokens.find((t) => t.platformId === 'bstock') || tokens[0];
+      const ondo = tokens.find((t) => t.platformId === 'ondo') || tokens[1];
+      const cheaper = bstock && ondo ? (Number(bstock.price) <= Number(ondo.price) ? bstock : ondo) : bstock;
+      const other = cheaper === bstock ? ondo : bstock;
+      const cheaperPrice = Number(cheaper?.price || 0);
+      const otherPrice = Number(other?.price || cheaperPrice);
+      const savings = Math.max(0, otherPrice - cheaperPrice);
+      const refPrice = Number(cheaper?.referencePrice || cheaperPrice);
+      const spread = refPrice > 0 ? ((cheaperPrice - refPrice) / refPrice) * 100 : 0;
+
+      return {
+        ticker: sym,
+        tokenName: cheaper?.tokenName || cheaper?.underlyingName || sym,
+        cheaperToken: cheaper,
+        cheaperSymbol: cheaper?.tokenSymbol || `${sym}B`,
+        platform: cheaper?.platformId || 'bstock',
+        price: cheaperPrice.toFixed(2),
+        referencePrice: refPrice.toFixed(2),
+        savings: savings.toFixed(2),
+        spreadToCash: spread.toFixed(2),
+        otherSymbol: other?.tokenSymbol || `${sym}on`,
+      };
+    });
+
+    list.sort((a, b) => Number(b.savings) - Number(a.savings));
+    const totalSavings = list.reduce((acc, item) => acc + Number(item.savings), 0);
+    const avgSpread = list.reduce((acc, item) => acc + Number(item.spreadToCash), 0) / (list.length || 1);
+
+    return {
+      ...basketConfig,
+      key: selectedBasket,
+      constituents: list,
+      totalSavings: totalSavings.toFixed(2),
+      avgSpread: avgSpread.toFixed(2),
+      topPick: list[0],
+    };
+  }, [selectedBasket]);
 
   // Request a live quote from Trading API
   const handleGetQuote = async (token: any) => {
@@ -778,7 +1038,165 @@ export default function Home() {
               </button>
             ))}
           </div>
+
+          {/* Thematic Baskets Selector */}
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/[0.04]">
+            <span className="text-xs text-[#A1A1AA] mr-1">Baskets:</span>
+            {[
+              { id: 'mag7', label: '🌟 Mag 7', count: 7 },
+              { id: 'ai_semis', label: '⚡ AI Semis', count: 3 },
+              { id: 'buffett', label: '🏛️ Buffett', count: 3 },
+            ].map((b) => (
+              <button
+                key={b.id}
+                type="button"
+                onClick={() => {
+                  setSelectedBasket(selectedBasket === b.id ? null : b.id);
+                }}
+                className={`px-3 py-1 rounded-full text-xs font-mono transition border flex items-center gap-1.5 ${
+                  selectedBasket === b.id
+                    ? 'bg-[#3D9A6A]/15 text-[#3D9A6A] border-[#3D9A6A]/50 font-semibold shadow-sm shadow-[#3D9A6A]/20'
+                    : 'bg-white/[0.04] text-[#A1A1AA] border-white/[0.06] hover:bg-white/[0.08] hover:text-[#F5F5F4]'
+                }`}
+              >
+                <span>{b.label}</span>
+                <span className="text-[10px] opacity-75 px-1 py-0.2 rounded bg-white/[0.06]">
+                  {b.count}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
+
+        {/* Thematic Basket Overview Card */}
+        {currentBasketData && (
+          <div className="w-full max-w-4xl mt-6 relative group">
+            {/* Ambient emerald backlight glow */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-[#3D9A6A]/30 via-[#F5C542]/20 to-[#3D9A6A]/25 blur-md opacity-85 group-hover:opacity-100 transition duration-500"
+            />
+
+            <div className="relative rounded-2xl bg-[#121214] border border-[#3D9A6A]/40 p-5 sm:p-6 shadow-2xl backdrop-blur-xl space-y-4">
+              {/* Basket Card Top Header */}
+              <div className="flex items-center justify-between gap-2 pb-3 border-b border-white/[0.06]">
+                <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                  <span className="text-xl sm:text-2xl">{currentBasketData.icon}</span>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-base sm:text-lg font-bold text-[#F5F5F4]">
+                        {currentBasketData.name}
+                      </h2>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30 font-semibold shrink-0">
+                        {currentBasketData.constituents.length} BSC Equities
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#A1A1AA] line-clamp-1 mt-0.5">
+                      {currentBasketData.description}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="hidden sm:inline-flex px-2 py-0.5 rounded text-[11px] font-mono bg-white/[0.04] border border-white/[0.06] text-[#A1A1AA]">
+                    🤖 Agent Skill Ready
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedBasket(null)}
+                    className="px-2.5 py-1 text-xs font-mono rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-[#A1A1AA] hover:text-[#F5F5F4] transition"
+                  >
+                    ✕ Close
+                  </button>
+                </div>
+              </div>
+
+              {/* Basket Aggregate Stats Ribbon */}
+              <div className="p-3.5 bg-[#07070A] rounded-xl border border-white/[0.04] grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs font-mono items-center">
+                <div>
+                  <span className="text-[#A1A1AA] text-[10px] block uppercase">Total Basket Savings</span>
+                  <span className="text-[#3D9A6A] text-sm sm:text-base font-bold mt-0.5 block">
+                    +${currentBasketData.totalSavings} USDT
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[#A1A1AA] text-[10px] block uppercase">Avg Spread to Cash</span>
+                  <span className="text-[#F5C542] text-sm sm:text-base font-bold mt-0.5 block">
+                    +{currentBasketData.avgSpread}% Basis
+                  </span>
+                </div>
+                <div className="col-span-2 sm:col-span-1">
+                  <span className="text-[#A1A1AA] text-[10px] block uppercase">Top Arbitrage Pick</span>
+                  <span className="text-white font-semibold mt-0.5 block truncate">
+                    {currentBasketData.topPick?.ticker} (+${currentBasketData.topPick?.savings} via {currentBasketData.topPick?.cheaperSymbol})
+                  </span>
+                </div>
+              </div>
+
+              {/* Constituents Grid */}
+              <div className="space-y-2 pt-1">
+                <div className="flex items-center justify-between text-xs text-[#A1A1AA] px-1 font-mono">
+                  <span>Constituents Ranked by Savings</span>
+                  <span>1-Tap Route & Quotes</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                  {currentBasketData.constituents.map((item) => (
+                    <div
+                      key={item.ticker}
+                      className="p-3 rounded-xl bg-[#07070A] border border-white/[0.04] hover:border-[#3D9A6A]/30 transition flex flex-col justify-between space-y-2 text-xs"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <span className="font-bold text-sm text-[#F5F5F4] font-mono">{item.ticker}</span>
+                          <span className="text-[11px] text-[#A1A1AA] block truncate max-w-[130px]">
+                            {item.tokenName}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[#3D9A6A] font-bold font-mono block">
+                            +${item.savings}
+                          </span>
+                          <span className="text-[10px] text-[#A1A1AA] font-mono block">
+                            {item.spreadToCash}% spread
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1 border-t border-white/[0.04] text-[11px] font-mono">
+                        <span className="text-[#F5C542] font-semibold">
+                          {item.cheaperSymbol} (${item.price})
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTicker(item.ticker);
+                              fetchRwaData(item.ticker);
+                              setSelectedBasket(null);
+                            }}
+                            className="px-2 py-0.5 rounded bg-white/[0.04] hover:bg-white/[0.08] text-[#F5F5F4] hover:text-[#F5C542] transition"
+                          >
+                            Inspect
+                          </button>
+                          {item.cheaperToken && (
+                            <button
+                              type="button"
+                              onClick={() => handleGetQuote(item.cheaperToken)}
+                              className="px-2 py-0.5 rounded bg-[#F5C542]/10 hover:bg-[#F5C542]/20 border border-[#F5C542]/30 text-[#F5C542] transition"
+                            >
+                              Quote
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Smart Route Recommendation Hero Card */}
         {bestRoute && (

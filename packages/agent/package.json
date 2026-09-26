@@ -1,0 +1,24 @@
+{
+  "name": "@aftergap/agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AfterGap Agentic Wallet & MCP Skill for autonomous tokenized stock arbitrage and best execution routing on BSC",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "bin": {
+    "aftergap-agent": "./src/server.ts"
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "start": "npx tsx src/server.ts",
+    "cli": "npx tsx src/cli.ts",
+    "test": "npx tsx src/cli.ts inspect NVDA"
+  },
+  "dependencies": {
+    "@aftergap/api": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "typescript": "^5.7.3"
+  }
+}

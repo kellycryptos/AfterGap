@@ -1,0 +1,84 @@
+{
+  "name": "aftergap-tokenized-stocks",
+  "version": "1.0.0",
+  "description": "AfterGap Agentic Skill for autonomous tokenized stock arbitrage and optimal routing across bStocks, Ondo, and xStocks on BNB Smart Chain (BSC 56).",
+  "author": "kellycryptos",
+  "repository": "https://github.com/kellycryptos/AfterGap",
+  "chains": [56],
+  "categories": ["trading", "rwa", "arbitrage", "ai-agents"],
+  "tools": [
+    {
+      "name": "inspect_gap",
+      "description": "Compare on-chain prices of a tokenized stock across bStocks, Ondo, and xStocks against the Friday cash reference price. Returns the cheapest wrapper, basis spread, and direct dollar savings.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "ticker": {
+            "type": "string",
+            "description": "The underlying stock ticker symbol (e.g. 'NVDA', 'TSLA', 'AAPL', 'MSFT', 'COIN', 'QQQ')."
+          }
+        },
+        "required": ["ticker"]
+      }
+    },
+    {
+      "name": "quote_best_route",
+      "description": "Fetches a live signed quote for the optimal (cheapest) stock wrapper on BSC using the Binance Web3 Trading API aggregator (LiquidMesh / RFQ mode).",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "ticker": {
+            "type": "string",
+            "description": "The stock ticker symbol (e.g. 'NVDA')."
+          },
+          "amountUsdt": {
+            "type": "number",
+            "description": "The amount in USDT to swap (e.g. 10)."
+          },
+          "userWalletAddress": {
+            "type": "string",
+            "description": "Optional recipient BSC wallet address (defaults to configured agent wallet)."
+          }
+        },
+        "required": ["ticker", "amountUsdt"]
+      }
+    },
+    {
+      "name": "simulate_swap",
+      "description": "Performs an on-chain eth_call dry-run simulation on BNB Smart Chain mainnet without spending gas to verify execution before committing funds.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "quoteId": {
+            "type": "string",
+            "description": "The quote ID returned by quote_best_route."
+          },
+          "toTokenAddress": {
+            "type": "string",
+            "description": "Contract address of the tokenized stock being purchased."
+          },
+          "amountUsdt": {
+            "type": "number",
+            "description": "Amount of USDT in the swap."
+          }
+        },
+        "required": ["quoteId", "toTokenAddress"]
+      }
+    },
+    {
+      "name": "scan_thematic_basket",
+      "description": "Scans an entire thematic stock basket ('mag7', 'ai_semis', or 'buffett') across all token wrappers and returns the constituents ranked by largest arbitrage spread.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "basket": {
+            "type": "string",
+            "enum": ["mag7", "ai_semis", "buffett"],
+            "description": "Name of the thematic basket to scan."
+          }
+        },
+        "required": ["basket"]
+      }
+    }
+  ]
+}

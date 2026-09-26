@@ -34,20 +34,48 @@ AfterGap/
 │   └── web/                 # Next.js 15 App Router frontend & server-side API proxy
 │       ├── app/
 │       │   ├── api/rwa/     # Secure route handler executing signed calls
-│       │   ├── page.tsx     # AfterGap ticker inspection & platforms visualizer
+│       │   ├── page.tsx     # AfterGap ticker inspection & Thematic Baskets visualizer
 │       │   ├── layout.tsx
 │       │   └── globals.css
 ├── packages/
-│   └── api/                 # Cryptographic signer & typed Binance Web3 RWA client
+│   ├── api/                 # Cryptographic signer & typed Binance Web3 RWA client
+│   │   ├── src/
+│   │   │   ├── signer.ts    # HMAC-SHA256 Base64 signer with /build prefix enforcement
+│   │   │   ├── signer.test.ts # Automated test vectors for signature validation
+│   │   │   ├── client.ts    # BinanceRwaClient implementation
+│   │   │   └── types.ts     # Strong TypeScript definitions
+│   └── agent/               # Autonomous Agentic Wallet Skill & MCP Server
 │       ├── src/
-│       │   ├── signer.ts    # HMAC-SHA256 Base64 signer with /build prefix enforcement
-│       │   ├── signer.test.ts # Automated test vectors for signature validation
-│       │   ├── client.ts    # BinanceRwaClient implementation
-│       │   └── types.ts     # Strong TypeScript definitions
+│       │   ├── tools.ts     # Gap inspection, best route quoting & basket analysis
+│       │   ├── server.ts    # Model Context Protocol (MCP) JSON-RPC 2.0 stdio server
+│       │   ├── cli.ts       # Interactive command-line test runner
+│       │   └── skill.json   # Binance Skills Hub manifest (BSC Chain 56)
+│       └── README.md
 ├── docs/
 │   └── DEVEX.md             # Developer Experience Report (first-call logs, wire dumps)
 ├── .env.example             # Required environment variables
 └── README.md
+```
+
+---
+
+## 🤖 Autonomous AI Agent & MCP Skill
+
+AfterGap includes a fully autonomous **Model Context Protocol (MCP)** server and **Binance Wallet Skill** for AI execution layers (Cursor, Claude Code, BNB Agent Studio):
+
+```bash
+# 1. Inspect stock price gap and best wrapper
+npx tsx packages/agent/src/cli.ts inspect NVDA
+
+# 2. Scan an entire thematic basket ranked by arbitrage spread
+npx tsx packages/agent/src/cli.ts basket mag7
+npx tsx packages/agent/src/cli.ts basket ai_semis
+
+# 3. Request executable spot quote for best route
+npx tsx packages/agent/src/cli.ts quote NVDA 10
+
+# 4. Perform gasless BSC eth_call simulation
+npx tsx packages/agent/src/cli.ts simulate NVDA 10
 ```
 
 ---
