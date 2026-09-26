@@ -656,21 +656,21 @@ export default function Home() {
 
       {/* Top Bar */}
       <header className="w-full border-b border-white/[0.06] bg-[#07070A]/80 backdrop-blur-sm sticky top-0 z-20">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5 sm:gap-3">
-            <span className="text-xl sm:text-2xl font-bold tracking-tight text-[#F5C542]">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <span className="text-lg sm:text-2xl font-bold tracking-tight text-[#F5C542] shrink-0">
               AfterGap
             </span>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-mono bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06]">
+            <span className="hidden sm:inline-flex px-2.5 py-0.5 rounded-full text-xs font-mono bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06]">
               BSC 56
             </span>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-mono bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30">
+            <span className="hidden md:inline-flex px-2.5 py-0.5 rounded-full text-xs font-mono bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30">
               Spot Aggregator
             </span>
           </div>
 
           {/* Wallet Address & Balances Bar */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono bg-white/[0.03] border border-white/[0.06]">
               <span className="text-[#A1A1AA]">Wallet:</span>
               <input
@@ -692,10 +692,13 @@ export default function Home() {
             </div>
 
             {/* Compact Auth Chip */}
-            <div className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono bg-white/[0.03] border border-white/[0.06]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#3D9A6A]" />
-              <span className="text-[#A1A1AA]">
+            <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full text-xs font-mono bg-white/[0.03] border border-white/[0.06] whitespace-nowrap shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#3D9A6A] shrink-0" />
+              <span className="text-[#A1A1AA] hidden sm:inline">
                 {isAuthed ? `Signed (${data?.auth?.apiKeyPrefix})` : 'Public Gateway (BSC 56)'}
+              </span>
+              <span className="text-[#A1A1AA] sm:hidden text-[11px]">
+                {isAuthed ? 'Signed' : 'Live'}
               </span>
             </div>
           </div>
@@ -703,13 +706,13 @@ export default function Home() {
       </header>
 
       {/* Main Screen Content */}
-      <main className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14 flex-1 flex flex-col items-center">
+      <main className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-14 flex-1 flex flex-col items-center">
         {/* Hero */}
-        <div className="text-center mb-8 space-y-2">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight text-[#F5F5F4]">
+        <div className="text-center mb-6 sm:mb-8 space-y-1.5 sm:space-y-2">
+          <h1 className="text-xl sm:text-3xl md:text-4xl font-semibold tracking-tight text-[#F5F5F4]">
             Same stock. Three wrappers. Live gap.
           </h1>
-          <p className="text-sm text-[#A1A1AA]">
+          <p className="text-xs sm:text-sm text-[#A1A1AA] max-w-lg mx-auto">
             Inspect on-chain pricing vs. cash reference, quote live spot execution, and simulate BEP-20 swaps.
           </p>
         </div>
@@ -781,24 +784,24 @@ export default function Home() {
 
             <div className="relative rounded-2xl bg-[#121214] border border-[#F5C542]/30 p-5 sm:p-6 shadow-2xl backdrop-blur-xl space-y-4">
               {/* Header Badges */}
-              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-white/[0.06]">
-                <div className="flex items-center gap-2.5">
-                  <span className="relative flex h-2.5 w-2.5">
+              <div className="flex items-center justify-between gap-2 pb-3 border-b border-white/[0.06]">
+                <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
+                  <span className="relative flex h-2 sm:h-2.5 w-2 sm:w-2.5 shrink-0">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#3D9A6A] opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#3D9A6A]"></span>
+                    <span className="relative inline-flex rounded-full h-2 sm:h-2.5 w-2 sm:w-2.5 bg-[#3D9A6A]"></span>
                   </span>
-                  <span className="text-xs font-mono uppercase tracking-wider text-[#F5C542] font-bold">
-                    Smart Route Recommendation
+                  <span className="text-[11px] sm:text-xs font-mono uppercase tracking-wider text-[#F5C542] font-bold truncate">
+                    Smart Route<span className="hidden sm:inline"> Recommendation</span>
                   </span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30 font-semibold">
-                    Cheapest Wrapper
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30 font-semibold whitespace-nowrap shrink-0">
+                    Cheapest<span className="hidden sm:inline"> Wrapper</span>
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-xs font-mono text-[#A1A1AA]">
-                  <span className="px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.06]">
+                <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-mono text-[#A1A1AA] shrink-0">
+                  <span className="px-1.5 sm:px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] text-[10px]">
                     BSC 56
                   </span>
-                  <span>Best Execution Guaranteed</span>
+                  <span className="hidden sm:inline">Best Execution Guaranteed</span>
                 </div>
               </div>
 
@@ -887,9 +890,9 @@ export default function Home() {
         )}
 
         {/* Results: Three Equal Columns */}
-        <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-5 mt-8">
+        <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 mt-6 sm:mt-8">
           {/* Column 1: bStocks */}
-          <div className="bg-[#121214] border border-white/[0.06] rounded-2xl p-5 flex flex-col justify-between">
+          <div className="bg-[#121214] border border-white/[0.06] rounded-2xl p-4 sm:p-5 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
                 <div className="flex items-center gap-2">
@@ -1116,7 +1119,7 @@ export default function Home() {
           </div>
 
           {/* Column 2: Ondo */}
-          <div className="bg-[#121214] border border-white/[0.06] rounded-2xl p-5 flex flex-col justify-between">
+          <div className="bg-[#121214] border border-white/[0.06] rounded-2xl p-4 sm:p-5 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
                 <div className="flex items-center gap-2">
@@ -1343,7 +1346,7 @@ export default function Home() {
           </div>
 
           {/* Column 3: xStocks */}
-          <div className="bg-[#121214] border border-white/[0.06] rounded-2xl p-5 flex flex-col justify-between">
+          <div className="bg-[#121214] border border-white/[0.06] rounded-2xl p-4 sm:p-5 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
                 <div className="flex items-center gap-2">
