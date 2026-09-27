@@ -10,7 +10,8 @@
   "scripts": {
     "dev": "npm run dev --workspace=apps/web",
     "build": "npm run build --workspaces",
-    "test:signer": "npx tsx packages/api/src/signer.test.ts"
+    "test:signer": "npx tsx packages/api/src/signer.test.ts",
+    "test:disclosure": "npx tsx scripts/verify-disclosure.ts && npx tsx scripts/verify-ui-render.ts"
   },
   "devDependencies": {
     "@types/node": "^22.13.0",

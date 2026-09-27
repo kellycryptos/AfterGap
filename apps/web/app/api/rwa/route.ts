@@ -600,9 +600,18 @@ export async function GET(request: NextRequest) {
   };
 
   try {
+    const simulate40304 = searchParams.get('simulate40304') === 'true';
+    const simulateLive = searchParams.get('simulateLive') === 'true';
+
     if (action === 'platforms') {
-      let platformsRes = await client.getPlatforms();
-      if (!platformsRes.success || (platformsRes.data as any)?.code === 40304) {
+      let platformsRes = simulateLive
+        ? { success: true, status: 200, statusText: 'OK', data: BENCHMARK_PLATFORMS, rawBody: JSON.stringify(BENCHMARK_PLATFORMS), headers: {}, debug: { fallbackUsed: false } as any }
+        : simulate40304
+        ? { success: false, status: 403, statusText: 'Forbidden', data: { code: 40304 }, rawBody: '', headers: {}, debug: {} as any }
+        : await client.getPlatforms();
+
+      const isBlocked = !platformsRes.success || (platformsRes.data as any)?.code === 40304;
+      if (isBlocked) {
         platformsRes = {
           success: true,
           status: 200,
@@ -616,12 +625,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         auth: authState,
         platforms: platformsRes,
+        isFallback: isBlocked,
       });
     }
 
     if (action === 'search') {
-      let searchRes = await client.search(keyword);
-      if (!searchRes.success || (searchRes.data as any)?.code === 40304) {
+      let searchRes = simulateLive
+        ? { success: true, status: 200, statusText: 'OK', data: BENCHMARK_SEARCH[keyword] || BENCHMARK_SEARCH.NVDA, rawBody: JSON.stringify(BENCHMARK_SEARCH[keyword] || BENCHMARK_SEARCH.NVDA), headers: {}, debug: { fallbackUsed: false } as any }
+        : simulate40304
+        ? { success: false, status: 403, statusText: 'Forbidden', data: { code: 40304 }, rawBody: '', headers: {}, debug: {} as any }
+        : await client.search(keyword);
+
+      const isBlocked = !searchRes.success || (searchRes.data as any)?.code === 40304;
+      if (isBlocked) {
         const fallback = BENCHMARK_SEARCH[keyword] || BENCHMARK_SEARCH.NVDA;
         searchRes = {
           success: true,
@@ -636,16 +652,26 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         auth: authState,
         search: searchRes,
+        isFallback: isBlocked,
       });
     }
 
     if (action === 'tokens') {
-      let tokensRes = await client.getTokens({
-        binanceChainId: 56,
-        platformId,
-      });
-      if (!tokensRes.success || (tokensRes.data as any)?.code === 40304) {
-        const fallback = BENCHMARK_TOKENS[keyword] || BENCHMARK_TOKENS.NVDA;
+      let tokensRes = simulateLive
+        ? { success: true, status: 200, statusText: 'OK', data: (BENCHMARK_TOKENS[keyword] || BENCHMARK_TOKENS.NVDA).map(t => ({ ...t, isFallback: false })), rawBody: JSON.stringify(BENCHMARK_TOKENS[keyword] || BENCHMARK_TOKENS.NVDA), headers: {}, debug: { fallbackUsed: false } as any }
+        : simulate40304
+        ? { success: false, status: 403, statusText: 'Forbidden', data: { code: 40304 }, rawBody: '', headers: {}, debug: {} as any }
+        : await client.getTokens({
+            binanceChainId: 56,
+            platformId,
+          });
+
+      const isBlocked = !tokensRes.success || (tokensRes.data as any)?.code === 40304;
+      if (isBlocked) {
+        const fallback = (BENCHMARK_TOKENS[keyword] || BENCHMARK_TOKENS.NVDA).map((t) => ({
+          ...t,
+          isFallback: true,
+        }));
         tokensRes = {
           success: true,
           status: 200,
@@ -655,10 +681,13 @@ export async function GET(request: NextRequest) {
           headers: {},
           debug: { ...tokensRes.debug, fallbackUsed: true } as any,
         };
+      } else if (Array.isArray(tokensRes.data)) {
+        tokensRes.data = tokensRes.data.map((t: any) => ({ ...t, isFallback: false }));
       }
       return NextResponse.json({
         auth: authState,
         tokens: tokensRes,
+        isFallback: isBlocked,
       });
     }
 
@@ -669,31 +698,91 @@ export async function GET(request: NextRequest) {
       const userWalletAddress = searchParams.get('userWalletAddress') || undefined;
       const slippagePercent = searchParams.get('slippagePercent') || '1';
 
-      let quoteRes = await client.getQuote({
-        binanceChainId: 56,
-        fromTokenAddress,
-        toTokenAddress,
-        amount,
-        userWalletAddress,
-        slippagePercent,
-      });
-
-      if (!quoteRes.success || (quoteRes.data as any)?.code === 40304) {
-        const fallbackQuote = BENCHMARK_QUOTES[toTokenAddress.toLowerCase()] || BENCHMARK_QUOTES['0x02fca66c1d1afb4e2a7884261eb00f63598a7436'];
+      let quoteRes;
+      if (simulateLive) {
+        const isOndo = toTokenAddress.toLowerCase() === '0xa9ee28c80f960b889dfbd1902055218cba016f75';
+        const liveQuoteData = [
+          {
+            quoteId: `quote-live-${Date.now()}`,
+            vendorName: isOndo ? 'Ondo RFQ' : 'LiquidMesh',
+            executionMode: isOndo ? 'RFQ' : 'SWAP',
+            binanceChainId: '56',
+            fromTokenAmount: amount,
+            toTokenAmount: isOndo ? '43531255000000000' : '43647167000000000',
+            priceImpactPercent: '0.04',
+            router: isOndo ? '0x62a12B47517a26fE7b783457a4e69d7B46fFA0F5' : '0x10ED43C718714eb63d5aA57B78B54704E256024E',
+            fromToken: {
+              tokenContractAddress: fromTokenAddress,
+              tokenSymbol: 'USDT',
+              tokenUnitPrice: '1.00',
+              decimal: 18,
+            },
+            toToken: {
+              tokenContractAddress: toTokenAddress,
+              tokenSymbol: isOndo ? 'NVDAon' : 'NVDAB',
+              tokenUnitPrice: isOndo ? '229.72' : '229.11',
+              decimal: 18,
+            },
+            approveTarget: isOndo ? '0x62a12B47517a26fE7b783457a4e69d7B46fFA0F5' : '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
+            isBest: !isOndo,
+            isFallback: false,
+          },
+        ];
         quoteRes = {
           success: true,
           status: 200,
           statusText: 'OK',
-          data: fallbackQuote as any,
-          rawBody: JSON.stringify(fallbackQuote),
+          data: liveQuoteData as any,
+          rawBody: JSON.stringify(liveQuoteData),
           headers: {},
-          debug: { ...quoteRes.debug, fallbackUsed: true } as any,
+          debug: { fallbackUsed: false } as any,
+          isFallback: false,
         };
+      } else {
+        quoteRes = simulate40304
+          ? ({ success: false, status: 403, statusText: 'Forbidden', data: { code: 40304 }, rawBody: '', headers: {}, debug: {} } as any)
+          : await client.getQuote({
+              binanceChainId: 56,
+              fromTokenAddress,
+              toTokenAddress,
+              amount,
+              userWalletAddress,
+              slippagePercent,
+            });
+
+        const isQuoteBlocked = !quoteRes.success || (quoteRes.data as any)?.code === 40304;
+
+        if (isQuoteBlocked) {
+          const fallbackQuote = (
+            BENCHMARK_QUOTES[toTokenAddress.toLowerCase()] ||
+            BENCHMARK_QUOTES['0x02fca66c1d1afb4e2a7884261eb00f63598a7436']
+          ).map((q: any) => ({ ...q, isFallback: true }));
+
+          quoteRes = {
+            success: true,
+            status: 200,
+            statusText: 'OK',
+            data: fallbackQuote as any,
+            rawBody: JSON.stringify(fallbackQuote),
+            headers: {},
+            debug: { ...quoteRes.debug, fallbackUsed: true } as any,
+            isFallback: true,
+          };
+        } else {
+          quoteRes = {
+            ...quoteRes,
+            isFallback: false,
+          };
+          if (Array.isArray(quoteRes.data)) {
+            quoteRes.data = quoteRes.data.map((q: any) => ({ ...q, isFallback: false }));
+          }
+        }
       }
 
       return NextResponse.json({
         auth: authState,
         quote: quoteRes,
+        isFallback: Boolean(quoteRes.isFallback),
         timestamp: new Date().toISOString(),
       });
     }
@@ -737,53 +826,109 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Default: Fetch platforms, search, and BSC tokens sequentially to respect rate limits
-    let platformsRes = await client.getPlatforms();
-    let searchRes = await client.search(keyword);
-    let bscTokensRes = await client.getTokens({ binanceChainId: 56, size: 500 });
+    // Default (action === 'resolve'): Fetch platforms, search, and BSC tokens
+    let platformsRes;
+    let searchRes;
+    let bscTokensRes;
 
-    // Resilient fallback if CloudFront geo-restricts (40304) or rate-limits
-    const isPlatformsBlocked = !platformsRes.success || (platformsRes.data as any)?.code === 40304;
-    const isTokensBlocked = !bscTokensRes.success || (bscTokensRes.data as any)?.code === 40304;
-    const isSearchBlocked = !searchRes.success || (searchRes.data as any)?.code === 40304;
-
-    if (isPlatformsBlocked) {
+    if (simulateLive) {
       platformsRes = {
         success: true,
         status: 200,
         statusText: 'OK',
-        data: BENCHMARK_PLATFORMS as any,
+        data: BENCHMARK_PLATFORMS,
         rawBody: JSON.stringify(BENCHMARK_PLATFORMS),
         headers: {},
-        debug: { ...platformsRes.debug, fallbackUsed: true } as any,
+        debug: { fallbackUsed: false } as any,
       };
-    }
-
-    if (isSearchBlocked) {
-      const fallback = BENCHMARK_SEARCH[keyword] || BENCHMARK_SEARCH.NVDA;
       searchRes = {
         success: true,
         status: 200,
         statusText: 'OK',
-        data: fallback as any,
-        rawBody: JSON.stringify(fallback),
+        data: BENCHMARK_SEARCH[keyword] || BENCHMARK_SEARCH.NVDA,
+        rawBody: JSON.stringify(BENCHMARK_SEARCH[keyword] || BENCHMARK_SEARCH.NVDA),
         headers: {},
-        debug: { ...searchRes.debug, fallbackUsed: true } as any,
+        debug: { fallbackUsed: false } as any,
       };
-    }
-
-    if (isTokensBlocked) {
-      const fallback = BENCHMARK_TOKENS[keyword] || BENCHMARK_TOKENS.NVDA;
+      const liveTokens = (BENCHMARK_TOKENS[keyword] || BENCHMARK_TOKENS.NVDA).map((t) => ({
+        ...t,
+        isFallback: false,
+      }));
       bscTokensRes = {
         success: true,
         status: 200,
         statusText: 'OK',
-        data: fallback as any,
-        rawBody: JSON.stringify(fallback),
+        data: liveTokens,
+        rawBody: JSON.stringify(liveTokens),
         headers: {},
-        debug: { ...bscTokensRes.debug, fallbackUsed: true } as any,
+        debug: { fallbackUsed: false } as any,
       };
+    } else {
+      platformsRes = simulate40304
+        ? ({ success: false, status: 403, statusText: 'Forbidden', data: { code: 40304 }, rawBody: '', headers: {}, debug: {} } as any)
+        : await client.getPlatforms();
+      searchRes = simulate40304
+        ? ({ success: false, status: 403, statusText: 'Forbidden', data: { code: 40304 }, rawBody: '', headers: {}, debug: {} } as any)
+        : await client.search(keyword);
+      bscTokensRes = simulate40304
+        ? ({ success: false, status: 403, statusText: 'Forbidden', data: { code: 40304 }, rawBody: '', headers: {}, debug: {} } as any)
+        : await client.getTokens({ binanceChainId: 56, size: 500 });
+
+      const isPlatformsBlocked = !platformsRes.success || (platformsRes.data as any)?.code === 40304;
+      const isTokensBlocked = !bscTokensRes.success || (bscTokensRes.data as any)?.code === 40304;
+      const isSearchBlocked = !searchRes.success || (searchRes.data as any)?.code === 40304;
+
+      if (isPlatformsBlocked) {
+        platformsRes = {
+          success: true,
+          status: 200,
+          statusText: 'OK',
+          data: BENCHMARK_PLATFORMS as any,
+          rawBody: JSON.stringify(BENCHMARK_PLATFORMS),
+          headers: {},
+          debug: { ...platformsRes.debug, fallbackUsed: true } as any,
+        };
+      }
+
+      if (isSearchBlocked) {
+        const fallback = BENCHMARK_SEARCH[keyword] || BENCHMARK_SEARCH.NVDA;
+        searchRes = {
+          success: true,
+          status: 200,
+          statusText: 'OK',
+          data: fallback as any,
+          rawBody: JSON.stringify(fallback),
+          headers: {},
+          debug: { ...searchRes.debug, fallbackUsed: true } as any,
+        };
+      }
+
+      if (isTokensBlocked) {
+        const fallback = (BENCHMARK_TOKENS[keyword] || BENCHMARK_TOKENS.NVDA).map((t) => ({
+          ...t,
+          isFallback: true,
+        }));
+        bscTokensRes = {
+          success: true,
+          status: 200,
+          statusText: 'OK',
+          data: fallback as any,
+          rawBody: JSON.stringify(fallback),
+          headers: {},
+          debug: { ...bscTokensRes.debug, fallbackUsed: true } as any,
+        };
+      } else if (Array.isArray(bscTokensRes.data)) {
+        bscTokensRes.data = bscTokensRes.data.map((t: any) => ({ ...t, isFallback: false }));
+      }
     }
+
+    const isOverallFallback = Boolean(
+      !simulateLive &&
+        (simulate40304 ||
+          bscTokensRes.debug?.fallbackUsed ||
+          searchRes.debug?.fallbackUsed ||
+          platformsRes.debug?.fallbackUsed)
+    );
 
     return NextResponse.json({
       auth: authState,
@@ -791,6 +936,7 @@ export async function GET(request: NextRequest) {
       platforms: platformsRes,
       search: searchRes,
       bscTokens: bscTokensRes,
+      isFallback: isOverallFallback,
       timestamp: new Date().toISOString(),
     });
   } catch (err: unknown) {
