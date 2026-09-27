@@ -297,8 +297,12 @@ export class AfterGapAgentTools {
 
     try {
       const bscTokensRes = await this.client.getTokens({ binanceChainId: 56, size: 500 });
-      if (bscTokensRes.success && Array.isArray((bscTokensRes.data as any)?.tokens)) {
-        const rawTokens = (bscTokensRes.data as any).tokens;
+      const rawTokens = Array.isArray(bscTokensRes.data)
+        ? bscTokensRes.data
+        : Array.isArray((bscTokensRes.data as any)?.tokens)
+        ? (bscTokensRes.data as any).tokens
+        : [];
+      if (bscTokensRes.success && rawTokens.length > 0) {
         for (const t of rawTokens) {
           if (String(t.underlyingTicker || '').toUpperCase() === sym) {
             tokens.push({

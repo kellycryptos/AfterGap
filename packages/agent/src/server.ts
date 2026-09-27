@@ -1,5 +1,18 @@
+import fs from 'fs';
+import path from 'path';
 import { AfterGapAgentTools } from './tools.js';
 import * as readline from 'readline';
+
+// Load .env.local or .env if present
+for (const envFile of ['.env.local', '.env', '../../.env.local', '../../.env']) {
+  const envPath = path.resolve(process.cwd(), envFile);
+  if (fs.existsSync(envPath) && typeof process.loadEnvFile === 'function') {
+    try {
+      process.loadEnvFile(envPath);
+      break;
+    } catch {}
+  }
+}
 
 // Model Context Protocol (MCP) JSON-RPC 2.0 Server over stdio
 const tools = new AfterGapAgentTools();
