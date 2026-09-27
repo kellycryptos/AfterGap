@@ -2016,6 +2016,72 @@ export default function Home() {
                                       Inspect EVM Calldata ({sim.tx.data.slice(0, 10)}...)
                                     </button>
                                   )}
+
+                                  {/* Execute Swap Button */}
+                                  {(() => {
+                                    const bc = broadcasts[contract];
+                                    return (
+                                      <div className="pt-1.5 border-t border-white/[0.04] mt-1">
+                                        {bc?.step === 'done' ? (
+                                          <div className="space-y-1">
+                                            <div className="flex items-center gap-1.5">
+                                              <span className="w-1.5 h-1.5 rounded-full bg-[#3D9A6A]" />
+                                              <span className="text-[#3D9A6A] font-semibold text-[10px]">🎉 Swap Executed Live on BSC!</span>
+                                            </div>
+                                            {bc.approveTxHash && (
+                                              <a
+                                                href={`https://bscscan.com/tx/${bc.approveTxHash}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="block text-[10px] text-[#F5C542] hover:underline truncate"
+                                              >
+                                                ✅ Approve tx: {bc.approveTxHash.slice(0, 16)}...
+                                              </a>
+                                            )}
+                                            {bc.swapTxHash && (
+                                              <a
+                                                href={`https://bscscan.com/tx/${bc.swapTxHash}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="block text-[10px] text-[#3D9A6A] hover:underline truncate"
+                                              >
+                                                🚀 Swap tx: {bc.swapTxHash.slice(0, 16)}...
+                                              </a>
+                                            )}
+                                          </div>
+                                        ) : bc?.step === 'error' ? (
+                                          <p className="text-[10px] text-[#C45C26]">{bc.error}</p>
+                                        ) : (
+                                          <button
+                                            type="button"
+                                            onClick={() => wallet.connected ? handleApproveAndExecute(t) : connectWallet()}
+                                            disabled={bc?.loading || (quote.ttlRemaining || 0) <= 0}
+                                            className={`w-full py-1.5 rounded text-[11px] font-mono font-semibold transition disabled:opacity-40 flex items-center justify-center gap-1.5 ${
+                                              wallet.connected
+                                                ? 'bg-[#3D9A6A]/15 hover:bg-[#3D9A6A]/25 border border-[#3D9A6A]/40 text-[#3D9A6A]'
+                                                : 'bg-[#F5C542]/10 hover:bg-[#F5C542]/20 border border-[#F5C542]/30 text-[#F5C542]'
+                                            }`}
+                                          >
+                                            {bc?.loading ? (
+                                              <>
+                                                <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
+                                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                                                </svg>
+                                                <span>
+                                                  {bc.step === 'approving' ? 'Approving USDT...' : bc.step === 'approved' ? 'Approved! Swapping...' : 'Broadcasting...'}
+                                                </span>
+                                              </>
+                                            ) : wallet.connected ? (
+                                              '🚀 Execute Live Swap on BSC'
+                                            ) : (
+                                              '🔗 Connect Wallet to Execute'
+                                            )}
+                                          </button>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
                                 </div>
                               )}
                             </div>
