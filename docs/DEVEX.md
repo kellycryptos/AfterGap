@@ -2,7 +2,7 @@
 
 **Product:** AfterGap  
 **Tagline:** Same stock, dual wrappers, live gap.  
-**Event:** BNB Hack: Tokenized Stocks Edition with Binance Web3 Wallet  
+**Ecosystem:** Binance Web3 Developer Infrastructure & BNB Smart Chain  
 **Chain:** BNB Smart Chain Mainnet (`binanceChainId=56`)
 
 ---
@@ -200,7 +200,7 @@ Header: `x-oc-blocked-by: TimestampFilter/40103`.
 2. **xStocks Evaluation & Scope Pruning Decision:**
    - `xStocks` is **100% absent** from both `/rwa/platforms` and `/rwa/search`.
    - Verified that neither `xstock`, `xstocks`, nor any `...x` token appears in Binance Web3 RWA Data or has active spot liquidity on BSC mainnet.
-   - The hackathon rules specify: *"Submissions must feature at least one of the following: bStocks, Ondo, or xStocks."*
+   - While industry specifications mention bStocks, Ondo, and xStocks as potential BSC equity wrappers:
    - Because xStocks does not practically function in the ecosystem APIs, we pruned xStocks completely from active trading and user-facing views to focus strictly on the two verified, fully operational protocols: **bStocks** and **Ondo**.
 3. **Vercel Monorepo Deployment:**
    - When the project Root Directory is configured as `apps/web` on Vercel, an explicit `"outputDirectory": "apps/web/.next"` in `vercel.json` causes double-nesting (`/vercel/path0/apps/web/apps/web/.next`).
@@ -301,8 +301,7 @@ Header: `x-oc-blocked-by: TimestampFilter/40103`.
 
 ## 7. AI Stack Developer Experience & Agentic Architecture
 
-### 1. AI Execution Layer Overview
-To compete for the **Best Use of Agentic Wallet / Wallet Skills** and **Best Use of BNB Agent Studio** special prizes ($2,000 each), AfterGap provides a fully autonomous agent package (`@aftergap/agent`) adhering to:
+To empower autonomous AI execution via **Agentic Wallets** and AI agent studios (including Cursor, Claude Code, and BNB Agent Studio), AfterGap provides a fully autonomous agent package (`@aftergap/agent`) adhering to:
 1. **Model Context Protocol (MCP):** JSON-RPC 2.0 stdio transport protocol (`packages/agent/src/server.ts`).
 2. **Binance Skills Hub Standard:** Manifest specification declaring tools, permissions, and network bindings for BSC (`packages/agent/src/skill.json`).
 3. **Interactive Agent CLI:** Standalone CLI interface for immediate terminal testing and agent script integration (`packages/agent/src/cli.ts`).

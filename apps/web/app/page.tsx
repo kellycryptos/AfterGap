@@ -2173,7 +2173,7 @@ export default function Home() {
               AfterGap
             </span>
             <span className="hidden sm:inline text-white/20">/</span>
-            <span>Built for BNB Hack Tokenized Stocks Edition with Binance Web3 Wallet</span>
+            <span>Dual-Wrapper Tokenized US Stocks Arbitrage & Smart Routing on BNB Smart Chain</span>
           </div>
 
           <div className="flex items-center gap-6 font-mono text-xs">

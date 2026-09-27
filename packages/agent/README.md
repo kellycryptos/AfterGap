@@ -2,9 +2,7 @@
 
 > AfterGap Autonomous Agentic Wallet Skill & Model Context Protocol (MCP) Server for Tokenized Stock Arbitrage on BNB Smart Chain (`binanceChainId=56`).
 
-Built for **BNB Hack: Tokenized Stocks Edition** competing for:
-- **Best Use of Agentic Wallet / Wallet Skills ($2,000 Special Prize)**
-- **Best Use of BNB Agent Studio ($2,000 Special Prize)**
+Empowers AI agents and agentic wallets to programmatically discover price discrepancies across tokenized equity wrappers, compute arbitrage margins, perform transaction simulations, and execute best-route trades on BNB Smart Chain.
 
 ---
 
