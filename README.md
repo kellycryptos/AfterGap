@@ -4,6 +4,9 @@
 
 Real-time dual-wrapper US stock price comparison, reference gap analysis, and best-execution routing across **bStocks** and **Ondo** on BNB Smart Chain (`binanceChainId=56`).
 
+**Live Production App:** [https://after-gap-web.vercel.app/](https://after-gap-web.vercel.app/)  
+**Track:** BNB Hack: Tokenized Stocks Edition (Chain ID: 56)
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Network: BNB Smart Chain](https://img.shields.io/badge/Network-BNB%20Smart%20Chain%20(56)-F3BA2F.svg)](https://bscscan.com)
 [![Next.js 15](https://img.shields.io/badge/Next.js-15.1-black.svg)](https://nextjs.org/)
@@ -196,10 +199,14 @@ WALLET_ADDRESS=0x0000000000000000000000000000000000000000
 BSC_RPC=https://bsc-dataseed.binance.org/
 ```
 
-### 4. Verify Cryptographic Signer
-Run the automated test vectors to confirm signature generation and path canonicalization:
+### 4. Verify Cryptographic Signer & Dynamic Disclosure Test Suite
+Run the automated test vectors to confirm signature generation, path canonicalization, and fallback disclosures:
 ```bash
+# Cryptographic HMAC-SHA256 test vectors
 npm run test:signer
+
+# Dynamic fallback pricing & React UI disclosure tests
+npm run test:disclosure
 ```
 
 ### 5. Launch the Web Application
