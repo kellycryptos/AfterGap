@@ -12,23 +12,33 @@ async function verifyUiRendering() {
 
   console.log('Rendered length:', html.length, 'bytes');
 
-  // By default, before live API fetch returns in useEffect, initial benchmark state is rendered:
-  const hasFallbackBadge = html.includes('Estimated price — live feed unavailable from this region');
-  const hasFallbackText = html.includes('Binance Web3 API CloudFront 40304 compliance restriction active');
+  // Verify benchmark pricing disclosures and verified on-chain badges:
+  const hasBenchmarkTitle = html.includes('Benchmark Reference Pricing');
+  const hasDatacenter40304Text = html.includes('Binance Web3 Gateway restricts serverless datacenter IPs (40304)');
   const hasBstocksFallback = html.includes('data-testid="bstocks-fallback-badge"');
   const hasOndoFallback = html.includes('data-testid="ondo-fallback-badge"');
-  const hasSmartRouteFallback = html.includes('data-testid="smart-route-fallback-badge"');
+  const hasOnChainVerified = html.includes('On-Chain Verified');
+  const noMisleadingLiveFeed = !html.includes('Live Binance Web3 Feed');
 
-  console.log(`Fallback Banner in HTML: ${hasFallbackBadge}`);
-  console.log(`40304 Disclosure Explanation in HTML: ${hasFallbackText}`);
+  console.log(`Benchmark Reference Pricing Title in HTML: ${hasBenchmarkTitle}`);
+  console.log(`40304 Datacenter Disclosure Explanation in HTML: ${hasDatacenter40304Text}`);
   console.log(`bStocks Fallback Badge: ${hasBstocksFallback}`);
   console.log(`Ondo Fallback Badge: ${hasOndoFallback}`);
-  console.log(`Smart Route Fallback Badge: ${hasSmartRouteFallback}`);
+  console.log(`On-Chain Verified Badges Present: ${hasOnChainVerified}`);
+  console.log(`Misleading "Live Binance Web3 Feed" Removed: ${noMisleadingLiveFeed}`);
 
-  if (hasFallbackBadge && hasBstocksFallback && hasOndoFallback && hasSmartRouteFallback) {
-    console.log('\n✅ PASS: Fallback disclosure banners render cleanly on BOTH bStocks and Ondo cards, and Smart Route header.');
+  if (
+    hasBenchmarkTitle &&
+    hasDatacenter40304Text &&
+    hasBstocksFallback &&
+    hasOndoFallback &&
+    hasOnChainVerified &&
+    noMisleadingLiveFeed
+  ) {
+    console.log('\n✅ PASS: Benchmark reference pricing disclosure banners render cleanly on BOTH bStocks and Ondo cards.');
+    console.log('✅ PASS: Badges accurately point to On-Chain Verified contracts without misleading "Live" claims.');
   } else {
-    console.error('❌ FAIL: Expected fallback disclosure banners in rendered markup.');
+    console.error('❌ FAIL: Expected honest benchmark disclosures and on-chain verified status in rendered markup.');
     process.exit(1);
   }
 

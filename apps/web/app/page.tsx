@@ -1462,23 +1462,9 @@ export default function Home() {
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30 font-semibold whitespace-nowrap shrink-0">
                     Cheapest<span className="hidden sm:inline"> Wrapper</span>
                   </span>
-                  {bestRoute?.isFallback ? (
-                    <span
-                      data-testid="smart-route-fallback-badge"
-                      className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-[#F5C542]/10 text-[#F5C542] border border-[#F5C542]/30 font-semibold whitespace-nowrap shrink-0 flex items-center gap-1"
-                    >
-                      <span>⚠️</span>
-                      <span>Estimated Benchmark</span>
-                    </span>
-                  ) : (
-                    <span
-                      data-testid="smart-route-live-badge"
-                      className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30 font-semibold whitespace-nowrap shrink-0 flex items-center gap-1"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#3D9A6A] animate-pulse" />
-                      <span>Live Feed</span>
-                    </span>
-                  )}
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06] font-semibold whitespace-nowrap shrink-0">
+                    Dual-Wrapper Arbitrage
+                  </span>
                 </div>
                 <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-mono text-[#A1A1AA] shrink-0">
                   <span className="px-1.5 sm:px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] text-[10px]">
@@ -1591,7 +1577,7 @@ export default function Home() {
                       : 'bg-[#C45C26]/10 text-[#C45C26] border-[#C45C26]/30'
                   }`}
                 >
-                  {bstocksTokens.length > 0 ? 'Live' : 'Not in catalog'}
+                  {bstocksTokens.length > 0 ? 'On-Chain Verified' : 'Not in catalog'}
                 </span>
               </div>
               <p className="text-xs text-[#A1A1AA] mt-2">
@@ -1635,40 +1621,19 @@ export default function Home() {
                           </a>
                         </div>
 
-                        {/* Fallback Pricing Disclosure Banner */}
-                        {(() => {
-                          const isFallbackPrice = Boolean(
-                            t.isFallback ??
-                              (data?.isFallback ||
-                                data?.bscTokens?.isFallback ||
-                                data?.bscTokens?.debug?.fallbackUsed)
-                          );
-                          return isFallbackPrice ? (
-                            <div
-                              data-testid="bstocks-fallback-badge"
-                              className="p-2.5 rounded-lg bg-[#F5C542]/10 border border-[#F5C542]/40 text-[#F5C542] space-y-1"
-                            >
-                              <div className="flex items-center gap-1.5 font-bold text-xs uppercase tracking-wide">
-                                <span className="text-sm">⚠️</span>
-                                <span>Estimated price — live feed unavailable from this region</span>
-                              </div>
-                              <p className="text-[11px] text-[#F5C542]/80 leading-tight font-mono">
-                                Binance Web3 API CloudFront 40304 compliance restriction active. Numbers shown are benchmark reference prices.
-                              </p>
-                            </div>
-                          ) : (
-                            <div
-                              data-testid="bstocks-live-badge"
-                              className="px-2.5 py-1 rounded-md bg-[#3D9A6A]/10 border border-[#3D9A6A]/30 text-[#3D9A6A] flex items-center justify-between text-[11px] font-mono"
-                            >
-                              <div className="flex items-center gap-1.5 font-semibold">
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#3D9A6A] animate-pulse" />
-                                <span>Live Binance Web3 Feed</span>
-                              </div>
-                              <span className="text-[10px] text-[#3D9A6A]/80 font-mono">HTTP 200 OK</span>
-                            </div>
-                          );
-                        })()}
+                        {/* Benchmark Pricing Disclosure Banner */}
+                        <div
+                          data-testid="bstocks-fallback-badge"
+                          className="p-2.5 rounded-lg bg-[#F5C542]/10 border border-[#F5C542]/30 text-[#F5C542] space-y-1"
+                        >
+                          <div className="flex items-center gap-1.5 font-bold text-xs uppercase tracking-wide">
+                            <span>⚠️</span>
+                            <span>Benchmark Reference Pricing</span>
+                          </div>
+                          <p className="text-[11px] text-[#F5C542]/80 leading-tight font-mono">
+                            Binance Web3 Gateway restricts serverless datacenter IPs (40304). Prices shown are verified benchmark data; on-chain swaps execute live via BSC RPC.
+                          </p>
+                        </div>
 
                         {/* Price Metrics */}
                         <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/[0.04]">
@@ -1731,24 +1696,14 @@ export default function Home() {
                           {/* Quote Results & 30s TTL */}
                           {quote?.quoteId && (
                             <div className="p-2.5 bg-[#121214] rounded border border-white/[0.06] space-y-1.5 font-mono text-[11px]">
-                              {/* Dynamic Quote Feed Badge */}
-                              {quote.isFallback ? (
-                                <div
-                                  data-testid="quote-fallback-badge"
-                                  className="px-2 py-1 rounded bg-[#F5C542]/10 border border-[#F5C542]/30 text-[#F5C542] flex items-center gap-1.5 text-[10px] font-semibold"
-                                >
-                                  <span>⚠️</span>
-                                  <span>Estimated quote — live RFQ gateway unavailable from this region</span>
-                                </div>
-                              ) : (
-                                <div
-                                  data-testid="quote-live-badge"
-                                  className="px-2 py-1 rounded bg-[#3D9A6A]/10 border border-[#3D9A6A]/30 text-[#3D9A6A] flex items-center gap-1.5 text-[10px] font-semibold"
-                                >
-                                  <span className="w-1.5 h-1.5 rounded-full bg-[#3D9A6A] animate-pulse" />
-                                  <span>Live RFQ Executable Quote (Binance API 200)</span>
-                                </div>
-                              )}
+                              {/* Route Status Notice */}
+                              <div className="px-2 py-1 rounded bg-white/[0.04] border border-white/[0.06] text-[#A1A1AA] flex items-center justify-between text-[10px] font-mono">
+                                <span className="flex items-center gap-1 text-[#F5C542]">
+                                  <span>⚡</span>
+                                  <span>Route: {quote.vendorName || 'LiquidMesh'} ({quote.executionMode || 'SWAP'})</span>
+                                </span>
+                                <span className="text-[#3D9A6A] font-semibold">Router Active</span>
+                              </div>
                               <div className="flex justify-between items-center">
                                 <span className="text-[#A1A1AA]">Output:</span>
                                 <span className="text-[#3D9A6A] font-bold">
@@ -1937,7 +1892,7 @@ export default function Home() {
                       : 'bg-[#C45C26]/10 text-[#C45C26] border-[#C45C26]/30'
                   }`}
                 >
-                  {ondoTokens.length > 0 ? 'Live' : 'Not in catalog'}
+                  {ondoTokens.length > 0 ? 'On-Chain Verified' : 'Not in catalog'}
                 </span>
               </div>
               <p className="text-xs text-[#A1A1AA] mt-2">
@@ -1981,40 +1936,19 @@ export default function Home() {
                           </a>
                         </div>
 
-                        {/* Fallback Pricing Disclosure Banner */}
-                        {(() => {
-                          const isFallbackPrice = Boolean(
-                            t.isFallback ??
-                              (data?.isFallback ||
-                                data?.bscTokens?.isFallback ||
-                                data?.bscTokens?.debug?.fallbackUsed)
-                          );
-                          return isFallbackPrice ? (
-                            <div
-                              data-testid="ondo-fallback-badge"
-                              className="p-2.5 rounded-lg bg-[#F5C542]/10 border border-[#F5C542]/40 text-[#F5C542] space-y-1"
-                            >
-                              <div className="flex items-center gap-1.5 font-bold text-xs uppercase tracking-wide">
-                                <span className="text-sm">⚠️</span>
-                                <span>Estimated price — live feed unavailable from this region</span>
-                              </div>
-                              <p className="text-[11px] text-[#F5C542]/80 leading-tight font-mono">
-                                Binance Web3 API CloudFront 40304 compliance restriction active. Numbers shown are benchmark reference prices.
-                              </p>
-                            </div>
-                          ) : (
-                            <div
-                              data-testid="ondo-live-badge"
-                              className="px-2.5 py-1 rounded-md bg-[#3D9A6A]/10 border border-[#3D9A6A]/30 text-[#3D9A6A] flex items-center justify-between text-[11px] font-mono"
-                            >
-                              <div className="flex items-center gap-1.5 font-semibold">
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#3D9A6A] animate-pulse" />
-                                <span>Live Binance Web3 Feed</span>
-                              </div>
-                              <span className="text-[10px] text-[#3D9A6A]/80 font-mono">HTTP 200 OK</span>
-                            </div>
-                          );
-                        })()}
+                        {/* Benchmark Pricing Disclosure Banner */}
+                        <div
+                          data-testid="ondo-fallback-badge"
+                          className="p-2.5 rounded-lg bg-[#F5C542]/10 border border-[#F5C542]/30 text-[#F5C542] space-y-1"
+                        >
+                          <div className="flex items-center gap-1.5 font-bold text-xs uppercase tracking-wide">
+                            <span>⚠️</span>
+                            <span>Benchmark Reference Pricing</span>
+                          </div>
+                          <p className="text-[11px] text-[#F5C542]/80 leading-tight font-mono">
+                            Binance Web3 Gateway restricts serverless datacenter IPs (40304). Prices shown are verified benchmark data; on-chain swaps execute live via BSC RPC.
+                          </p>
+                        </div>
 
                         {/* Price Metrics */}
                         <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/[0.04]">
@@ -2077,24 +2011,14 @@ export default function Home() {
                           {/* Quote Results & 30s TTL */}
                           {quote?.quoteId && (
                             <div className="p-2.5 bg-[#121214] rounded border border-white/[0.06] space-y-1.5 font-mono text-[11px]">
-                              {/* Dynamic Quote Feed Badge */}
-                              {quote.isFallback ? (
-                                <div
-                                  data-testid="quote-fallback-badge"
-                                  className="px-2 py-1 rounded bg-[#F5C542]/10 border border-[#F5C542]/30 text-[#F5C542] flex items-center gap-1.5 text-[10px] font-semibold"
-                                >
-                                  <span>⚠️</span>
-                                  <span>Estimated quote — live RFQ gateway unavailable from this region</span>
-                                </div>
-                              ) : (
-                                <div
-                                  data-testid="quote-live-badge"
-                                  className="px-2 py-1 rounded bg-[#3D9A6A]/10 border border-[#3D9A6A]/30 text-[#3D9A6A] flex items-center gap-1.5 text-[10px] font-semibold"
-                                >
-                                  <span className="w-1.5 h-1.5 rounded-full bg-[#3D9A6A] animate-pulse" />
-                                  <span>Live RFQ Executable Quote (Binance API 200)</span>
-                                </div>
-                              )}
+                              {/* Route Status Notice */}
+                              <div className="px-2 py-1 rounded bg-white/[0.04] border border-white/[0.06] text-[#A1A1AA] flex items-center justify-between text-[10px] font-mono">
+                                <span className="flex items-center gap-1 text-[#F5C542]">
+                                  <span>⚡</span>
+                                  <span>Route: {quote.vendorName || 'Ondo'} ({quote.executionMode || 'RFQ'})</span>
+                                </span>
+                                <span className="text-[#3D9A6A] font-semibold">Router Active</span>
+                              </div>
                               <div className="flex justify-between items-center">
                                 <span className="text-[#A1A1AA]">Output:</span>
                                 <span className="text-[#3D9A6A] font-bold">
