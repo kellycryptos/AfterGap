@@ -1153,8 +1153,13 @@ export default function Home() {
     } catch (err: any) {
       const fallbackBest = DEFAULT_BENCHMARK_QUOTES[contract.toLowerCase()] || DEFAULT_BENCHMARK_QUOTES['0x02fca66c1d1afb4e2a7884261eb00f63598a7436'];
       if (fallbackBest) {
+        const unitPrice = Number(fallbackBest.toToken?.tokenUnitPrice || '229.11');
+        const numInput = Number(usdtAmountStr);
+        const calculatedOutput = unitPrice > 0 ? numInput / unitPrice : 0;
+        const toTokenAmountFormatted = calculatedOutput.toFixed(6);
         const toDecimals = Number(fallbackBest.toToken?.decimal || 18);
-        const toTokenAmountFormatted = (Number(fallbackBest.toTokenAmount) / 10 ** toDecimals).toFixed(6);
+        const toTokenAmountScaled = BigInt(Math.floor(calculatedOutput * 10 ** toDecimals)).toString();
+
         setQuotes((prev) => ({
           ...prev,
           [contract]: {
@@ -1170,7 +1175,11 @@ export default function Home() {
             router: fallbackBest.router,
             fetchedAt: Date.now(),
             ttlRemaining: 30,
-            rawQuote: fallbackBest,
+            rawQuote: {
+              ...fallbackBest,
+              fromTokenAmount: amountInSmallestUnit,
+              toTokenAmount: toTokenAmountScaled,
+            },
             isFallback: true,
           },
         }));
@@ -1884,6 +1893,10 @@ export default function Home() {
                                 </span>
                                 <span className="text-[#3D9A6A] font-semibold">Router Active</span>
                               </div>
+                              <div className="flex justify-between items-center text-[10px]">
+                                <span className="text-[#A1A1AA]">Input Amount:</span>
+                                <span className="text-[#F5F5F4] font-semibold">{quote.fromAmount} USDT</span>
+                              </div>
                               <div className="flex justify-between items-center">
                                 <span className="text-[#A1A1AA]">Output:</span>
                                 <span className="text-[#3D9A6A] font-bold">
@@ -2224,6 +2237,10 @@ export default function Home() {
                                   <span>Route: {quote.vendorName || 'Ondo'} ({quote.executionMode || 'RFQ'})</span>
                                 </span>
                                 <span className="text-[#3D9A6A] font-semibold">Router Active</span>
+                              </div>
+                              <div className="flex justify-between items-center text-[10px]">
+                                <span className="text-[#A1A1AA]">Input Amount:</span>
+                                <span className="text-[#F5F5F4] font-semibold">{quote.fromAmount} USDT</span>
                               </div>
                               <div className="flex justify-between items-center">
                                 <span className="text-[#A1A1AA]">Output:</span>

@@ -775,10 +775,22 @@ export async function GET(request: NextRequest) {
         const isQuoteBlocked = !quoteRes.success || (quoteRes.data as any)?.code === 40304;
 
         if (isQuoteBlocked) {
+          const reqAmountNum = Number(BigInt(amount)) / 1e18;
           const fallbackQuote = (
             BENCHMARK_QUOTES[toTokenAddress.toLowerCase()] ||
             BENCHMARK_QUOTES['0x02fca66c1d1afb4e2a7884261eb00f63598a7436']
-          ).map((q: any) => ({ ...q, isFallback: true }));
+          ).map((q: any) => {
+            const unitPrice = Number(q.toToken?.tokenUnitPrice || '229.11');
+            const calculatedOutput = unitPrice > 0 ? reqAmountNum / unitPrice : 0;
+            const toDecimals = Number(q.toToken?.decimal || 18);
+            const toTokenAmountScaled = BigInt(Math.floor(calculatedOutput * 10 ** toDecimals)).toString();
+            return {
+              ...q,
+              fromTokenAmount: amount,
+              toTokenAmount: toTokenAmountScaled,
+              isFallback: true,
+            };
+          });
 
           quoteRes = {
             success: true,
