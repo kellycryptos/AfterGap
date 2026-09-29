@@ -2,7 +2,7 @@
   "name": "aftergap-tokenized-stocks",
   "version": "1.0.0",
   "description": "AfterGap Agentic Skill for autonomous tokenized stock arbitrage and optimal routing across bStocks and Ondo on BNB Smart Chain (BSC 56).",
-  "author": "kellycryptos",
+  "author": "aftergap",
   "repository": "https://github.com/kellycryptos/AfterGap",
   "homepage": "https://www.aftergap.xyz/",
   "chains": [56],

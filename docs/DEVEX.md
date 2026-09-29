@@ -2,6 +2,7 @@
 
 **Product:** AfterGap  
 **Tagline:** Same stock, dual wrappers, live gap.  
+**Official X:** [@aftergap](https://x.com/aftergap)  
 **Ecosystem:** Binance Web3 Developer Infrastructure & BNB Smart Chain  
 **Chain:** BNB Smart Chain Mainnet (`binanceChainId=56`)
 

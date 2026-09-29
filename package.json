@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "homepage": "https://www.aftergap.xyz/",
+  "author": "aftergap",
   "description": "Same stock, dual wrappers, live gap. Real-time tokenized US stock price comparison, reference gap analysis, and best-execution routing across bStocks and Ondo on BNB Smart Chain.",
   "workspaces": [
     "packages/*",
