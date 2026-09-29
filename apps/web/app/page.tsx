@@ -1142,18 +1142,6 @@ export default function Home() {
 
           {/* Top Bar Actions */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <a
-              href="https://x.com/aftergap"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-mono font-medium text-[#A1A1AA] hover:text-[#F5F5F4] bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] transition"
-              title="Official X: @aftergap"
-            >
-              <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-              </svg>
-              <span>@aftergap</span>
-            </a>
             {wallet.connected && wallet.address ? (
               <div className="flex items-center gap-2">
                 {/* Balances (desktop only) */}
