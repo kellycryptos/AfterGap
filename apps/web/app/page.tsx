@@ -2266,7 +2266,7 @@ export default function Home() {
               GitHub
             </a>
             <a
-              href="https://x.com/kellycryptos"
+              href="https://x.com/aftergap"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-[#F5F5F4] transition"

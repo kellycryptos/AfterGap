@@ -385,7 +385,7 @@ To maintain 100% honesty and complete functionality across both environments:
 1. **Local Developer & AI Agent Layer (`packages/agent`):**
    - Runs in residential/local environments where `web3.binance.com` is directly accessible.
    - Pulls 488 live tokens, fetches live executable RFQ quotes from LiquidMesh, and runs autonomous MCP multi-turn reasoning loops.
-2. **Cloud Web Deployment (`https://aftergap.xyz` / `https://after-gap-web.vercel.app/`):**
+2. **Cloud Web Deployment (`https://www.aftergap.xyz/`):**
    - Because CloudFront `40304` blocks Vercel's serverless edge, the deployed web app operates in **Verified Benchmark Reference Mode** for dual-wrapper pricing comparisons.
    - Every card displays a prominent, transparent banner: *"Benchmark Reference Pricing — Binance Web3 Gateway restricts serverless datacenter IPs (40304). Prices shown are verified benchmark data; on-chain swaps execute live via BSC RPC."*
    - Cards display **"On-Chain Verified"** status tied to real on-chain token contracts, completely eliminating misleading "Live" claims.

@@ -8,7 +8,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://aftergap.xyz'),
+  metadataBase: new URL('https://www.aftergap.xyz'),
   title: 'AfterGap | Same stock, dual wrappers, live gap.',
   description:
     'Compare the same US name across bStocks and Ondo on BSC, show the cash-hours vs overnight gap, and let a user buy the best live spot route in plain English.',
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     title: 'AfterGap | Same stock, dual wrappers, live gap.',
     description:
       'Real-time dual-wrapper US stock price comparison, reference gap analysis, and best-execution routing across bStocks and Ondo on BNB Smart Chain.',
-    url: 'https://aftergap.xyz',
+    url: 'https://www.aftergap.xyz',
     siteName: 'AfterGap',
     type: 'website',
   },
@@ -36,6 +36,8 @@ export const metadata: Metadata = {
     title: 'AfterGap | Same stock, dual wrappers, live gap.',
     description:
       'Real-time dual-wrapper US stock price comparison, reference gap analysis, and best-execution routing across bStocks and Ondo on BNB Smart Chain.',
+    site: '@aftergap',
+    creator: '@aftergap',
   },
 };
 

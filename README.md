@@ -4,13 +4,15 @@
 
 Real-time dual-wrapper US stock price comparison, reference gap analysis, and best-execution routing across **bStocks** and **Ondo** on BNB Smart Chain (`binanceChainId=56`).
 
-**Live Production App:** [https://aftergap.xyz](https://aftergap.xyz) (Mirror: [https://after-gap-web.vercel.app](https://after-gap-web.vercel.app))  
+**Live Production App:** [https://www.aftergap.xyz/](https://www.aftergap.xyz/)  
+**Official X / Twitter:** [@aftergap](https://x.com/aftergap)  
 **Track:** BNB Hack: Tokenized Stocks Edition (Chain ID: 56)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Network: BNB Smart Chain](https://img.shields.io/badge/Network-BNB%20Smart%20Chain%20(56)-F3BA2F.svg)](https://bscscan.com)
 [![Next.js 15](https://img.shields.io/badge/Next.js-15.1-black.svg)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
+[![X (Twitter)](https://img.shields.io/badge/X-@aftergap-000000?style=flat&logo=x&logoColor=white)](https://x.com/aftergap)
 
 ---
 

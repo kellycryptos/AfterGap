@@ -10,12 +10,16 @@
   },
   "dependencies": {
     "@aftergap/api": "*",
+    "border-beam": "^1.4.1",
+    "bot-avatars": "^0.1.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.16.0",
+    "metal-fx": "^2.0.11",
     "next": "^15.1.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "tailwind-merge": "^3.0.1"
+    "tailwind-merge": "^3.0.1",
+    "thinking-orbs": "^0.3.2"
   },
   "devDependencies": {
     "@types/node": "^22.13.0",
