@@ -951,7 +951,7 @@ export default function Home() {
     const contract = token.tokenContractAddress || token.contractAddress || token.tokenAddress;
     if (!contract) return;
 
-    const usdtAmountStr = amounts[contract] || '10';
+    const usdtAmountStr = amounts[contract] && Number(amounts[contract]) > 0 ? amounts[contract] : '10';
     const amountInSmallestUnit = (BigInt(Math.floor(Number(usdtAmountStr) * 1e6)) * BigInt(1e12)).toString(); // 18 decimals
 
     setQuotes((prev) => ({
@@ -1612,7 +1612,7 @@ export default function Home() {
 
                     const quote = quotes[contract];
                     const sim = simulations[contract];
-                    const inputAmount = amounts[contract] || '10';
+                    const inputAmount = amounts[contract] !== undefined ? amounts[contract] : '10';
 
                     return (
                       <div
@@ -1943,7 +1943,7 @@ export default function Home() {
 
                     const quote = quotes[contract];
                     const sim = simulations[contract];
-                    const inputAmount = amounts[contract] || '10';
+                    const inputAmount = amounts[contract] !== undefined ? amounts[contract] : '10';
 
                     return (
                       <div
