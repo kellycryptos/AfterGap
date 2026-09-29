@@ -1186,10 +1186,10 @@ export default function Home() {
             <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full text-xs font-mono bg-white/[0.03] border border-white/[0.06] whitespace-nowrap shrink-0">
               <ThinkingOrb state={loading ? 'searching' : 'breathing'} size={20} theme="dark" />
               <span className="text-[#A1A1AA] hidden sm:inline">
-                {isAuthed ? `Signed (${data?.auth?.apiKeyPrefix})` : 'Public Gateway (BSC 56)'}
+                {isAuthed ? `Signed (${data?.auth?.apiKeyPrefix})` : 'BSC 56 Gateway'}
               </span>
               <span className="text-[#A1A1AA] sm:hidden text-[11px]">
-                {isAuthed ? 'Signed' : 'Live'}
+                {isAuthed ? 'Signed' : 'BSC 56'}
               </span>
             </div>
           </div>
