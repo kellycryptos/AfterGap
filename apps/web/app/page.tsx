@@ -1,6 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { BorderBeam } from 'border-beam';
+import { ThinkingOrb } from 'thinking-orbs';
+import { BotAvatar } from 'bot-avatars';
+import { MetalFx } from 'metal-fx';
 
 interface ApiResponseData {
   auth?: {
@@ -1121,10 +1125,10 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <div className="flex items-center gap-2">
-              <img
-                src="/icon.png"
-                alt="AfterGap AG Logo"
-                className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg shadow-md shadow-[#F5C542]/20 border border-[#F5C542]/30 shrink-0 object-cover"
+              <BotAvatar
+                type="mech"
+                state={loading ? 'working' : 'default'}
+                size={32}
               />
               <span className="text-lg sm:text-2xl font-bold tracking-tight text-[#F5C542] shrink-0">
                 AfterGap
@@ -1168,10 +1172,7 @@ export default function Home() {
               >
                 {wallet.connecting ? (
                   <>
-                    <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                    </svg>
+                    <ThinkingOrb state="connecting" size={20} theme="dark" />
                     <span>Connecting…</span>
                   </>
                 ) : (
@@ -1185,7 +1186,7 @@ export default function Home() {
 
             {/* Compact Auth Chip (Public Gateway status) */}
             <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full text-xs font-mono bg-white/[0.03] border border-white/[0.06] whitespace-nowrap shrink-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#3D9A6A] shrink-0" />
+              <ThinkingOrb state={loading ? 'searching' : 'breathing'} size={20} theme="dark" />
               <span className="text-[#A1A1AA] hidden sm:inline">
                 {isAuthed ? `Signed (${data?.auth?.apiKeyPrefix})` : 'Public Gateway (BSC 56)'}
               </span>
@@ -1230,20 +1231,29 @@ export default function Home() {
           {/* Ticker Search Form */}
           <form onSubmit={handleSubmit} className="flex gap-2.5">
             <div className="relative flex-1">
-              <input
-                type="text"
-                value={ticker}
-                onChange={(e) => setTicker(e.target.value.toUpperCase())}
-                placeholder="Ticker e.g. NVDA"
-                className="w-full bg-[#07070A] border border-white/[0.06] rounded-lg px-4 py-2.5 text-[#F5F5F4] placeholder-[#A1A1AA]/50 font-mono text-sm uppercase focus:outline-none focus:border-[#F5C542]/60 transition"
-              />
+              <BorderBeam size="line" colorVariant="sunset" active={loading}>
+                <input
+                  type="text"
+                  value={ticker}
+                  onChange={(e) => setTicker(e.target.value.toUpperCase())}
+                  placeholder="Ticker e.g. NVDA"
+                  className="w-full bg-[#07070A] border border-white/[0.06] rounded-lg px-4 py-2.5 text-[#F5F5F4] placeholder-[#A1A1AA]/50 font-mono text-sm uppercase focus:outline-none focus:border-[#F5C542]/60 transition"
+                />
+              </BorderBeam>
             </div>
             <button
               type="submit"
               disabled={loading}
-              className="bg-[#F5C542] hover:bg-[#E0B02E] disabled:opacity-50 text-[#07070A] font-semibold px-5 py-2.5 rounded-lg text-sm transition"
+              className="bg-[#F5C542] hover:bg-[#E0B02E] disabled:opacity-50 text-[#07070A] font-semibold px-5 py-2.5 rounded-lg text-sm transition flex items-center justify-center gap-1.5 min-w-[105px]"
             >
-              {loading ? 'Inspecting...' : 'Inspect'}
+              {loading ? (
+                <>
+                  <ThinkingOrb state="searching" size={20} theme="light" />
+                  <span>Inspecting...</span>
+                </>
+              ) : (
+                'Inspect'
+              )}
             </button>
           </form>
 
@@ -1448,113 +1458,120 @@ export default function Home() {
               className="pointer-events-none absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-[#F5C542]/30 via-[#3D9A6A]/25 to-[#F5C542]/20 blur-md opacity-75 group-hover:opacity-100 transition duration-500"
             />
 
-            <div className="relative rounded-2xl bg-[#121214] border border-[#F5C542]/30 p-5 sm:p-6 shadow-2xl backdrop-blur-xl space-y-4">
-              {/* Header Badges */}
-              <div className="flex items-center justify-between gap-2 pb-3 border-b border-white/[0.06]">
-                <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
-                  <span className="relative flex h-2 sm:h-2.5 w-2 sm:w-2.5 shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#3D9A6A] opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 sm:h-2.5 w-2 sm:w-2.5 bg-[#3D9A6A]"></span>
-                  </span>
-                  <span className="text-[11px] sm:text-xs font-mono uppercase tracking-wider text-[#F5C542] font-bold truncate">
-                    Smart Route<span className="hidden sm:inline"> Recommendation</span>
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30 font-semibold whitespace-nowrap shrink-0">
-                    Cheapest<span className="hidden sm:inline"> Wrapper</span>
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06] font-semibold whitespace-nowrap shrink-0">
-                    Dual-Wrapper Arbitrage
-                  </span>
+            <BorderBeam size="md" colorVariant="sunset" active={true} className="w-full rounded-2xl">
+              <div className="relative rounded-2xl bg-[#121214] border border-[#F5C542]/30 p-5 sm:p-6 shadow-2xl backdrop-blur-xl space-y-4">
+                {/* Header Badges */}
+                <div className="flex items-center justify-between gap-2 pb-3 border-b border-white/[0.06]">
+                  <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0">
+                    <span className="relative flex h-2 sm:h-2.5 w-2 sm:w-2.5 shrink-0">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#3D9A6A] opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 sm:h-2.5 w-2 sm:w-2.5 bg-[#3D9A6A]"></span>
+                    </span>
+                    <span className="text-[11px] sm:text-xs font-mono uppercase tracking-wider text-[#F5C542] font-bold truncate">
+                      Smart Route<span className="hidden sm:inline"> Recommendation</span>
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30 font-semibold whitespace-nowrap shrink-0">
+                      Cheapest<span className="hidden sm:inline"> Wrapper</span>
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06] font-semibold whitespace-nowrap shrink-0">
+                      Dual-Wrapper Arbitrage
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-mono text-[#A1A1AA] shrink-0">
+                    <span className="px-1.5 sm:px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] text-[10px]">
+                      BSC 56
+                    </span>
+                    <span className="hidden sm:inline">Best Execution Guaranteed</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-mono text-[#A1A1AA] shrink-0">
-                  <span className="px-1.5 sm:px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] text-[10px]">
-                    BSC 56
-                  </span>
-                  <span className="hidden sm:inline">Best Execution Guaranteed</span>
+
+                {/* Plain English Hero Sentence */}
+                <div className="py-1">
+                  <p className="text-base sm:text-lg md:text-xl font-medium tracking-tight text-[#F5F5F4] leading-relaxed">
+                    <span className="inline-block mr-1">💡</span>
+                    <span className="font-semibold text-white">Best Route:</span>{' '}
+                    {bestRoute.action}{' '}
+                    <span className="font-bold text-[#F5C542] font-mono px-2 py-0.5 rounded bg-[#F5C542]/10 border border-[#F5C542]/20">
+                      {bestRoute.symbol}
+                    </span>{' '}
+                    at{' '}
+                    <span className="font-bold text-white font-mono">
+                      ${bestRoute.price}
+                    </span>{' '}
+                    <span className="text-[#3D9A6A] font-semibold">
+                      (Saves ${bestRoute.savings} vs {bestRoute.otherSymbol}, {bestRoute.spreadToCash}% spread to cash)
+                    </span>{' '}
+                    via{' '}
+                    <span className="font-semibold text-[#F5F5F4] underline decoration-[#F5C542]/50 decoration-2 underline-offset-4 font-mono">
+                      {bestRoute.venue}
+                    </span>
+                    .
+                  </p>
+                </div>
+
+                {/* Breakdown Metrics & Quick Action Bar */}
+                <div className="pt-3 border-t border-white/[0.06] grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono items-center">
+                  <div>
+                    <span className="text-[#A1A1AA] text-[10px] block uppercase">Cheapest Wrapper</span>
+                    <span className="text-[#F5F5F4] font-semibold flex items-center gap-1.5 mt-0.5">
+                      {bestRoute.symbol}
+                      <span className="text-[10px] text-[#A1A1AA]">({bestRoute.cheaperName})</span>
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-[#A1A1AA] text-[10px] block uppercase">Direct Savings</span>
+                    <span className="text-[#3D9A6A] font-bold mt-0.5 block">
+                      +${bestRoute.savings} ({bestRoute.savingsPercent}%)
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-[#A1A1AA] text-[10px] block uppercase">Spread to Cash</span>
+                    <span className="text-[#F5C542] font-semibold mt-0.5 block">
+                      {bestRoute.spreadToCash}% Basis
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-start sm:justify-end">
+                    {bestRoute.token ? (
+                      <button
+                        type="button"
+                        onClick={() => handleGetQuote(bestRoute.token)}
+                        disabled={quotes[bestRoute.token.tokenContractAddress || '']?.loading}
+                        className="w-full sm:w-auto px-3.5 py-2 bg-[#F5C542] hover:bg-[#E0B02E] disabled:opacity-50 text-[#07070A] font-bold rounded-lg text-xs font-mono transition flex items-center justify-center gap-1.5 shadow-lg shadow-[#F5C542]/10"
+                      >
+                        {quotes[bestRoute.token.tokenContractAddress || '']?.loading ? (
+                          <>
+                            <ThinkingOrb state="working" size={20} theme="light" />
+                            <span>Quoting...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>Quote Best Route</span>
+                            <span>⚡</span>
+                          </>
+                        )}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const tok =
+                            allResolvedTokens.find((t) => t.tokenSymbol === bestRoute.symbol) ||
+                            bstocksTokens[0];
+                          if (tok) handleGetQuote(tok);
+                        }}
+                        className="w-full sm:w-auto px-3.5 py-2 bg-[#F5C542] hover:bg-[#E0B02E] text-[#07070A] font-bold rounded-lg text-xs font-mono transition flex items-center justify-center gap-1.5 shadow-lg shadow-[#F5C542]/10"
+                      >
+                        <span>Quote Best Route</span>
+                        <span>⚡</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-
-              {/* Plain English Hero Sentence */}
-              <div className="py-1">
-                <p className="text-base sm:text-lg md:text-xl font-medium tracking-tight text-[#F5F5F4] leading-relaxed">
-                  <span className="inline-block mr-1">💡</span>
-                  <span className="font-semibold text-white">Best Route:</span>{' '}
-                  {bestRoute.action}{' '}
-                  <span className="font-bold text-[#F5C542] font-mono px-2 py-0.5 rounded bg-[#F5C542]/10 border border-[#F5C542]/20">
-                    {bestRoute.symbol}
-                  </span>{' '}
-                  at{' '}
-                  <span className="font-bold text-white font-mono">
-                    ${bestRoute.price}
-                  </span>{' '}
-                  <span className="text-[#3D9A6A] font-semibold">
-                    (Saves ${bestRoute.savings} vs {bestRoute.otherSymbol}, {bestRoute.spreadToCash}% spread to cash)
-                  </span>{' '}
-                  via{' '}
-                  <span className="font-semibold text-[#F5F5F4] underline decoration-[#F5C542]/50 decoration-2 underline-offset-4 font-mono">
-                    {bestRoute.venue}
-                  </span>
-                  .
-                </p>
-              </div>
-
-              {/* Breakdown Metrics & Quick Action Bar */}
-              <div className="pt-3 border-t border-white/[0.06] grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono items-center">
-                <div>
-                  <span className="text-[#A1A1AA] text-[10px] block uppercase">Cheapest Wrapper</span>
-                  <span className="text-[#F5F5F4] font-semibold flex items-center gap-1.5 mt-0.5">
-                    {bestRoute.symbol}
-                    <span className="text-[10px] text-[#A1A1AA]">({bestRoute.cheaperName})</span>
-                  </span>
-                </div>
-
-                <div>
-                  <span className="text-[#A1A1AA] text-[10px] block uppercase">Direct Savings</span>
-                  <span className="text-[#3D9A6A] font-bold mt-0.5 block">
-                    +${bestRoute.savings} ({bestRoute.savingsPercent}%)
-                  </span>
-                </div>
-
-                <div>
-                  <span className="text-[#A1A1AA] text-[10px] block uppercase">Spread to Cash</span>
-                  <span className="text-[#F5C542] font-semibold mt-0.5 block">
-                    {bestRoute.spreadToCash}% Basis
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-start sm:justify-end">
-                  {bestRoute.token ? (
-                    <button
-                      type="button"
-                      onClick={() => handleGetQuote(bestRoute.token)}
-                      disabled={quotes[bestRoute.token.tokenContractAddress || '']?.loading}
-                      className="w-full sm:w-auto px-3.5 py-2 bg-[#F5C542] hover:bg-[#E0B02E] disabled:opacity-50 text-[#07070A] font-bold rounded-lg text-xs font-mono transition flex items-center justify-center gap-1.5 shadow-lg shadow-[#F5C542]/10"
-                    >
-                      <span>
-                        {quotes[bestRoute.token.tokenContractAddress || '']?.loading
-                          ? 'Quoting...'
-                          : 'Quote Best Route'}
-                      </span>
-                      <span>⚡</span>
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const tok =
-                          allResolvedTokens.find((t) => t.tokenSymbol === bestRoute.symbol) ||
-                          bstocksTokens[0];
-                        if (tok) handleGetQuote(tok);
-                      }}
-                      className="w-full sm:w-auto px-3.5 py-2 bg-[#F5C542] hover:bg-[#E0B02E] text-[#07070A] font-bold rounded-lg text-xs font-mono transition flex items-center justify-center gap-1.5 shadow-lg shadow-[#F5C542]/10"
-                    >
-                      <span>Quote Best Route</span>
-                      <span>⚡</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
+            </BorderBeam>
           </div>
         )}
 
@@ -1687,9 +1704,16 @@ export default function Home() {
                               type="button"
                               onClick={() => handleGetQuote(t)}
                               disabled={quote?.loading}
-                              className="px-3 py-1 bg-[#F5C542]/10 hover:bg-[#F5C542]/20 border border-[#F5C542]/30 text-[#F5C542] rounded text-xs font-mono transition disabled:opacity-50"
+                              className="px-3 py-1 bg-[#F5C542]/10 hover:bg-[#F5C542]/20 border border-[#F5C542]/30 text-[#F5C542] rounded text-xs font-mono transition disabled:opacity-50 flex items-center justify-center gap-1.5 min-w-[85px]"
                             >
-                              {quote?.loading ? 'Quoting...' : 'Get Quote'}
+                              {quote?.loading ? (
+                                <>
+                                  <ThinkingOrb state="working" size={20} theme="dark" />
+                                  <span>Quoting...</span>
+                                </>
+                              ) : (
+                                'Get Quote'
+                              )}
                             </button>
                           </div>
 
@@ -1741,9 +1765,16 @@ export default function Home() {
                                   type="button"
                                   onClick={() => handleSimulate(t)}
                                   disabled={sim?.loading || (quote.ttlRemaining || 0) <= 0}
-                                  className="w-full py-1 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-[#F5F5F4] rounded text-center text-[11px] font-mono transition disabled:opacity-40"
+                                  className="w-full py-1 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-[#F5F5F4] rounded text-center text-[11px] font-mono transition disabled:opacity-40 flex items-center justify-center gap-1.5"
                                 >
-                                  {sim?.loading ? 'Simulating via BSC eth_call...' : 'Simulate Swap (eth_call)'}
+                                  {sim?.loading ? (
+                                    <>
+                                      <ThinkingOrb state="solving" size={20} theme="dark" />
+                                      <span>Simulating via BSC eth_call...</span>
+                                    </>
+                                  ) : (
+                                    'Simulate Swap (eth_call)'
+                                  )}
                                 </button>
                               </div>
 
@@ -1817,32 +1848,31 @@ export default function Home() {
                                         ) : bc?.step === 'error' ? (
                                           <p className="text-[10px] text-[#C45C26]">{bc.error}</p>
                                         ) : (
-                                          <button
-                                            type="button"
-                                            onClick={() => wallet.connected ? handleApproveAndExecute(t) : connectWallet()}
-                                            disabled={bc?.loading || (quote.ttlRemaining || 0) <= 0}
-                                            className={`w-full py-1.5 rounded text-[11px] font-mono font-semibold transition disabled:opacity-40 flex items-center justify-center gap-1.5 ${
-                                              wallet.connected
-                                                ? 'bg-[#3D9A6A]/15 hover:bg-[#3D9A6A]/25 border border-[#3D9A6A]/40 text-[#3D9A6A]'
-                                                : 'bg-[#F5C542]/10 hover:bg-[#F5C542]/20 border border-[#F5C542]/30 text-[#F5C542]'
-                                            }`}
-                                          >
-                                            {bc?.loading ? (
-                                              <>
-                                                <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
-                                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                                                </svg>
-                                                <span>
-                                                  {bc.step === 'approving' ? 'Approving USDT...' : bc.step === 'approved' ? 'Approved! Swapping...' : 'Broadcasting...'}
-                                                </span>
-                                              </>
-                                            ) : wallet.connected ? (
-                                              '🚀 Execute Live Swap on BSC'
-                                            ) : (
-                                              '🔗 Connect Wallet to Execute'
-                                            )}
-                                          </button>
+                                          <MetalFx variant="button" preset="gold" strength={0.85}>
+                                            <button
+                                              type="button"
+                                              onClick={() => wallet.connected ? handleApproveAndExecute(t) : connectWallet()}
+                                              disabled={bc?.loading || (quote.ttlRemaining || 0) <= 0}
+                                              className={`w-full py-1.5 px-3 rounded text-[11px] font-mono font-semibold transition disabled:opacity-40 flex items-center justify-center gap-1.5 ${
+                                                wallet.connected
+                                                  ? 'bg-[#3D9A6A]/15 hover:bg-[#3D9A6A]/25 border border-[#3D9A6A]/40 text-[#3D9A6A]'
+                                                  : 'bg-[#F5C542]/10 hover:bg-[#F5C542]/20 border border-[#F5C542]/30 text-[#F5C542]'
+                                              }`}
+                                            >
+                                              {bc?.loading ? (
+                                                <>
+                                                  <ThinkingOrb state="connecting" size={20} theme="dark" />
+                                                  <span>
+                                                    {bc.step === 'approving' ? 'Approving USDT...' : bc.step === 'approved' ? 'Approved! Swapping...' : 'Broadcasting...'}
+                                                  </span>
+                                                </>
+                                              ) : wallet.connected ? (
+                                                '🚀 Execute Live Swap on BSC'
+                                              ) : (
+                                                '🔗 Connect Wallet to Execute'
+                                              )}
+                                            </button>
+                                          </MetalFx>
                                         )}
                                       </div>
                                     );
@@ -2002,9 +2032,16 @@ export default function Home() {
                               type="button"
                               onClick={() => handleGetQuote(t)}
                               disabled={quote?.loading}
-                              className="px-3 py-1 bg-[#F5C542]/10 hover:bg-[#F5C542]/20 border border-[#F5C542]/30 text-[#F5C542] rounded text-xs font-mono transition disabled:opacity-50"
+                              className="px-3 py-1 bg-[#F5C542]/10 hover:bg-[#F5C542]/20 border border-[#F5C542]/30 text-[#F5C542] rounded text-xs font-mono transition disabled:opacity-50 flex items-center justify-center gap-1.5 min-w-[85px]"
                             >
-                              {quote?.loading ? 'Quoting...' : 'Get Quote'}
+                              {quote?.loading ? (
+                                <>
+                                  <ThinkingOrb state="working" size={20} theme="dark" />
+                                  <span>Quoting...</span>
+                                </>
+                              ) : (
+                                'Get Quote'
+                              )}
                             </button>
                           </div>
 
@@ -2056,9 +2093,16 @@ export default function Home() {
                                   type="button"
                                   onClick={() => handleSimulate(t)}
                                   disabled={sim?.loading || (quote.ttlRemaining || 0) <= 0}
-                                  className="w-full py-1 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-[#F5F5F4] rounded text-center text-[11px] font-mono transition disabled:opacity-40"
+                                  className="w-full py-1 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-[#F5F5F4] rounded text-center text-[11px] font-mono transition disabled:opacity-40 flex items-center justify-center gap-1.5"
                                 >
-                                  {sim?.loading ? 'Simulating via BSC eth_call...' : 'Simulate Swap (eth_call)'}
+                                  {sim?.loading ? (
+                                    <>
+                                      <ThinkingOrb state="solving" size={20} theme="dark" />
+                                      <span>Simulating via BSC eth_call...</span>
+                                    </>
+                                  ) : (
+                                    'Simulate Swap (eth_call)'
+                                  )}
                                 </button>
                               </div>
 
@@ -2132,32 +2176,31 @@ export default function Home() {
                                         ) : bc?.step === 'error' ? (
                                           <p className="text-[10px] text-[#C45C26]">{bc.error}</p>
                                         ) : (
-                                          <button
-                                            type="button"
-                                            onClick={() => wallet.connected ? handleApproveAndExecute(t) : connectWallet()}
-                                            disabled={bc?.loading || (quote.ttlRemaining || 0) <= 0}
-                                            className={`w-full py-1.5 rounded text-[11px] font-mono font-semibold transition disabled:opacity-40 flex items-center justify-center gap-1.5 ${
-                                              wallet.connected
-                                                ? 'bg-[#3D9A6A]/15 hover:bg-[#3D9A6A]/25 border border-[#3D9A6A]/40 text-[#3D9A6A]'
-                                                : 'bg-[#F5C542]/10 hover:bg-[#F5C542]/20 border border-[#F5C542]/30 text-[#F5C542]'
-                                            }`}
-                                          >
-                                            {bc?.loading ? (
-                                              <>
-                                                <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
-                                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                                                </svg>
-                                                <span>
-                                                  {bc.step === 'approving' ? 'Approving USDT...' : bc.step === 'approved' ? 'Approved! Swapping...' : 'Broadcasting...'}
-                                                </span>
-                                              </>
-                                            ) : wallet.connected ? (
-                                              '🚀 Execute Live Swap on BSC'
-                                            ) : (
-                                              '🔗 Connect Wallet to Execute'
-                                            )}
-                                          </button>
+                                          <MetalFx variant="button" preset="gold" strength={0.85}>
+                                            <button
+                                              type="button"
+                                              onClick={() => wallet.connected ? handleApproveAndExecute(t) : connectWallet()}
+                                              disabled={bc?.loading || (quote.ttlRemaining || 0) <= 0}
+                                              className={`w-full py-1.5 px-3 rounded text-[11px] font-mono font-semibold transition disabled:opacity-40 flex items-center justify-center gap-1.5 ${
+                                                wallet.connected
+                                                  ? 'bg-[#3D9A6A]/15 hover:bg-[#3D9A6A]/25 border border-[#3D9A6A]/40 text-[#3D9A6A]'
+                                                  : 'bg-[#F5C542]/10 hover:bg-[#F5C542]/20 border border-[#F5C542]/30 text-[#F5C542]'
+                                              }`}
+                                            >
+                                              {bc?.loading ? (
+                                                <>
+                                                  <ThinkingOrb state="connecting" size={20} theme="dark" />
+                                                  <span>
+                                                    {bc.step === 'approving' ? 'Approving USDT...' : bc.step === 'approved' ? 'Approved! Swapping...' : 'Broadcasting...'}
+                                                  </span>
+                                                </>
+                                              ) : wallet.connected ? (
+                                                '🚀 Execute Live Swap on BSC'
+                                              ) : (
+                                                '🔗 Connect Wallet to Execute'
+                                              )}
+                                            </button>
+                                          </MetalFx>
                                         )}
                                       </div>
                                     );
