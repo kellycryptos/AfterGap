@@ -5,6 +5,8 @@ import { BorderBeam } from 'border-beam';
 import { ThinkingOrb } from 'thinking-orbs';
 import { BotAvatar } from 'bot-avatars';
 import { MetalFx } from 'metal-fx';
+import { Wallet } from 'lucide-react';
+import { AfterGapLogo } from './Logo';
 
 interface ApiResponseData {
   auth?: {
@@ -1124,12 +1126,8 @@ export default function Home() {
       <header className="w-full border-b border-white/[0.06] bg-[#07070A]/80 backdrop-blur-sm sticky top-0 z-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <div className="flex items-center gap-2">
-              <BotAvatar
-                type="mech"
-                state={loading ? 'working' : 'default'}
-                size={32}
-              />
+            <div className="flex items-center gap-2.5">
+              <AfterGapLogo className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl shadow-md shadow-[#F5C542]/20 shrink-0" />
               <span className="text-lg sm:text-2xl font-bold tracking-tight text-[#F5C542] shrink-0">
                 AfterGap
               </span>
@@ -1189,7 +1187,7 @@ export default function Home() {
                   </>
                 ) : (
                   <>
-                    <span className="text-base">🔗</span>
+                    <Wallet className="w-3.5 h-3.5" />
                     <span>Connect Wallet</span>
                   </>
                 )}
@@ -1881,7 +1879,10 @@ export default function Home() {
                                               ) : wallet.connected ? (
                                                 '🚀 Execute Live Swap on BSC'
                                               ) : (
-                                                '🔗 Connect Wallet to Execute'
+                                                <span className="flex items-center justify-center gap-1.5">
+                                                  <Wallet className="w-3.5 h-3.5" />
+                                                  <span>Connect Wallet to Execute</span>
+                                                </span>
                                               )}
                                             </button>
                                           </MetalFx>
@@ -2209,7 +2210,10 @@ export default function Home() {
                                               ) : wallet.connected ? (
                                                 '🚀 Execute Live Swap on BSC'
                                               ) : (
-                                                '🔗 Connect Wallet to Execute'
+                                                <span className="flex items-center justify-center gap-1.5">
+                                                  <Wallet className="w-3.5 h-3.5" />
+                                                  <span>Connect Wallet to Execute</span>
+                                                </span>
                                               )}
                                             </button>
                                           </MetalFx>

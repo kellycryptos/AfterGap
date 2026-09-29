@@ -14,6 +14,7 @@ export const metadata: Metadata = {
     'Compare the same US name across bStocks and Ondo on BSC, show the cash-hours vs overnight gap, and let a user buy the best live spot route in plain English.',
   icons: {
     icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
       { url: '/favicon.ico', sizes: 'any' },
       { url: '/icon.png', type: 'image/png', sizes: '512x512' },
       { url: '/favicon-32x32.png', type: 'image/png', sizes: '32x32' },
