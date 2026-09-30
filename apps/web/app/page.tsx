@@ -579,9 +579,10 @@ export default function Home() {
 
   // Wallet address for quote & simulation (default to standard BSC address)
   const [walletAddress, setWalletAddress] = useState('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045');
-  const [walletBalances, setWalletBalances] = useState<{ usdt: string; bnb: string; loading: boolean }>({
+  const [walletBalances, setWalletBalances] = useState<{ usdt: string; bnb: string; nvdab: string; loading: boolean }>({
     usdt: '—',
     bnb: '—',
+    nvdab: '—',
     loading: false,
   });
 
@@ -767,7 +768,7 @@ export default function Home() {
         // Poll until approval receipt is mined into a BSC block
         const confirmed = await waitForTxReceipt(txHash);
         if (!confirmed) {
-          throw new Error('USDT Approval transaction timed out or failed on BSC. Please check BSCScan.');
+          throw new Error('Token approval transaction timed out or failed on BSC. Please check BSCScan.');
         }
       }
 
@@ -832,19 +833,23 @@ export default function Home() {
         'https://bsc-dataseed1.ninicoin.io/',
       ];
       const usdtContract = '0x55d398326f99059fF775485246999027B3197955';
+      const nvdabContract = '0x02fca66c1d1afb4e2a7884261eb00f63598a7436';
       const usdtCallData = '0x70a08231000000000000000000000000' + address.slice(2).toLowerCase();
+      const nvdabCallData = '0x70a08231000000000000000000000000' + address.slice(2).toLowerCase();
 
       let bnbVal = '0.0000';
       let usdtVal = '0.00';
+      let nvdabVal = '0.0000';
       let fetchedOnChain = false;
 
       // 1. Direct wallet query via window.ethereum (100% reliable, zero CORS issues)
       const eth = typeof window !== 'undefined' ? (window as any).ethereum : null;
       if (eth?.request) {
         try {
-          const [bnbHex, usdtHex] = await Promise.all([
+          const [bnbHex, usdtHex, nvdabHex] = await Promise.all([
             eth.request({ method: 'eth_getBalance', params: [address, 'latest'] }),
             eth.request({ method: 'eth_call', params: [{ to: usdtContract, data: usdtCallData }, 'latest'] }),
+            eth.request({ method: 'eth_call', params: [{ to: nvdabContract, data: nvdabCallData }, 'latest'] }).catch(() => null),
           ]);
           if (bnbHex) {
             const rawBnb = BigInt(bnbHex);
@@ -856,6 +861,11 @@ export default function Home() {
             const rawUsdt = BigInt(usdtHex);
             usdtVal = (Number(rawUsdt) / 1e18).toFixed(2);
           }
+          if (nvdabHex && nvdabHex !== '0x') {
+            const rawNvdab = BigInt(nvdabHex);
+            const numNvdab = Number(rawNvdab) / 1e18;
+            nvdabVal = numNvdab > 0 && numNvdab < 0.0001 ? '<0.0001' : numNvdab.toFixed(4);
+          }
         } catch (e) {
           console.warn('Direct wallet balance query fallback:', e);
         }
@@ -865,7 +875,7 @@ export default function Home() {
       if (!fetchedOnChain) {
         for (const rpc of bscRpcs) {
           try {
-            const [bnbRes, usdtRes] = await Promise.all([
+            const [bnbRes, usdtRes, nvdabRes] = await Promise.all([
               fetch(rpc, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -876,6 +886,11 @@ export default function Home() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_call', params: [{ to: usdtContract, data: usdtCallData }, 'latest'] }),
               }).then((r) => r.json()),
+              fetch(rpc, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'eth_call', params: [{ to: nvdabContract, data: nvdabCallData }, 'latest'] }),
+              }).then((r) => r.json()).catch(() => null),
             ]);
 
             if (bnbRes?.result) {
@@ -887,6 +902,11 @@ export default function Home() {
             if (usdtRes?.result) {
               const rawUsdt = BigInt(usdtRes.result);
               usdtVal = (Number(rawUsdt) / 1e18).toFixed(2);
+            }
+            if (nvdabRes?.result && nvdabRes.result !== '0x') {
+              const rawNvdab = BigInt(nvdabRes.result);
+              const numNvdab = Number(rawNvdab) / 1e18;
+              nvdabVal = numNvdab > 0 && numNvdab < 0.0001 ? '<0.0001' : numNvdab.toFixed(4);
             }
             if (bnbRes?.result && usdtRes?.result) {
               break;
@@ -901,6 +921,7 @@ export default function Home() {
         setWalletBalances({
           usdt: usdtVal,
           bnb: bnbVal,
+          nvdab: nvdabVal,
           loading: false,
         });
         return;
@@ -916,6 +937,9 @@ export default function Home() {
       const bnbAsset = assets.find(
         (a) => a.symbol === 'BNB' || a.tokenContractAddress?.toLowerCase() === '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c'
       );
+      const nvdabAsset = assets.find(
+        (a) => a.tokenContractAddress?.toLowerCase() === nvdabContract.toLowerCase() || a.symbol === 'NVDAB'
+      );
       if (bnbAsset?.balance) {
         const numBnb = Number(bnbAsset.balance);
         bnbVal = numBnb > 0 && numBnb < 0.0001 ? '<0.0001' : numBnb.toFixed(4);
@@ -923,6 +947,7 @@ export default function Home() {
       setWalletBalances({
         usdt: usdtAsset ? Number(usdtAsset.balance).toFixed(2) : usdtVal,
         bnb: bnbVal,
+        nvdab: nvdabAsset ? Number(nvdabAsset.balance).toFixed(4) : nvdabVal,
         loading: false,
       });
     } catch {
@@ -1439,6 +1464,13 @@ export default function Home() {
                   <span className="text-white/20">|</span>
                   <span className="text-[#A1A1AA]">BNB:</span>
                   <span className="text-[#F5F5F4] font-semibold">{walletBalances.bnb}</span>
+                  {walletBalances.nvdab !== '—' && Number(walletBalances.nvdab) > 0 && (
+                    <>
+                      <span className="text-white/20">|</span>
+                      <span className="text-[#A1A1AA]">NVDAB:</span>
+                      <span className="text-[#3D9A6A] font-semibold">{walletBalances.nvdab}</span>
+                    </>
+                  )}
                 </div>
                 {/* Connected address chip */}
                 <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-xs font-mono bg-[#3D9A6A]/10 border border-[#3D9A6A]/30 whitespace-nowrap shrink-0">
@@ -1900,7 +1932,10 @@ export default function Home() {
 
                     const quote = quotes[contract];
                     const sim = simulations[contract];
-                    const inputAmount = amounts[contract] !== undefined ? amounts[contract] : '10';
+                    const direction = tradeDirections[contract.toLowerCase()] || 'buy';
+                    const isSell = direction === 'sell';
+                    const defaultAmount = isSell ? '0.0218' : '10';
+                    const inputAmount = amounts[contract] !== undefined ? amounts[contract] : defaultAmount;
 
                     return (
                       <div
@@ -1970,39 +2005,95 @@ export default function Home() {
 
                         {/* Trading API Quote Box */}
                         <div className="pt-2 border-t border-white/[0.04] space-y-2">
+                          {/* Buy / Sell Mode Toggle */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1 p-0.5 rounded-lg bg-black/40 border border-white/[0.06]">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (isSell) {
+                                    setTradeDirections((prev) => ({ ...prev, [contract.toLowerCase()]: 'buy' }));
+                                    setAmounts((prev) => ({ ...prev, [contract]: '10' }));
+                                    handleGetQuote(t, 'buy');
+                                  }
+                                }}
+                                className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-medium transition ${
+                                  !isSell
+                                    ? 'bg-[#3D9A6A]/20 text-[#3D9A6A] border border-[#3D9A6A]/40 font-bold'
+                                    : 'text-[#A1A1AA] hover:text-[#F5F5F4]'
+                                }`}
+                              >
+                                🟢 Buy {t.tokenSymbol}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (!isSell) {
+                                    setTradeDirections((prev) => ({ ...prev, [contract.toLowerCase()]: 'sell' }));
+                                    const userSellAmt = walletBalances.nvdab !== '—' && Number(walletBalances.nvdab) > 0 ? walletBalances.nvdab : '0.0218';
+                                    setAmounts((prev) => ({ ...prev, [contract]: userSellAmt }));
+                                    handleGetQuote(t, 'sell');
+                                  }
+                                }}
+                                className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-medium transition ${
+                                  isSell
+                                    ? 'bg-[#C45C26]/20 text-[#E07A5F] border border-[#C45C26]/40 font-bold'
+                                    : 'text-[#A1A1AA] hover:text-[#F5F5F4]'
+                                }`}
+                              >
+                                🔴 Sell {t.tokenSymbol}
+                              </button>
+                            </div>
+                            {isSell && walletBalances.nvdab !== '—' && (
+                              <span className="text-[10px] font-mono text-[#A1A1AA]">
+                                Bal: <span className="text-[#3D9A6A] font-semibold">{walletBalances.nvdab}</span> {t.tokenSymbol}
+                              </span>
+                            )}
+                          </div>
+
                           {/* Quick Amount Pills */}
                           <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
                             <span className="text-[10px] text-[#A1A1AA] font-mono shrink-0">Quick:</span>
-                            {['5', '10', '25', '50'].map((amt) => (
+                            {(!isSell ? ['5', '10', '25', '50'] : ['0.01', '0.02', '0.0218', '0.05']).map((amt) => (
                               <button
                                 key={amt}
                                 type="button"
                                 onClick={() => setAmounts((prev) => ({ ...prev, [contract]: amt }))}
                                 className={`px-2 py-0.5 rounded text-[10px] font-mono transition shrink-0 ${
-                                  (amounts[contract] || '10') === amt
+                                  (amounts[contract] || defaultAmount) === amt
                                     ? 'bg-[#F5C542]/20 text-[#F5C542] border border-[#F5C542]/40 font-semibold'
                                     : 'bg-white/[0.04] text-[#A1A1AA] hover:text-[#F5F5F4] border border-white/[0.06]'
                                 }`}
                               >
-                                {amt} USDT
+                                {amt} {!isSell ? 'USDT' : t.tokenSymbol}
                               </button>
                             ))}
+                            {isSell && walletBalances.nvdab !== '—' && Number(walletBalances.nvdab) > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => setAmounts((prev) => ({ ...prev, [contract]: walletBalances.nvdab }))}
+                                className="px-2 py-0.5 rounded text-[10px] font-mono bg-[#3D9A6A]/15 text-[#3D9A6A] hover:bg-[#3D9A6A]/25 border border-[#3D9A6A]/30 transition shrink-0 font-semibold"
+                              >
+                                MAX
+                              </button>
+                            )}
                           </div>
 
                           <div className="flex items-center gap-2">
                             <div className="relative flex-1">
                               <input
                                 type="number"
-                                min="5"
+                                min={isSell ? "0.001" : "5"}
+                                step={isSell ? "0.001" : "1"}
                                 value={inputAmount}
                                 onChange={(e) =>
                                   setAmounts((prev) => ({ ...prev, [contract]: e.target.value }))
                                 }
-                                placeholder="USDT (Min 5)"
+                                placeholder={isSell ? `${t.tokenSymbol} amount` : "USDT (Min 5)"}
                                 className="w-full bg-[#121214] border border-white/[0.06] rounded px-2.5 py-1 text-xs font-mono text-[#F5F5F4] focus:outline-none focus:border-[#F5C542]/50"
                               />
                               <span className="absolute right-2 top-1 text-[10px] text-[#A1A1AA] font-mono">
-                                USDT
+                                {isSell ? t.tokenSymbol : 'USDT'}
                               </span>
                             </div>
                             <button
@@ -2017,13 +2108,18 @@ export default function Home() {
                                   <span>Quoting...</span>
                                 </>
                               ) : (
-                                'Get Quote'
+                                isSell ? 'Sell Quote' : 'Get Quote'
                               )}
                             </button>
                           </div>
-                          {Number(inputAmount) < 5 && (
+                          {!isSell && Number(inputAmount) < 5 && (
                             <p className="text-[10px] text-[#F5C542] font-mono">
                               ℹ Binance Web3 RFQ requires min order of 5 USDT.
+                            </p>
+                          )}
+                          {isSell && Number(inputAmount) <= 0 && (
+                            <p className="text-[10px] text-[#F5C542] font-mono">
+                              ℹ Enter amount of {t.tokenSymbol} to sell for USDT.
                             </p>
                           )}
 
@@ -2040,7 +2136,7 @@ export default function Home() {
                               </div>
                               <div className="flex justify-between items-center text-[10px]">
                                 <span className="text-[#A1A1AA]">Input Amount:</span>
-                                <span className="text-[#F5F5F4] font-semibold">{quote.fromAmount} USDT</span>
+                                <span className="text-[#F5F5F4] font-semibold">{quote.fromAmount} {isSell ? t.tokenSymbol : 'USDT'}</span>
                               </div>
                               <div className="flex justify-between items-center">
                                 <span className="text-[#A1A1AA]">Output:</span>
@@ -2055,9 +2151,11 @@ export default function Home() {
                                 </span>
                               </div>
                               <div className="pt-1 border-t border-white/[0.04] text-[10px]">
-                                <span className="text-[#A1A1AA] block text-[9px] uppercase tracking-wider text-white/40">LiquidMesh Multi-Hop Route</span>
+                                <span className="text-[#A1A1AA] block text-[9px] uppercase tracking-wider text-white/40">LiquidMesh {isSell ? 'Reverse Hop Route' : 'Multi-Hop Route'}</span>
                                 <span className="text-[#F5C542] font-semibold text-[10px] break-words">
-                                  {t.tokenSymbol === 'NVDAon' ? 'USDT → NVDAB → NVDAon' : 'USDT → ASTER → WBNB → USDC → NVDAB'}
+                                  {isSell
+                                    ? `${t.tokenSymbol} → USDC → WBTC → BTCB → USDT (LiquidMesh / Elfomofi)`
+                                    : (t.tokenSymbol === 'NVDAon' ? 'USDT → NVDAB → NVDAon' : 'USDT → ASTER → WBNB → USDC → NVDAB')}
                                 </span>
                               </div>
 
@@ -2186,7 +2284,7 @@ export default function Home() {
 
                                             {bc.approveTxHash && (
                                               <div className="flex items-center justify-between text-[10px] text-[#A1A1AA] pt-0.5 border-t border-white/[0.04]">
-                                                <span>USDT Approval:</span>
+                                                <span>{isSell ? `${t.tokenSymbol} Approval:` : 'USDT Approval:'}</span>
                                                 <div className="flex items-center gap-1.5 font-mono">
                                                   <button
                                                     type="button"
@@ -2240,7 +2338,7 @@ export default function Home() {
                                                       {bc.step === 'preparing'
                                                         ? 'Preparing Route...'
                                                         : bc.step === 'approving'
-                                                        ? 'Approve USDT in wallet...'
+                                                        ? `Approve ${isSell ? t.tokenSymbol : 'USDT'} in wallet...`
                                                         : bc.step === 'waiting_receipt'
                                                         ? 'Confirming on BSC (~3s)...'
                                                         : bc.step === 'approved'
@@ -2255,7 +2353,7 @@ export default function Home() {
                                                     <span>🛡️ Benchmark Mode (Trading Locked)</span>
                                                   </span>
                                                 ) : wallet.connected ? (
-                                                  '🚀 Execute Live Swap on BSC'
+                                                  isSell ? '🚀 Execute Live Sell on BSC' : '🚀 Execute Live Buy on BSC'
                                                 ) : (
                                                   <span className="flex items-center justify-center gap-1.5">
                                                     <Wallet className="w-3.5 h-3.5" />
@@ -2269,7 +2367,7 @@ export default function Home() {
                                                 <span className="flex items-center gap-1 text-[#3D9A6A]">
                                                   <span>🛡️ Allowance:</span>
                                                   <span className="font-semibold text-[#F5F5F4]">
-                                                    {approvalMode === 'exact' ? `Exact ($${amounts[contract] || '10'} USDT)` : 'Unlimited'}
+                                                    {approvalMode === 'exact' ? `Exact (${amounts[contract] || defaultAmount} ${isSell ? t.tokenSymbol : 'USDT'})` : 'Unlimited'}
                                                   </span>
                                                   <span className="text-[9px] text-[#3D9A6A] bg-[#3D9A6A]/10 px-1 py-0.2 rounded border border-[#3D9A6A]/20">
                                                     {approvalMode === 'exact' ? 'Least-Privilege' : 'Convenience'}
@@ -2359,7 +2457,10 @@ export default function Home() {
 
                     const quote = quotes[contract];
                     const sim = simulations[contract];
-                    const inputAmount = amounts[contract] !== undefined ? amounts[contract] : '10';
+                    const direction = tradeDirections[contract.toLowerCase()] || 'buy';
+                    const isSell = direction === 'sell';
+                    const defaultAmount = isSell ? '0.026' : '10';
+                    const inputAmount = amounts[contract] !== undefined ? amounts[contract] : defaultAmount;
 
                     return (
                       <div
@@ -2429,20 +2530,80 @@ export default function Home() {
 
                         {/* Trading API Quote Box */}
                         <div className="pt-2 border-t border-white/[0.04] space-y-2">
+                          {/* Buy / Sell Mode Toggle */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1 p-0.5 rounded-lg bg-black/40 border border-white/[0.06]">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (isSell) {
+                                    setTradeDirections((prev) => ({ ...prev, [contract.toLowerCase()]: 'buy' }));
+                                    setAmounts((prev) => ({ ...prev, [contract]: '10' }));
+                                    handleGetQuote(t, 'buy');
+                                  }
+                                }}
+                                className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-medium transition ${
+                                  !isSell
+                                    ? 'bg-[#3D9A6A]/20 text-[#3D9A6A] border border-[#3D9A6A]/40 font-bold'
+                                    : 'text-[#A1A1AA] hover:text-[#F5F5F4]'
+                                }`}
+                              >
+                                🟢 Buy {t.tokenSymbol}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (!isSell) {
+                                    setTradeDirections((prev) => ({ ...prev, [contract.toLowerCase()]: 'sell' }));
+                                    setAmounts((prev) => ({ ...prev, [contract]: '0.026' }));
+                                    handleGetQuote(t, 'sell');
+                                  }
+                                }}
+                                className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-medium transition ${
+                                  isSell
+                                    ? 'bg-[#C45C26]/20 text-[#E07A5F] border border-[#C45C26]/40 font-bold'
+                                    : 'text-[#A1A1AA] hover:text-[#F5F5F4]'
+                                }`}
+                              >
+                                🔴 Sell {t.tokenSymbol}
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Quick Amount Pills */}
+                          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+                            <span className="text-[10px] text-[#A1A1AA] font-mono shrink-0">Quick:</span>
+                            {(!isSell ? ['5', '10', '25', '50'] : ['0.01', '0.02', '0.026', '0.05']).map((amt) => (
+                              <button
+                                key={amt}
+                                type="button"
+                                onClick={() => setAmounts((prev) => ({ ...prev, [contract]: amt }))}
+                                className={`px-2 py-0.5 rounded text-[10px] font-mono transition shrink-0 ${
+                                  (amounts[contract] || defaultAmount) === amt
+                                    ? 'bg-[#F5C542]/20 text-[#F5C542] border border-[#F5C542]/40 font-semibold'
+                                    : 'bg-white/[0.04] text-[#A1A1AA] hover:text-[#F5F5F4] border border-white/[0.06]'
+                                }`}
+                              >
+                                {amt} {!isSell ? 'USDT' : t.tokenSymbol}
+                              </button>
+                            ))}
+                          </div>
+
                           <div className="flex items-center gap-2">
                             <div className="relative flex-1">
                               <input
                                 type="number"
-                                min="1"
+                                min={isSell ? "0.001" : "1"}
+                                step={isSell ? "0.001" : "1"}
                                 value={inputAmount}
                                 onChange={(e) =>
                                   setAmounts((prev) => ({ ...prev, [contract]: e.target.value }))
                                 }
-                                placeholder="USDT"
+                                placeholder={isSell ? `${t.tokenSymbol} amount` : "USDT"}
                                 className="w-full bg-[#121214] border border-white/[0.06] rounded px-2.5 py-1 text-xs font-mono text-[#F5F5F4] focus:outline-none focus:border-[#F5C542]/50"
                               />
                               <span className="absolute right-2 top-1 text-[10px] text-[#A1A1AA] font-mono">
-                                USDT
+                                {isSell ? t.tokenSymbol : 'USDT'}
                               </span>
                             </div>
                             <button
@@ -2457,10 +2618,20 @@ export default function Home() {
                                   <span>Quoting...</span>
                                 </>
                               ) : (
-                                'Get Quote'
+                                isSell ? 'Sell Quote' : 'Get Quote'
                               )}
                             </button>
                           </div>
+                          {!isSell && Number(inputAmount) < 5 && (
+                            <p className="text-[10px] text-[#F5C542] font-mono">
+                              ℹ Binance Web3 RFQ requires min order of 5 USDT.
+                            </p>
+                          )}
+                          {isSell && Number(inputAmount) <= 0 && (
+                            <p className="text-[10px] text-[#F5C542] font-mono">
+                              ℹ Enter amount of {t.tokenSymbol} to sell for USDT.
+                            </p>
+                          )}
 
                           {/* Quote Results & 30s TTL */}
                           {quote?.quoteId && (
@@ -2475,7 +2646,7 @@ export default function Home() {
                               </div>
                               <div className="flex justify-between items-center text-[10px]">
                                 <span className="text-[#A1A1AA]">Input Amount:</span>
-                                <span className="text-[#F5F5F4] font-semibold">{quote.fromAmount} USDT</span>
+                                <span className="text-[#F5F5F4] font-semibold">{quote.fromAmount} {isSell ? t.tokenSymbol : 'USDT'}</span>
                               </div>
                               <div className="flex justify-between items-center">
                                 <span className="text-[#A1A1AA]">Output:</span>
@@ -2615,7 +2786,7 @@ export default function Home() {
 
                                             {bc.approveTxHash && (
                                               <div className="flex items-center justify-between text-[10px] text-[#A1A1AA] pt-0.5 border-t border-white/[0.04]">
-                                                <span>USDT Approval:</span>
+                                                <span>{isSell ? `${t.tokenSymbol} Approval:` : 'USDT Approval:'}</span>
                                                 <div className="flex items-center gap-1.5 font-mono">
                                                   <button
                                                     type="button"
@@ -2669,7 +2840,7 @@ export default function Home() {
                                                       {bc.step === 'preparing'
                                                         ? 'Preparing Route...'
                                                         : bc.step === 'approving'
-                                                        ? 'Approve USDT in wallet...'
+                                                        ? `Approve ${isSell ? t.tokenSymbol : 'USDT'} in wallet...`
                                                         : bc.step === 'waiting_receipt'
                                                         ? 'Confirming on BSC (~3s)...'
                                                         : bc.step === 'approved'
@@ -2684,7 +2855,7 @@ export default function Home() {
                                                     <span>🛡️ Benchmark Mode (Trading Locked)</span>
                                                   </span>
                                                 ) : wallet.connected ? (
-                                                  '🚀 Execute Live Swap on BSC'
+                                                  isSell ? '🚀 Execute Live Sell on BSC' : '🚀 Execute Live Buy on BSC'
                                                 ) : (
                                                   <span className="flex items-center justify-center gap-1.5">
                                                     <Wallet className="w-3.5 h-3.5" />
@@ -2698,7 +2869,7 @@ export default function Home() {
                                                 <span className="flex items-center gap-1 text-[#3D9A6A]">
                                                   <span>🛡️ Allowance:</span>
                                                   <span className="font-semibold text-[#F5F5F4]">
-                                                    {approvalMode === 'exact' ? `Exact ($${amounts[contract] || '10'} USDT)` : 'Unlimited'}
+                                                    {approvalMode === 'exact' ? `Exact (${amounts[contract] || defaultAmount} ${isSell ? t.tokenSymbol : 'USDT'})` : 'Unlimited'}
                                                   </span>
                                                   <span className="text-[9px] text-[#3D9A6A] bg-[#3D9A6A]/10 px-1 py-0.2 rounded border border-[#3D9A6A]/20">
                                                     {approvalMode === 'exact' ? 'Least-Privilege' : 'Convenience'}
