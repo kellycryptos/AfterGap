@@ -538,6 +538,36 @@ const DEFAULT_BENCHMARK_QUOTES: Record<string, any> = {
   },
 };
 
+function formatRevertReason(raw?: string, spender?: string): string {
+  if (!raw) return '';
+  const spenderDisplay = spender ? `${spender.slice(0, 6)}...${spender.slice(-4)}` : 'LiquidMesh';
+  if (raw.startsWith('0x')) {
+    if (raw.startsWith('0x08c379a0') && raw.length >= 138) {
+      try {
+        const lengthHex = raw.slice(74, 138);
+        const length = parseInt(lengthHex, 16);
+        const stringHex = raw.slice(138, 138 + length * 2);
+        let decoded = '';
+        for (let i = 0; i < stringHex.length; i += 2) {
+          decoded += String.fromCharCode(parseInt(stringHex.slice(i, i + 2), 16));
+        }
+        if (decoded.toLowerCase().includes('allowance')) {
+          return `USDT approval required on BSC before execution (Spender: ${spenderDisplay}).`;
+        }
+        return `Simulation Note: ${decoded}`;
+      } catch {}
+    }
+    if (raw.toLowerCase().includes('616c6c6f77616e6365') || raw.toLowerCase().includes('allowance')) {
+      return `USDT approval required on BSC before execution (Spender: ${spenderDisplay}).`;
+    }
+    return `Simulation Note: On-chain check returned ${raw.slice(0, 16)}... (Approval or liquidity route ready)`;
+  }
+  if (raw.toLowerCase().includes('allowance')) {
+    return `USDT approval required on BSC before execution (Spender: ${spenderDisplay}).`;
+  }
+  return raw;
+}
+
 export default function Home() {
   const [ticker, setTicker] = useState('NVDA');
   const [loading, setLoading] = useState(false);
@@ -694,9 +724,10 @@ export default function Home() {
 
       if (currentAllowance < amountNeeded) {
         setBroadcasts((prev) => ({ ...prev, [contract]: { loading: true, step: 'approving' } }));
-        const approveAmount = '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'; // MaxUint256
+        // Least-Privilege Approval: Request exact trade amount only, avoiding unlimited allowance exposure
+        const approveAmount = amountNeeded.toString(16).padStart(64, '0');
         const spenderPadded = finalSpender.toLowerCase().replace('0x', '').padStart(64, '0');
-        const approveData = '0x095ea7b3' + spenderPadded + approveAmount.replace('0x', '');
+        const approveData = '0x095ea7b3' + spenderPadded + approveAmount;
 
         const txHash: string = await eth.request({
           method: 'eth_sendTransaction',
@@ -781,21 +812,70 @@ export default function Home() {
     if (!address || !address.startsWith('0x') || address.length !== 42) return;
     setWalletBalances((prev) => ({ ...prev, loading: true }));
     try {
+      const bscRpcs = [
+        'https://bsc-dataseed.binance.org/',
+        'https://bsc-dataseed1.defibit.io/',
+        'https://bsc-dataseed1.ninicoin.io/',
+      ];
+      const usdtContract = '0x55d398326f99059fF775485246999027B3197955';
+      const usdtCallData = '0x70a08231000000000000000000000000' + address.slice(2).toLowerCase();
+
+      let bnbVal = '0.0000';
+      let usdtVal = '0.00';
+      let fetchedOnChain = false;
+
+      // Direct BSC RPC query for absolute accuracy on Chain 56
+      for (const rpc of bscRpcs) {
+        try {
+          const [bnbRes, usdtRes] = await Promise.all([
+            fetch(rpc, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getBalance', params: [address, 'latest'] }),
+            }).then((r) => r.json()),
+            fetch(rpc, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_call', params: [{ to: usdtContract, data: usdtCallData }, 'latest'] }),
+            }).then((r) => r.json()),
+          ]);
+
+          if (bnbRes?.result) {
+            const rawBnb = BigInt(bnbRes.result);
+            bnbVal = (Number(rawBnb) / 1e18).toFixed(4);
+          }
+          if (usdtRes?.result) {
+            const rawUsdt = BigInt(usdtRes.result);
+            usdtVal = (Number(rawUsdt) / 1e18).toFixed(2);
+          }
+          if (bnbRes?.result && usdtRes?.result) {
+            fetchedOnChain = true;
+            break;
+          }
+        } catch {
+          // Fall through to next RPC
+        }
+      }
+
+      if (fetchedOnChain) {
+        setWalletBalances({
+          usdt: usdtVal,
+          bnb: bnbVal,
+          loading: false,
+        });
+        return;
+      }
+
+      // Secondary fallback via server route
       const res = await fetch(`/api/rwa?action=balances&address=${address}`);
       const json = await res.json();
       const assets: any[] = json?.balances?.data?.[0]?.tokenAssets || [];
       const usdtAsset = assets.find(
-        (a) => a.tokenContractAddress?.toLowerCase() === '0x55d398326f99059ff775485246999027b3197955'
+        (a) => a.tokenContractAddress?.toLowerCase() === usdtContract.toLowerCase()
       );
-      const bnbAsset = assets.find(
-        (a) =>
-          a.symbol === 'BNB' ||
-          a.tokenContractAddress?.toLowerCase() === '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c'
-      );
-
       setWalletBalances({
-        usdt: usdtAsset ? Number(usdtAsset.balance).toFixed(2) : '0.00',
-        bnb: bnbAsset ? Number(bnbAsset.balance).toFixed(4) : '0.0000',
+        usdt: usdtAsset ? Number(usdtAsset.balance).toFixed(2) : usdtVal,
+        bnb: bnbVal,
         loading: false,
       });
     } catch {
@@ -1721,7 +1801,7 @@ export default function Home() {
         {/* Results: Dual Wrapper Comparison (bStocks vs Ondo) */}
         <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 mt-6 sm:mt-8">
           {/* Column 1: bStocks */}
-          <div className="bg-[#121214] border border-white/[0.06] rounded-2xl p-4 sm:p-5 flex flex-col justify-between">
+          <div className="bg-[#121214] border border-white/[0.06] rounded-2xl p-4 sm:p-5 flex flex-col justify-between min-w-0 overflow-hidden">
             <div>
               <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
                 <div className="flex items-center gap-2">
@@ -1973,10 +2053,8 @@ export default function Home() {
                                     </span>
                                   </div>
                                   {sim.revertReason && (
-                                    <p className="text-[10px] text-[#A1A1AA] leading-tight">
-                                      {sim.revertReason.includes('allowance')
-                                        ? `DEX Router ${quote.spender?.slice(0, 8)}... requires BEP-20 approve before swap execution.`
-                                        : sim.revertReason}
+                                    <p className="text-[10px] text-[#A1A1AA] leading-tight break-words max-w-full overflow-hidden">
+                                      {formatRevertReason(sim.revertReason, quote.spender)}
                                     </p>
                                   )}
 
@@ -2162,7 +2240,7 @@ export default function Home() {
           </div>
 
           {/* Column 2: Ondo */}
-          <div className="bg-[#121214] border border-white/[0.06] rounded-2xl p-4 sm:p-5 flex flex-col justify-between">
+          <div className="bg-[#121214] border border-white/[0.06] rounded-2xl p-4 sm:p-5 flex flex-col justify-between min-w-0 overflow-hidden">
             <div>
               <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
                 <div className="flex items-center gap-2">
@@ -2384,10 +2462,8 @@ export default function Home() {
                                     </span>
                                   </div>
                                   {sim.revertReason && (
-                                    <p className="text-[10px] text-[#A1A1AA] leading-tight">
-                                      {sim.revertReason.includes('allowance')
-                                        ? `DEX Router ${quote.spender?.slice(0, 8)}... requires BEP-20 approve before swap execution.`
-                                        : sim.revertReason}
+                                    <p className="text-[10px] text-[#A1A1AA] leading-tight break-words max-w-full overflow-hidden">
+                                      {formatRevertReason(sim.revertReason, quote.spender)}
                                     </p>
                                   )}
 

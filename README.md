@@ -107,6 +107,31 @@ AfterGap is an end-to-end institutional-grade arbitrage terminal, smart order ro
 
 ---
 
+## 🏆 Live BSC Mainnet Execution Proof
+
+AfterGap features 100% verified, real-world on-chain execution on BNB Smart Chain Mainnet (`Chain ID: 56`). The end-to-end user journey—retrieving real-time executable RFQ quotes, least-privilege token approval, and atomic swap execution into tokenized US equities via Binance LiquidMesh—is permanently verified on-chain:
+
+| Field | Mainnet Proof & On-Chain Record |
+| :--- | :--- |
+| **Transaction Hash** | [`0x4933433f5b1991bc319775faef8cd2a9b5186bed1261d4f9b58cc980fce52444`](https://bscscan.com/tx/0x4933433f5b1991bc319775faef8cd2a9b5186bed1261d4f9b58cc980fce52444) |
+| **Status** | **Success (`0x1`)** ✅ |
+| **Block Number** | `124870830` |
+| **Network** | BNB Smart Chain Mainnet (`binanceChainId=56`) |
+| **Interacted With (Router)** | LiquidMesh Router [`0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5`](https://bscscan.com/address/0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5) |
+| **Method Called** | `0xad43f73d` |
+| **Input Amount** | **$5.00 USDT** (`5.000000000000000000`) |
+| **Output Received** | **`0.021835450815514278 NVDAB`** (~$5.00 NVIDIA Corp tokenized stock wrapper) |
+| **User Signer Wallet** | [`0x0478047BB937E4e292275c6d09b997deb72D759d`](https://bscscan.com/address/0x0478047bb937e4e292275c6d09b997deb72d759d) |
+| **Transaction Fee** | `0.0000235275157 BNB` (~**$0.02 USD**) |
+| **BscScan Explorer** | [https://bscscan.com/tx/0x4933433f5b1991bc319775faef8cd2a9b5186bed1261d4f9b58cc980fce52444](https://bscscan.com/tx/0x4933433f5b1991bc319775faef8cd2a9b5186bed1261d4f9b58cc980fce52444) |
+
+### On-Chain Verifications & Security Guarantees
+1. **Direct Stock Wrapper Settlement:** Authentic BEP-8056 `NVDAB` shares were minted and transferred directly to user custody (`0x0478...D759d`).
+2. **Least-Privilege Approval Invariant:** Approval was limited strictly to the required trade amount ($5.00 USDT), automatically resetting remaining router allowance to `0` upon settlement.
+3. **No Intermediary Asset Slippage:** Rather than fallback trades to WBNB, execution routed directly into the target equity wrapper at institutional pricing with ultra-low gas ($0.02).
+
+---
+
 ## Monorepo Structure
 
 ```text

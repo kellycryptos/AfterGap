@@ -860,7 +860,64 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Missing address parameter' }, { status: 400 });
       }
 
-      const balancesRes = await client.getBalances(address, 56);
+      let balancesRes = await client.getBalances(address, 56);
+
+      // If Binance API returned error/empty data (e.g. CloudFront 40304), query public BSC RPC
+      const tokenAssets: any[] = (balancesRes?.data as any)?.[0]?.tokenAssets || [];
+      if (!balancesRes.success || tokenAssets.length === 0) {
+        try {
+          const bscRpc = 'https://bsc-dataseed.binance.org/';
+          const usdtContract = '0x55d398326f99059fF775485246999027B3197955';
+          const usdtCallData = '0x70a08231000000000000000000000000' + address.slice(2).toLowerCase();
+          const [bnbRes, usdtRes] = await Promise.all([
+            fetch(bscRpc, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getBalance', params: [address, 'latest'] }),
+            }).then((r) => r.json()),
+            fetch(bscRpc, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_call', params: [{ to: usdtContract, data: usdtCallData }, 'latest'] }),
+            }).then((r) => r.json()),
+          ]);
+
+          const bnbBalance = (Number(BigInt(bnbRes?.result || '0x0')) / 1e18).toString();
+          const usdtBalance = (Number(BigInt(usdtRes?.result || '0x0')) / 1e18).toString();
+
+          balancesRes = {
+            success: true,
+            status: 200,
+            statusText: 'OK',
+            data: [
+              {
+                chainId: '56',
+                address,
+                tokenAssets: [
+                  {
+                    symbol: 'BNB',
+                    tokenContractAddress: '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c',
+                    balance: bnbBalance,
+                    decimal: 18,
+                  },
+                  {
+                    symbol: 'USDT',
+                    tokenContractAddress: '0x55d398326f99059ff775485246999027b3197955',
+                    balance: usdtBalance,
+                    decimal: 18,
+                  },
+                ],
+              },
+            ] as any,
+            rawBody: '',
+            headers: {},
+            debug: { fallbackUsed: true } as any,
+          };
+        } catch (rpcErr) {
+          console.warn('RPC balance query error in API route:', rpcErr);
+        }
+      }
+
       return NextResponse.json({
         auth: authState,
         balances: balancesRes,

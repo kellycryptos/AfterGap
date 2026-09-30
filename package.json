@@ -14,7 +14,8 @@
     "build": "npm run build --workspaces",
     "test:signer": "npx tsx packages/api/src/signer.test.ts",
     "test:disclosure": "npx tsx scripts/verify-disclosure.ts && npx tsx scripts/verify-ui-render.ts",
-    "test:live": "npx tsx scripts/test-live-quote.ts"
+    "test:live": "npx tsx scripts/test-live-quote.ts",
+    "test:server": "npx tsx scripts/test-server-side-quote.ts"
   },
   "devDependencies": {
     "@types/node": "^22.13.0",

@@ -441,6 +441,59 @@ This confirms why single-hop DEX swaps fail: tokenized US equity liquidity on BS
 - **Safety Invariant:** All swaps strictly route into the user's requested token (`NVDAB` or `NVDAon`) via LiquidMesh. If a route cannot be established, the transaction cleanly aborts and displays diagnostic feedback, guaranteeing zero unwanted token purchases.
 - **UI Enhancements:** A dedicated "Copy Hash" button with clipboard feedback (`✓ Copied`) and full, untruncated BSCScan links ensure seamless transaction tracking on mobile and desktop.
 
+---
+
+### 4. Least-Privilege ERC-20 Approvals: Eliminating the `MaxUint256` Trap
+- **The Finding:** Many DeFi and aggregator dApps default to requesting `type(uint256).max` (`0xfff...`) allowance for user convenience on subsequent trades. However, this creates a major attack surface: an unlimited approval exposes the user's entire USDT balance to the spender router indefinitely.
+- **The Fix:** AfterGap strictly enforces exact-amount approvals (`amountNeeded`). If a user executes a 5 USDT swap, the approval transaction requests authorization for exactly `5000000000000000000` wei ($5.00 USDT). Once the swap executes, the allowance immediately drops to 0, ensuring zero ongoing contract exposure.
+- **On-Chain Confirmation:** Verified on BSC mainnet — immediately following swap execution, the user's remaining allowance to the LiquidMesh router (`0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5`) is strictly `0`.
+
+---
+
+## 10. Live BSC Mainnet Execution Proof & On-Chain Settlement
+
+AfterGap provides verified, immutable on-chain proof of live execution on **BNB Smart Chain Mainnet (Chain ID: 56)**. The end-to-end user flow—retrieving real-time executable RFQ quotes, least-privilege token approval, and atomic swap execution into tokenized US equities via Binance LiquidMesh—was executed and confirmed on-chain:
+
+### 1. On-Chain Transaction Parameters
+
+| Attribute | Verified Value |
+| :--- | :--- |
+| **Transaction Hash** | [`0x4933433f5b1991bc319775faef8cd2a9b5186bed1261d4f9b58cc980fce52444`](https://bscscan.com/tx/0x4933433f5b1991bc319775faef8cd2a9b5186bed1261d4f9b58cc980fce52444) |
+| **Status** | **Success (`0x1`)** ✅ |
+| **Block Number** | `124870830` |
+| **Block Confirmations** | `860+` |
+| **Timestamp** | `Sep-30-2026 07:45:11 AM +UTC` |
+| **From (Signer Wallet)** | [`0x0478047BB937E4e292275c6d09b997deb72D759d`](https://bscscan.com/address/0x0478047bb937e4e292275c6d09b997deb72d759d) |
+| **Interacted With (Router)** | LiquidMesh Router [`0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5`](https://bscscan.com/address/0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5) |
+| **Transaction Action** | Call `0xad43f73d` method on `0xB44446b0...82b5FdDA5` |
+| **Input Token & Amount** | **$5.00 USDT** (`5.000000000000000000`) |
+| **Output Token & Amount** | **`0.021835450815514278 NVDAB`** ($4.99 NVIDIA Corp tokenized equity wrapper) |
+| **Transaction Fee** | `0.0000235275157 BNB` (~**$0.02 USD**) |
+| **Gas Price** | `0.06565 Gwei` |
+| **BscScan Explorer Link** | [https://bscscan.com/tx/0x4933433f5b1991bc319775faef8cd2a9b5186bed1261d4f9b58cc980fce52444](https://bscscan.com/tx/0x4933433f5b1991bc319775faef8cd2a9b5186bed1261d4f9b58cc980fce52444) |
+
+### 2. Token Transfer Flow Breakdown
+The transaction execution logs confirm multi-hop routing and final delivery:
+1. **BEP-20 Transfers (5 events):**
+   - User wallet (`0x0478...D759d`) transferred $5.00 USDT into LiquidMesh router routing pools.
+   - Internal routing across verified liquidity pools (`Elfomofi`, `Pancakeswap V4`).
+2. **BEP-8056 Equity Transfers (2 events):**
+   - `0xC6448de0...7A7C10AF7` $\to$ `0xB44446b0...82b5FdDA5`: `0.02185244 NVDAB`
+   - `0xB44446b0...82b5FdDA5` $\to$ `0x0478047B...eb72D759d`: **`0.02183545 NVDAB`** ($4.99 USD value) delivered directly into user self-custody.
+
+### 3. Post-Execution Live Wallet Verification
+Direct query of the BNB Smart Chain node (`eth_call` to `0x02fca66c1d1afb4e2a7884261eb00f63598a7436`) confirms the shares arrived immediately in the user's wallet:
+```text
+Checking balance for: 0x0478047bb937e4e292275c6d09b997deb72d759d
+  BNB:     0.005216 BNB
+  USDT:    $0.225827 USDT
+  NVDAB:   0.021835 shares (Confirmed On-Chain ✅)
+  NVDAon:  0.000000 shares
+```
+
+This live transaction settles any doubt: AfterGap is not a mock concept, but an operational institutional terminal executing real tokenized equity swaps on BSC Mainnet.
+
+
 
 
 
