@@ -101,8 +101,11 @@ interface TxBroadcastState {
   error?: string;
 }
 
-async function checkAllowance(owner: string, spender: string): Promise<bigint> {
-  const usdtContract = '0x55d398326f99059fF775485246999027B3197955';
+async function checkAllowance(
+  owner: string,
+  spender: string,
+  tokenContract: string = '0x55d398326f99059fF775485246999027B3197955'
+): Promise<bigint> {
   const ownerPadded = owner.toLowerCase().replace('0x', '').padStart(64, '0');
   const spenderPadded = spender.toLowerCase().replace('0x', '').padStart(64, '0');
   const data = '0xdd62ed3e' + ownerPadded + spenderPadded;
@@ -113,7 +116,7 @@ async function checkAllowance(owner: string, spender: string): Promise<bigint> {
     if (eth?.request) {
       result = await eth.request({
         method: 'eth_call',
-        params: [{ to: usdtContract, data }, 'latest'],
+        params: [{ to: tokenContract, data }, 'latest'],
       });
     }
     if (!result || result === '0x') {
@@ -124,7 +127,7 @@ async function checkAllowance(owner: string, spender: string): Promise<bigint> {
           jsonrpc: '2.0',
           id: 1,
           method: 'eth_call',
-          params: [{ to: usdtContract, data }, 'latest'],
+          params: [{ to: tokenContract, data }, 'latest'],
         }),
       });
       const json = await res.json();
@@ -598,6 +601,8 @@ export default function Home() {
   // Per-token broadcast state (approve + swap)
   const [broadcasts, setBroadcasts] = useState<Record<string, TxBroadcastState>>({});
   const [copiedHash, setCopiedHash] = useState<string | null>(null);
+  const [approvalMode, setApprovalMode] = useState<'exact' | 'unlimited'>('exact');
+  const [tradeDirections, setTradeDirections] = useState<Record<string, 'buy' | 'sell'>>({});
 
   // --- Wallet Connect ---
   const connectWallet = async () => {
@@ -671,9 +676,15 @@ export default function Home() {
     const eth = (window as any).ethereum;
     if (!eth) return;
 
+    const direction = tradeDirections[contract.toLowerCase()] || 'buy';
+    const isSell = direction === 'sell';
     const usdtContract = '0x55d398326f99059fF775485246999027B3197955';
-    const usdtAmountStr = currentQuote.fromAmount || '10';
-    const amountInSmallestUnit = (BigInt(Math.floor(Number(usdtAmountStr) * 1e6)) * BigInt(1e12)).toString();
+    const fromToken = isSell ? contract : usdtContract;
+    const toToken = isSell ? usdtContract : contract;
+    const tokenToApprove = isSell ? contract : usdtContract;
+
+    const inputAmountStr = currentQuote.fromAmount || (isSell ? '0.0218' : '10');
+    const amountInSmallestUnit = (BigInt(Math.floor(Number(inputAmountStr) * 1e6)) * BigInt(1e12)).toString();
     const amountNeeded = BigInt(amountInSmallestUnit);
 
     setBroadcasts((prev) => ({ ...prev, [contract]: { loading: true, step: 'preparing' } }));
@@ -697,7 +708,7 @@ export default function Home() {
 
       try {
         const swapRes = await fetch(
-          `/api/rwa?action=swap&quoteId=${currentQuote.quoteId}&toTokenAddress=${contract}&amount=${amountInSmallestUnit}&userWalletAddress=${wallet.address}&slippagePercent=1`
+          `/api/rwa?action=swap&quoteId=${currentQuote.quoteId}&fromTokenAddress=${fromToken}&toTokenAddress=${toToken}&amount=${amountInSmallestUnit}&userWalletAddress=${wallet.address}&slippagePercent=1`
         );
         const swapJson = await swapRes.json();
         if (swapRes.ok && swapJson?.swap?.data?.tx?.data) {
@@ -712,20 +723,23 @@ export default function Home() {
 
       if (!swapTx || !swapTx.data) {
         throw new Error(
-          'Live LiquidMesh execution route could not be locked. Please refresh quote and ensure trade amount is at least 5 USDT.'
+          'Live LiquidMesh execution route could not be locked. Please refresh quote and ensure trade amount is at least 5 USD.'
         );
       }
 
       const finalSpender = targetSpender || '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5';
 
-      // Step 2: Check existing USDT allowance on BSC for finalSpender
-      const currentAllowance = await checkAllowance(wallet.address, finalSpender);
+      // Step 2: Check existing token allowance on BSC for finalSpender
+      const currentAllowance = await checkAllowance(wallet.address, finalSpender, tokenToApprove);
       let approveTxHash: string | undefined;
 
       if (currentAllowance < amountNeeded) {
         setBroadcasts((prev) => ({ ...prev, [contract]: { loading: true, step: 'approving' } }));
-        // Least-Privilege Approval: Request exact trade amount only, avoiding unlimited allowance exposure
-        const approveAmount = amountNeeded.toString(16).padStart(64, '0');
+        // Least-Privilege Approval Default: Request exact trade amount only, avoiding unlimited allowance exposure
+        const isExact = approvalMode === 'exact';
+        const approveAmount = isExact
+          ? amountNeeded.toString(16).padStart(64, '0')
+          : 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
         const spenderPadded = finalSpender.toLowerCase().replace('0x', '').padStart(64, '0');
         const approveData = '0x095ea7b3' + spenderPadded + approveAmount;
 
@@ -733,7 +747,7 @@ export default function Home() {
           method: 'eth_sendTransaction',
           params: [{
             from: wallet.address,
-            to: usdtContract,
+            to: tokenToApprove,
             data: approveData,
             gas: '0x13880', // 80,000 gas
           }],
@@ -824,36 +838,62 @@ export default function Home() {
       let usdtVal = '0.00';
       let fetchedOnChain = false;
 
-      // Direct BSC RPC query for absolute accuracy on Chain 56
-      for (const rpc of bscRpcs) {
+      // 1. Direct wallet query via window.ethereum (100% reliable, zero CORS issues)
+      const eth = typeof window !== 'undefined' ? (window as any).ethereum : null;
+      if (eth?.request) {
         try {
-          const [bnbRes, usdtRes] = await Promise.all([
-            fetch(rpc, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getBalance', params: [address, 'latest'] }),
-            }).then((r) => r.json()),
-            fetch(rpc, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_call', params: [{ to: usdtContract, data: usdtCallData }, 'latest'] }),
-            }).then((r) => r.json()),
+          const [bnbHex, usdtHex] = await Promise.all([
+            eth.request({ method: 'eth_getBalance', params: [address, 'latest'] }),
+            eth.request({ method: 'eth_call', params: [{ to: usdtContract, data: usdtCallData }, 'latest'] }),
           ]);
-
-          if (bnbRes?.result) {
-            const rawBnb = BigInt(bnbRes.result);
-            bnbVal = (Number(rawBnb) / 1e18).toFixed(4);
+          if (bnbHex) {
+            const rawBnb = BigInt(bnbHex);
+            const numBnb = Number(rawBnb) / 1e18;
+            bnbVal = numBnb > 0 && numBnb < 0.0001 ? '<0.0001' : numBnb.toFixed(4);
+            fetchedOnChain = true;
           }
-          if (usdtRes?.result) {
-            const rawUsdt = BigInt(usdtRes.result);
+          if (usdtHex && usdtHex !== '0x') {
+            const rawUsdt = BigInt(usdtHex);
             usdtVal = (Number(rawUsdt) / 1e18).toFixed(2);
           }
-          if (bnbRes?.result && usdtRes?.result) {
-            fetchedOnChain = true;
-            break;
+        } catch (e) {
+          console.warn('Direct wallet balance query fallback:', e);
+        }
+      }
+
+      // 2. Direct BSC RPC query if not already fetched
+      if (!fetchedOnChain) {
+        for (const rpc of bscRpcs) {
+          try {
+            const [bnbRes, usdtRes] = await Promise.all([
+              fetch(rpc, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getBalance', params: [address, 'latest'] }),
+              }).then((r) => r.json()),
+              fetch(rpc, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'eth_call', params: [{ to: usdtContract, data: usdtCallData }, 'latest'] }),
+              }).then((r) => r.json()),
+            ]);
+
+            if (bnbRes?.result) {
+              const rawBnb = BigInt(bnbRes.result);
+              const numBnb = Number(rawBnb) / 1e18;
+              bnbVal = numBnb > 0 && numBnb < 0.0001 ? '<0.0001' : numBnb.toFixed(4);
+              fetchedOnChain = true;
+            }
+            if (usdtRes?.result) {
+              const rawUsdt = BigInt(usdtRes.result);
+              usdtVal = (Number(rawUsdt) / 1e18).toFixed(2);
+            }
+            if (bnbRes?.result && usdtRes?.result) {
+              break;
+            }
+          } catch {
+            // Fall through to next RPC
           }
-        } catch {
-          // Fall through to next RPC
         }
       }
 
@@ -866,13 +906,20 @@ export default function Home() {
         return;
       }
 
-      // Secondary fallback via server route
+      // 3. Secondary fallback via server route
       const res = await fetch(`/api/rwa?action=balances&address=${address}`);
       const json = await res.json();
       const assets: any[] = json?.balances?.data?.[0]?.tokenAssets || [];
       const usdtAsset = assets.find(
-        (a) => a.tokenContractAddress?.toLowerCase() === usdtContract.toLowerCase()
+        (a) => a.tokenContractAddress?.toLowerCase() === usdtContract.toLowerCase() || a.symbol === 'USDT'
       );
+      const bnbAsset = assets.find(
+        (a) => a.symbol === 'BNB' || a.tokenContractAddress?.toLowerCase() === '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c'
+      );
+      if (bnbAsset?.balance) {
+        const numBnb = Number(bnbAsset.balance);
+        bnbVal = numBnb > 0 && numBnb < 0.0001 ? '<0.0001' : numBnb.toFixed(4);
+      }
       setWalletBalances({
         usdt: usdtAsset ? Number(usdtAsset.balance).toFixed(2) : usdtVal,
         bnb: bnbVal,
@@ -1153,18 +1200,29 @@ export default function Home() {
   }, [selectedBasket]);
 
   // Request a live quote from Trading API
-  // Request a live quote from Trading API
-  const handleGetQuote = async (token: any) => {
+  const handleGetQuote = async (token: any, forceDirection?: 'buy' | 'sell') => {
     const contract = token.tokenContractAddress || token.contractAddress || token.tokenAddress;
     if (!contract) return;
 
-    let usdtAmountStr = amounts[contract] && Number(amounts[contract]) > 0 ? amounts[contract] : '10';
-    // Binance Trading API enforces a minimum order amount of 5 USD (code 40375)
-    if (Number(usdtAmountStr) < 5) {
-      usdtAmountStr = '5';
+    const direction = forceDirection || tradeDirections[contract.toLowerCase()] || 'buy';
+    const isSell = direction === 'sell';
+    const usdtContract = '0x55d398326f99059fF775485246999027B3197955';
+    const fromToken = isSell ? contract : usdtContract;
+    const toToken = isSell ? usdtContract : contract;
+
+    let inputAmountStr = amounts[contract];
+    if (!inputAmountStr || Number(inputAmountStr) <= 0) {
+      inputAmountStr = isSell ? '0.0218' : '10';
+      setAmounts((prev) => ({ ...prev, [contract]: inputAmountStr }));
+    }
+
+    // In buy mode, enforce 5 USDT min
+    if (!isSell && Number(inputAmountStr) < 5) {
+      inputAmountStr = '5';
       setAmounts((prev) => ({ ...prev, [contract]: '5' }));
     }
-    const amountInSmallestUnit = (BigInt(Math.floor(Number(usdtAmountStr) * 1e6)) * BigInt(1e12)).toString(); // 18 decimals
+
+    const amountInSmallestUnit = (BigInt(Math.floor(Number(inputAmountStr) * 1e6)) * BigInt(1e12)).toString(); // 18 decimals
 
     setQuotes((prev) => ({
       ...prev,
@@ -1177,7 +1235,7 @@ export default function Home() {
     // Fetch quote via authenticated server API route (1-hop)
     try {
       const res = await fetch(
-        `/api/rwa?action=quote&toTokenAddress=${contract}&amount=${amountInSmallestUnit}&userWalletAddress=${walletAddress}&slippagePercent=1`
+        `/api/rwa?action=quote&fromTokenAddress=${fromToken}&toTokenAddress=${toToken}&amount=${amountInSmallestUnit}&userWalletAddress=${walletAddress}&slippagePercent=1`
       );
       const json = await res.json();
       if (res.ok && json.quote?.data) {
@@ -1198,7 +1256,7 @@ export default function Home() {
 
     if (bestRoute && bestRoute.quoteId) {
       const toDecimals = Number(bestRoute.toToken?.decimal || 18);
-      const toTokenAmountFormatted = (Number(bestRoute.toTokenAmount) / 10 ** toDecimals).toFixed(6);
+      const toTokenAmountFormatted = (Number(bestRoute.toTokenAmount) / 10 ** toDecimals).toFixed(isSell ? 4 : 6);
 
       setQuotes((prev) => ({
         ...prev,
@@ -1207,9 +1265,9 @@ export default function Home() {
           quoteId: bestRoute.quoteId,
           vendorName: bestRoute.vendorName || 'LiquidMesh',
           executionMode: bestRoute.executionMode || 'SWAP',
-          fromAmount: usdtAmountStr,
+          fromAmount: inputAmountStr,
           toAmount: toTokenAmountFormatted,
-          toTokenSymbol: bestRoute.toToken?.tokenSymbol || token.tokenSymbol,
+          toTokenSymbol: isSell ? 'USDT' : (bestRoute.toToken?.tokenSymbol || token.tokenSymbol),
           unitPrice: bestRoute.toToken?.tokenUnitPrice,
           spender: bestRoute.approveTarget || '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
           router: bestRoute.router || '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
@@ -1226,9 +1284,9 @@ export default function Home() {
     const fallbackBest = DEFAULT_BENCHMARK_QUOTES[contract.toLowerCase()] || DEFAULT_BENCHMARK_QUOTES['0x02fca66c1d1afb4e2a7884261eb00f63598a7436'];
     if (fallbackBest) {
       const unitPrice = Number(fallbackBest.toToken?.tokenUnitPrice || '229.11');
-      const numInput = Number(usdtAmountStr);
-      const calculatedOutput = unitPrice > 0 ? numInput / unitPrice : 0;
-      const toTokenAmountFormatted = calculatedOutput.toFixed(6);
+      const numInput = Number(inputAmountStr);
+      const calculatedOutput = isSell ? numInput * unitPrice : (unitPrice > 0 ? numInput / unitPrice : 0);
+      const toTokenAmountFormatted = calculatedOutput.toFixed(isSell ? 4 : 6);
       const toDecimals = Number(fallbackBest.toToken?.decimal || 18);
       const toTokenAmountScaled = BigInt(Math.floor(calculatedOutput * 10 ** toDecimals)).toString();
 
@@ -1239,9 +1297,9 @@ export default function Home() {
           quoteId: fallbackBest.quoteId,
           vendorName: fallbackBest.vendorName,
           executionMode: fallbackBest.executionMode,
-          fromAmount: usdtAmountStr,
+          fromAmount: inputAmountStr,
           toAmount: toTokenAmountFormatted,
-          toTokenSymbol: fallbackBest.toToken?.tokenSymbol || token.tokenSymbol,
+          toTokenSymbol: isSell ? 'USDT' : (fallbackBest.toToken?.tokenSymbol || token.tokenSymbol),
           unitPrice: fallbackBest.toToken?.tokenUnitPrice,
           spender: fallbackBest.approveTarget,
           router: fallbackBest.router,
@@ -1262,7 +1320,7 @@ export default function Home() {
       ...prev,
       [contract]: {
         loading: false,
-        error: 'Quote request failed. Ensure input is at least 5 USDT.',
+        error: isSell ? 'Sell quote request failed. Check input amount.' : 'Quote request failed. Ensure input is at least 5 USDT.',
       },
     }));
   };
@@ -1279,16 +1337,21 @@ export default function Home() {
     }));
 
     try {
+      const direction = tradeDirections[contract.toLowerCase()] || 'buy';
+      const isSell = direction === 'sell';
       const usdtContract = '0x55d398326f99059fF775485246999027B3197955';
-      const usdtAmountStr = currentQuote.fromAmount || '10';
-      const amountInSmallestUnit = (BigInt(Math.floor(Number(usdtAmountStr) * 1e6)) * BigInt(1e12)).toString();
+      const fromToken = isSell ? contract : usdtContract;
+      const toToken = isSell ? usdtContract : contract;
+
+      const inputAmountStr = currentQuote.fromAmount || (isSell ? '0.0218' : '10');
+      const amountInSmallestUnit = (BigInt(Math.floor(Number(inputAmountStr) * 1e6)) * BigInt(1e12)).toString();
 
       let tx: any = null;
 
       // Fetch swap calldata via secure server API proxy
       try {
         const swapRes = await fetch(
-          `/api/rwa?action=swap&quoteId=${currentQuote.quoteId}&toTokenAddress=${contract}&amount=${amountInSmallestUnit}&userWalletAddress=${walletAddress}&slippagePercent=1`
+          `/api/rwa?action=swap&quoteId=${currentQuote.quoteId}&fromTokenAddress=${fromToken}&toTokenAddress=${toToken}&amount=${amountInSmallestUnit}&userWalletAddress=${walletAddress}&slippagePercent=1`
         );
         const swapJson = await swapRes.json();
         if (swapRes.ok && swapJson.swap?.data?.tx?.data) {
@@ -1369,8 +1432,8 @@ export default function Home() {
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {wallet.connected && wallet.address ? (
               <div className="flex items-center gap-2">
-                {/* Balances (desktop only) */}
-                <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono bg-white/[0.03] border border-white/[0.06]">
+                {/* Balances (responsive mobile & desktop) */}
+                <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-mono bg-white/[0.03] border border-white/[0.06]">
                   <span className="text-[#A1A1AA]">USDT:</span>
                   <span className="text-[#F5F5F4] font-semibold">{walletBalances.usdt}</span>
                   <span className="text-white/20">|</span>
@@ -2201,6 +2264,26 @@ export default function Home() {
                                                 )}
                                               </button>
                                             </MetalFx>
+                                            {!quote.isFallback && (
+                                              <div className="flex items-center justify-between text-[10px] text-[#A1A1AA] pt-1.5 px-0.5">
+                                                <span className="flex items-center gap-1 text-[#3D9A6A]">
+                                                  <span>🛡️ Allowance:</span>
+                                                  <span className="font-semibold text-[#F5F5F4]">
+                                                    {approvalMode === 'exact' ? `Exact ($${amounts[contract] || '10'} USDT)` : 'Unlimited'}
+                                                  </span>
+                                                  <span className="text-[9px] text-[#3D9A6A] bg-[#3D9A6A]/10 px-1 py-0.2 rounded border border-[#3D9A6A]/20">
+                                                    {approvalMode === 'exact' ? 'Least-Privilege' : 'Convenience'}
+                                                  </span>
+                                                </span>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => setApprovalMode(approvalMode === 'exact' ? 'unlimited' : 'exact')}
+                                                  className="text-[#F5C542] hover:underline font-mono text-[10px]"
+                                                >
+                                                  {approvalMode === 'exact' ? 'Switch to Unlimited' : 'Switch to Exact (Safer)'}
+                                                </button>
+                                              </div>
+                                            )}
                                             {quote.isFallback && (
                                               <p className="text-[10px] text-[#A1A1AA] text-center pt-1 leading-tight">
                                                 Live RFQ is restricted in this cloud region (40304). Trades are locked for fund safety. Run AfterGap Agent CLI for live execution.
@@ -2610,6 +2693,26 @@ export default function Home() {
                                                 )}
                                               </button>
                                             </MetalFx>
+                                            {!quote.isFallback && (
+                                              <div className="flex items-center justify-between text-[10px] text-[#A1A1AA] pt-1.5 px-0.5">
+                                                <span className="flex items-center gap-1 text-[#3D9A6A]">
+                                                  <span>🛡️ Allowance:</span>
+                                                  <span className="font-semibold text-[#F5F5F4]">
+                                                    {approvalMode === 'exact' ? `Exact ($${amounts[contract] || '10'} USDT)` : 'Unlimited'}
+                                                  </span>
+                                                  <span className="text-[9px] text-[#3D9A6A] bg-[#3D9A6A]/10 px-1 py-0.2 rounded border border-[#3D9A6A]/20">
+                                                    {approvalMode === 'exact' ? 'Least-Privilege' : 'Convenience'}
+                                                  </span>
+                                                </span>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => setApprovalMode(approvalMode === 'exact' ? 'unlimited' : 'exact')}
+                                                  className="text-[#F5C542] hover:underline font-mono text-[10px]"
+                                                >
+                                                  {approvalMode === 'exact' ? 'Switch to Unlimited' : 'Switch to Exact (Safer)'}
+                                                </button>
+                                              </div>
+                                            )}
                                             {quote.isFallback && (
                                               <p className="text-[10px] text-[#A1A1AA] text-center pt-1 leading-tight">
                                                 Live RFQ is restricted in this cloud region (40304). Trades are locked for fund safety. Run AfterGap Agent CLI for live execution.

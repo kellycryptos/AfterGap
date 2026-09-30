@@ -755,18 +755,24 @@ export async function GET(request: NextRequest) {
 
         if (isQuoteBlocked) {
           const reqAmountNum = Number(BigInt(amount)) / 1e18;
+          const isReverseToUsdt = toTokenAddress.toLowerCase() === '0x55d398326f99059ff775485246999027b3197955';
+          const tokenLookup = isReverseToUsdt ? fromTokenAddress.toLowerCase() : toTokenAddress.toLowerCase();
+
           const fallbackQuote = (
-            BENCHMARK_QUOTES[toTokenAddress.toLowerCase()] ||
+            BENCHMARK_QUOTES[tokenLookup] ||
             BENCHMARK_QUOTES['0x02fca66c1d1afb4e2a7884261eb00f63598a7436']
           ).map((q: any) => {
             const unitPrice = Number(q.toToken?.tokenUnitPrice || '229.11');
-            const calculatedOutput = unitPrice > 0 ? reqAmountNum / unitPrice : 0;
-            const toDecimals = Number(q.toToken?.decimal || 18);
+            const toDecimals = isReverseToUsdt ? 18 : Number(q.toToken?.decimal || 18);
+            // In sell mode: output = shares * unitPrice; In buy mode: output = usdt / unitPrice
+            const calculatedOutput = isReverseToUsdt ? reqAmountNum * unitPrice : (unitPrice > 0 ? reqAmountNum / unitPrice : 0);
             const toTokenAmountScaled = BigInt(Math.floor(calculatedOutput * 10 ** toDecimals)).toString();
             return {
               ...q,
               fromTokenAmount: amount,
               toTokenAmount: toTokenAmountScaled,
+              fromToken: isReverseToUsdt ? q.toToken : q.fromToken,
+              toToken: isReverseToUsdt ? q.fromToken : q.toToken,
               isFallback: true,
             };
           });
