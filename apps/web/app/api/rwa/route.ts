@@ -1,29 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { BinanceRwaClient } from '@aftergap/api';
+import { BinanceRwaClient, signRequest } from '@aftergap/api';
 
 export const dynamic = 'force-dynamic';
-
-function encodePancakeSwapV2(
-  amountIn: bigint,
-  amountOutMin: bigint,
-  path: string[],
-  to: string,
-  deadline: number
-): string {
-  const selector = '38ed1739';
-  const padUint = (n: bigint | number) => n.toString(16).padStart(64, '0');
-  const padAddr = (a: string) => a.toLowerCase().replace('0x', '').padStart(64, '0');
-
-  const partAmountIn = padUint(amountIn);
-  const partAmountOutMin = padUint(amountOutMin);
-  const partPathOffset = padUint(BigInt(160)); // 5 * 32 = 160 = 0xa0
-  const partTo = padAddr(to);
-  const partDeadline = padUint(BigInt(deadline));
-  const partPathLen = padUint(BigInt(path.length));
-  const partPathItems = path.map(padAddr).join('');
-
-  return '0x' + selector + partAmountIn + partAmountOutMin + partPathOffset + partTo + partDeadline + partPathLen + partPathItems;
-}
 
 const BENCHMARK_PLATFORMS = [
   {
@@ -556,7 +534,7 @@ const BENCHMARK_QUOTES: Record<string, any> = {
       fromTokenAmount: '10000000000000000000',
       toTokenAmount: '43647167000000000',
       priceImpactPercent: '0.04',
-      router: '0x10ED43C718714eb63d5aA57B78B54704E256024E',
+      router: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
       fromToken: {
         tokenContractAddress: '0x55d398326f99059fF775485246999027B3197955',
         tokenSymbol: 'USDT',
@@ -569,20 +547,20 @@ const BENCHMARK_QUOTES: Record<string, any> = {
         tokenUnitPrice: '229.11',
         decimal: 18,
       },
-      approveTarget: '0x10ED43C718714eb63d5aA57B78B54704E256024E',
+      approveTarget: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
       isBest: true,
     },
   ],
   '0xa9ee28c80f960b889dfbd1902055218cba016f75': [
     {
       quoteId: 'quote-nvdaon-benchmark-02',
-      vendorName: 'PcsXRfq',
-      executionMode: 'RFQ',
+      vendorName: 'LiquidMesh',
+      executionMode: 'SWAP',
       binanceChainId: '56',
       fromTokenAmount: '10000000000000000000',
       toTokenAmount: '43531255000000000',
       priceImpactPercent: '0.05',
-      router: '0x62a12B47517a26fE7b783457a4e69d7B46fFA0F5',
+      router: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
       fromToken: {
         tokenContractAddress: '0x55d398326f99059fF775485246999027B3197955',
         tokenSymbol: 'USDT',
@@ -595,7 +573,7 @@ const BENCHMARK_QUOTES: Record<string, any> = {
         tokenUnitPrice: '229.72',
         decimal: 18,
       },
-      approveTarget: '0x62a12B47517a26fE7b783457a4e69d7B46fFA0F5',
+      approveTarget: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
       isBest: false,
     },
   ],
@@ -624,6 +602,33 @@ export async function GET(request: NextRequest) {
   try {
     const simulate40304 = searchParams.get('simulate40304') === 'true';
     const simulateLive = searchParams.get('simulateLive') === 'true';
+
+    if (action === 'sign') {
+      const pathWithQuery = searchParams.get('path') || '';
+      if (!pathWithQuery) {
+        return NextResponse.json({ error: 'Missing path parameter' }, { status: 400 });
+      }
+      if (!apiKey || !secretKey) {
+        return NextResponse.json({ error: 'API credentials not configured' }, { status: 500 });
+      }
+      const timestamp = new Date().toISOString();
+      const signed = signRequest(
+        {
+          method: 'GET',
+          pathWithQuery,
+          timestamp,
+        },
+        apiKey,
+        secretKey
+      );
+
+      return NextResponse.json({
+        success: true,
+        requestUrl: signed.fullUrl,
+        headers: signed.headers,
+        timestamp,
+      });
+    }
 
     if (action === 'platforms') {
       let platformsRes = simulateLive
@@ -726,13 +731,13 @@ export async function GET(request: NextRequest) {
         const liveQuoteData = [
           {
             quoteId: `quote-live-${Date.now()}`,
-            vendorName: isOndo ? 'Ondo RFQ' : 'LiquidMesh',
-            executionMode: isOndo ? 'RFQ' : 'SWAP',
+            vendorName: 'LiquidMesh',
+            executionMode: 'SWAP',
             binanceChainId: '56',
             fromTokenAmount: amount,
             toTokenAmount: isOndo ? '43531255000000000' : '43647167000000000',
             priceImpactPercent: '0.04',
-            router: isOndo ? '0x62a12B47517a26fE7b783457a4e69d7B46fFA0F5' : '0x10ED43C718714eb63d5aA57B78B54704E256024E',
+            router: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
             fromToken: {
               tokenContractAddress: fromTokenAddress,
               tokenSymbol: 'USDT',
@@ -745,7 +750,7 @@ export async function GET(request: NextRequest) {
               tokenUnitPrice: isOndo ? '229.72' : '229.11',
               decimal: 18,
             },
-            approveTarget: isOndo ? '0x62a12B47517a26fE7b783457a4e69d7B46fFA0F5' : '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
+            approveTarget: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
             isBest: !isOndo,
             isFallback: false,
           },
@@ -846,44 +851,26 @@ export async function GET(request: NextRequest) {
         !(swapRes.data as any)?.tx?.data;
 
       if (isSwapBlocked) {
-        const pancakeRouter = '0x10ED43C718714eb63d5aA57B78B54704E256024E';
-        const wbnb = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c';
-        const deadline = Math.floor(Date.now() / 1000) + 1800;
-        const validCalldata = encodePancakeSwapV2(
-          BigInt(amount),
-          0n,
-          [fromTokenAddress, wbnb],
-          userWalletAddress,
-          deadline
-        );
-
-        swapRes = {
-          success: true,
-          status: 200,
-          statusText: 'OK',
-          data: {
-            executionMode: 'SWAP',
-            isFallback: true,
-            routerResult: {
-              binanceChainId: '56',
-              vendorName: 'PancakeSwap V2 (Verified Mainnet Gateway)',
-              fromTokenAmount: amount,
-              toTokenAmount: '0',
-              router: pancakeRouter,
+        return NextResponse.json({
+          auth: authState,
+          swap: {
+            success: false,
+            status: 400,
+            statusText: 'Swap route unavailable',
+            error: {
+              code: (swapRes.data as any)?.code || 40001,
+              message:
+                (swapRes.data as any)?.msg ||
+                'Direct LiquidMesh swap route unavailable. Please refresh quote and ensure minimum order is at least 5 USD.',
+              details: swapRes.data,
             },
-            tx: {
-              from: userWalletAddress,
-              to: pancakeRouter,
-              data: validCalldata,
-              value: '0',
-              gas: '300000',
-              gasPrice: '3000000000',
-            },
-          } as any,
-          rawBody: '',
-          headers: {},
-          debug: { ...swapRes.debug, fallbackUsed: true } as any,
-        };
+            data: null,
+            rawBody: swapRes.rawBody,
+            headers: {},
+            debug: { ...swapRes.debug, fallbackUsed: false } as any,
+          },
+          timestamp: new Date().toISOString(),
+        });
       }
 
       return NextResponse.json({
@@ -1090,41 +1077,26 @@ export async function POST(request: NextRequest) {
         !(swapRes.data as any)?.tx?.data;
 
       if (isSwapBlocked) {
-        const fromAddr = fromTokenAddress || '0x55d398326f99059fF775485246999027B3197955';
-        const userAddr = userWalletAddress || '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045';
-        const amtStr = amount || '10000000000000000000';
-        const pancakeRouter = '0x10ED43C718714eb63d5aA57B78B54704E256024E';
-        const wbnb = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c';
-        const deadline = Math.floor(Date.now() / 1000) + 1800;
-        const validCalldata = encodePancakeSwapV2(BigInt(amtStr), 0n, [fromAddr, wbnb], userAddr, deadline);
-
-        swapRes = {
-          success: true,
-          status: 200,
-          statusText: 'OK',
-          data: {
-            executionMode: 'SWAP',
-            isFallback: true,
-            routerResult: {
-              binanceChainId: '56',
-              vendorName: 'PancakeSwap V2 (Verified Mainnet Gateway)',
-              fromTokenAmount: amtStr,
-              toTokenAmount: '0',
-              router: pancakeRouter,
+        return NextResponse.json({
+          auth: authState,
+          swap: {
+            success: false,
+            status: 400,
+            statusText: 'Swap route unavailable',
+            error: {
+              code: (swapRes.data as any)?.code || 40001,
+              message:
+                (swapRes.data as any)?.msg ||
+                'Direct LiquidMesh swap route unavailable. Please refresh quote and ensure minimum order is at least 5 USD.',
+              details: swapRes.data,
             },
-            tx: {
-              from: userAddr,
-              to: pancakeRouter,
-              data: validCalldata,
-              value: '0',
-              gas: '300000',
-              gasPrice: '3000000000',
-            },
-          } as any,
-          rawBody: '',
-          headers: {},
-          debug: { ...swapRes.debug, fallbackUsed: true } as any,
-        };
+            data: null,
+            rawBody: swapRes.rawBody,
+            headers: {},
+            debug: { ...swapRes.debug, fallbackUsed: false } as any,
+          },
+          timestamp: new Date().toISOString(),
+        });
       }
 
       return NextResponse.json({

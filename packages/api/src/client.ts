@@ -1,5 +1,6 @@
-import { Agent, setGlobalDispatcher } from 'undici';
-import dns from 'dns/promises';
+import { Agent, fetch as undiciFetch } from 'undici';
+import https from 'https';
+import dns from 'dns';
 import {
   ClientConfig,
   BinanceApiResponse,
@@ -15,52 +16,67 @@ import {
 } from './types';
 import { signRequest } from './signer';
 
-// Setup resilient DNS and timeouts
-let dispatcherInitialized = false;
-function initDispatcher() {
-  if (dispatcherInitialized) return;
+// Setup resilient CloudFront IP resolution for web3.binance.com
+const BINANCE_CLOUDFRONT_IPS = ['108.156.221.91', '108.156.221.120', '108.156.221.129', '108.156.221.85'];
+let cachedBinanceIp: string = BINANCE_CLOUDFRONT_IPS[0];
+
+function refreshDohIp(hostname: string): void {
   try {
-    import('dns').then((d) => {
-      try {
-        d.setServers(['8.8.8.8', '1.1.1.1']);
-        d.setDefaultResultOrder('ipv4first');
-      } catch {}
-    });
-
-    const resolver = new dns.Resolver();
-    resolver.setServers(['8.8.8.8', '1.1.1.1']);
-
-    const agent = new Agent({
-      headersTimeout: 30000,
-      connectTimeout: 30000,
-      connect: {
-        lookup: (hostname, options, callback) => {
-          resolver
-            .resolve4(hostname)
-            .then((ips) => {
-              if (!ips || ips.length === 0) {
-                return callback(new Error(`No IPv4 address found for ${hostname}`), '' as any, 4);
-              }
-              if (typeof options === 'object' && options?.all) {
-                callback(null, ips.map((ip) => ({ address: ip, family: 4 })) as any);
-              } else {
-                callback(null, ips[0], 4);
-              }
-            })
-            .catch(() => {
-              // System fallback
-              import('dns').then((d) => d.lookup(hostname, options, callback));
-            });
-        },
+    const req = https.get(
+      `https://8.8.8.8/resolve?name=${hostname}&type=A`,
+      {
+        headers: { Host: 'dns.google' },
+        servername: 'dns.google',
+        timeout: 3000,
       },
-    });
-
-    setGlobalDispatcher(agent);
-    dispatcherInitialized = true;
+      (res) => {
+        let d = '';
+        res.on('data', (c) => (d += c));
+        res.on('end', () => {
+          try {
+            const j = JSON.parse(d);
+            const a = j.Answer && j.Answer.find((x: any) => x.type === 1);
+            if (a && a.data) cachedBinanceIp = a.data;
+          } catch {}
+        });
+      }
+    );
+    req.on('error', () => {});
+    req.on('timeout', () => req.destroy());
   } catch {}
 }
 
-initDispatcher();
+let sharedAgent: Agent | null = null;
+
+function getAgent(): Agent {
+  if (sharedAgent) return sharedAgent;
+  sharedAgent = new Agent({
+    headersTimeout: 30000,
+    connectTimeout: 30000,
+    keepAliveTimeout: 4000,
+    keepAliveMaxTimeout: 10000,
+    connect: {
+      lookup: (hostname, options, callback) => {
+        let cb = callback;
+        let opts = options;
+        if (typeof opts === 'function') {
+          cb = opts as any;
+          opts = {};
+        }
+        if (hostname === 'web3.binance.com') {
+          refreshDohIp(hostname);
+          const ip = cachedBinanceIp || BINANCE_CLOUDFRONT_IPS[0];
+          if (typeof opts === 'object' && (opts as any)?.all) {
+            return cb(null, [{ address: ip, family: 4 }] as any);
+          }
+          return cb(null, ip as any, 4);
+        }
+        (dns.lookup as any)(hostname, opts, cb);
+      },
+    },
+  });
+  return sharedAgent;
+}
 
 export interface ApiResponseWrapper<T> {
   success: boolean;
@@ -98,8 +114,6 @@ export class BinanceRwaClient {
    * Helper to perform an HTTP GET request (signed if keys provided)
    */
   public async get<T>(pathWithQuery: string): Promise<ApiResponseWrapper<T>> {
-    initDispatcher();
-
     const timestamp = new Date().toISOString();
     const hasAuth = Boolean(this.apiKey && this.secretKey);
 
@@ -133,9 +147,10 @@ export class BinanceRwaClient {
     }
 
     try {
-      const response = await fetch(requestUrl, {
+      const response = await undiciFetch(requestUrl, {
         method: 'GET',
         headers,
+        dispatcher: getAgent(),
       });
 
       const rawBody = await response.text();
@@ -177,7 +192,8 @@ export class BinanceRwaClient {
         },
       };
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
+      const cause = err instanceof Error && (err as any).cause ? ` (${(err as any).cause?.message || (err as any).cause})` : '';
+      const errorMessage = (err instanceof Error ? err.message : String(err)) + cause;
       return {
         success: false,
         status: 0,
@@ -202,8 +218,6 @@ export class BinanceRwaClient {
    * Helper to perform an HTTP POST request (signed if keys provided)
    */
   public async post<T>(pathWithQuery: string, bodyString: string = ''): Promise<ApiResponseWrapper<T>> {
-    initDispatcher();
-
     const timestamp = new Date().toISOString();
     const hasAuth = Boolean(this.apiKey && this.secretKey);
 
@@ -238,10 +252,11 @@ export class BinanceRwaClient {
     }
 
     try {
-      const response = await fetch(requestUrl, {
+      const response = await undiciFetch(requestUrl, {
         method: 'POST',
         headers,
         body: bodyString,
+        dispatcher: getAgent(),
       });
 
       const rawBody = await response.text();
@@ -283,7 +298,8 @@ export class BinanceRwaClient {
         },
       };
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
+      const cause = err instanceof Error && (err as any).cause ? ` (${(err as any).cause?.message || (err as any).cause})` : '';
+      const errorMessage = (err instanceof Error ? err.message : String(err)) + cause;
       return {
         success: false,
         status: 0,

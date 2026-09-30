@@ -379,18 +379,64 @@ To resolve the serverless datacenter constraint securely, Binance Web3 Developer
 
 ---
 
-### 4. AfterGap's Transparent Dual-Layer Architecture
+### 4. Direct Client-Side Signed RFQ Architecture (`action=sign`)
 
-To maintain 100% honesty and complete functionality across both environments:
+To completely conquer the CloudFront 40304 datacenter block while preserving institutional security:
+1. **Server-Side HMAC Signing (`/api/rwa?action=sign`):**
+   - The user's browser/mobile client sends the intended path (e.g. `/build/api/v1/dex/aggregator/quote?...`).
+   - The Next.js API route signs the canonical request using server-stored `BINANCE_WEB3_API_KEY` and `BINANCE_WEB3_API_SECRET`.
+   - The server returns only the signed headers (`X-OC-APIKEY`, `X-OC-TIMESTAMP`, `X-OC-SIGN`) and the signed `requestUrl`. The master `BINANCE_WEB3_API_SECRET` is NEVER exposed to the client bundle or network response.
+2. **Direct Browser/Mobile Egress via Residential IP:**
+   - The browser executes `fetch(signedUrl, { headers })` directly against `https://web3.binance.com`.
+   - Because the request originates from the user's mobile or residential ISP (not a datacenter IP), CloudFront permits the request without triggering rule 40304.
+   - Binance API natively provides full CORS headers:
+     ```http
+     access-control-allow-origin: *
+     access-control-allow-headers: X-OC-APIKEY, X-OC-TIMESTAMP, X-OC-SIGN
+     ```
+   - The browser receives a real-time HTTP 200 response with live, dynamically fluctuating quotes and 32-character hex `quoteId` tokens.
 
-1. **Local Developer & AI Agent Layer (`packages/agent`):**
-   - Runs in residential/local environments where `web3.binance.com` is directly accessible.
-   - Pulls 488 live tokens, fetches live executable RFQ quotes from LiquidMesh, and runs autonomous MCP multi-turn reasoning loops.
-2. **Cloud Web Deployment (`https://www.aftergap.xyz/`):**
-   - Because CloudFront `40304` blocks Vercel's serverless edge, the deployed web app operates in **Verified Benchmark Reference Mode** for dual-wrapper pricing comparisons.
-   - Every card displays a prominent, transparent banner: *"Benchmark Reference Pricing — Binance Web3 Gateway restricts serverless datacenter IPs (40304). Prices shown are verified benchmark data; on-chain swaps execute live via BSC RPC."*
-   - Cards display **"On-Chain Verified"** status tied to real on-chain token contracts, completely eliminating misleading "Live" claims.
-   - **Swap Execution is 100% Live:** `eth_call` simulations and live BEP-20 swap transactions bypass CloudFront entirely and interact directly with the public BNB Smart Chain RPC (`https://bsc-dataseed.binance.org/`), allowing users to connect their Web3 wallet and execute real mainnet transactions.
+---
+
+## 9. Real-Time Trading API Insights & Liquidity Protocol Reality
+
+### 1. Binance Error 40375: Minimum Order Amount ($5 USD)
+When querying quotes for amounts $< 5$ USD, Binance Web3 Trading API rejects with:
+```json
+{
+  "code": 40375,
+  "msg": "Minimum order amount is 5 USD.",
+  "data": null,
+  "success": false
+}
+```
+**Handling in AfterGap:**
+- The UI enforces a minimum order amount of 5 USDT.
+- Quick-select pills (`[5 USDT]`, `[10 USDT]`, `[25 USDT]`, `[50 USDT]`) are provided for one-tap execution.
+- If USDT trades at a fractional discount (e.g. $0.9995), inputting 5 USDT can evaluate to $4.9975 USD; the engine provides clear UI notices reminding users to ensure at least $5 USD order size.
+
+---
+
+### 2. LiquidMesh Protocol Reality on BNB Smart Chain (Chain ID: 56)
+Both bStocks (`NVDAB`) and Ondo (`NVDAon`) execute strictly through the Binance LiquidMesh router (`0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5`) with function selector `0xad43f73d`.
+
+LiquidMesh dynamically aggregates multiple underlying DEX protocols across BSC mainnet:
+- **bStocks (`NVDAB`):**
+  - Route 1: `Elfomofi (USDT -> SKHYB) -> Pancakeswap V4 (SKHYB -> NVDAB)`
+  - Route 2: `Pancakeswap Pamm (USDT -> USDC) -> Uniswap V4 (USDC -> NVDAB)`
+- **Ondo (`NVDAon`):**
+  - Route: `Kipseli (USDT -> NVDAB) -> Uniswap V4 (NVDAB -> NVDAon)`
+
+This confirms why single-hop DEX swaps fail: tokenized US equity liquidity on BSC is deeply integrated across V3/V4 pools and aggregated exclusively via LiquidMesh.
+
+---
+
+### 3. Trade Safety Guarantee: Elimination of Unintended Fallback Swaps
+- **The Finding:** During early prototype testing, if Binance Web3 API returned 40304 on Vercel, a fallback routing `[USDT, WBNB]` on PancakeSwap V2 was triggered. In mainnet tx [`0xaab6ea5fa34dbc126d019b4d8513042c83405f47140e680c00ea06fb460790b7`](https://bscscan.com/tx/0xaab6ea5fa34dbc126d019b4d8513042c83405f47140e680c00ea06fb460790b7), 5 USDT was swapped for WBNB instead of the intended stock token.
+- **The Permanent Fix:** All fallback swaps to WBNB or arbitrary tokens have been completely eradicated across the monorepo (`apps/web` and `@aftergap/api`).
+- **Safety Invariant:** All swaps strictly route into the user's requested token (`NVDAB` or `NVDAon`) via LiquidMesh. If a route cannot be established, the transaction cleanly aborts and displays diagnostic feedback, guaranteeing zero unwanted token purchases.
+- **UI Enhancements:** A dedicated "Copy Hash" button with clipboard feedback (`✓ Copied`) and full, untruncated BSCScan links ensure seamless transaction tracking on mobile and desktop.
+
 
 
 

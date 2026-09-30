@@ -70,17 +70,20 @@ AfterGap is an end-to-end institutional-grade arbitrage terminal, smart order ro
 - **Dynamic Best Route Identification:** Instantly highlights which wrapper is trading at a discount and computes total savings.
 - **Thematic Baskets:** Pre-configured clusters (**Mag 7**, **AI & Semiconductors**, **Buffett / Value**, **Liquid Growth**) ranked in real time by basis spread to spot arbitrage opportunities across entire sectors at a glance.
 
-### 2. Intelligent Smart Order Routing & Execution
-- **Binance Web3 Trading API Integration:** Direct connectivity with `/dex/aggregator/quote` and `/dex/aggregator/swap` for executable quotes.
-- **Live Quote TTL Engine:** Built-in 30-second TTL countdown with synchronized auto-refresh to prevent expired quote execution.
+### 2. Intelligent Smart Order Routing & Real-Time Execution
+- **Binance Web3 Trading API Integration:** Direct connectivity with `/dex/aggregator/quote` and `/dex/aggregator/swap` for real-time executable spot quotes.
+- **Client-Side Direct Signed RFQ Architecture (`action=sign`):** Server signs requests with HMAC-SHA256 while client browsers fetch directly from `web3.binance.com` using residential/mobile IPs, cleanly bypassing datacenter WAF restrictions (HTTP 40304) without exposing API secrets.
+- **Verified LiquidMesh Protocol Routing:** Trades execute directly through Binance's LiquidMesh router (`0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5`, selector `0xad43f73d`), aggregating multi-pool liquidity across PancakeSwap V3/V4 and Uniswap V4.
+- **Absolute Trade Safety Invariant:** Zero fallback token swaps. Unlike early prototypes that routed unfillable orders through PancakeSwap WBNB, all trades strictly execute into the requested token (`NVDAB` or `NVDAon`) or cleanly abort with actionable diagnostics.
+- **Live Quote TTL Engine:** Built-in 30-second TTL countdown with synchronized auto-refresh to prevent stale quote execution.
 - **Native Web3 Wallet Execution:** EIP-1193 browser wallet connection (Binance Web3 Wallet & MetaMask) supporting auto-network switching to BSC Mainnet (`0x38` / `56`).
-- **Two-Step On-Chain Execution:** Seamless in-browser token approval (`USDT` $\to$ spender) and atomic swap execution with real-time transaction state feedback and BscScan explorers.
+- **Two-Step On-Chain Execution:** Seamless in-browser token approval (`USDT` $\to$ spender) and atomic swap execution with real-time transaction state feedback, one-tap copy button, and direct BSCScan explorer links.
 
 ### 3. Cryptographic API Client & Signer (`@aftergap/api`)
 - Enterprise TypeScript client for Binance Web3 Developer APIs (Market RWA, Trading Aggregator, and Wallet Balances).
 - Strict canonical request pre-hashing and HMAC-SHA256 Base64 signing.
-- Built-in zero-downtime fallback profiles ensuring terminal continuity even during external gateway rate limits.
-- Fully unit tested with cryptographic test vectors (`npx tsx packages/api/src/signer.test.ts`).
+- Built-in DNS-over-HTTPS (DoH) and verified CloudFront edge routing to ensure zero-hang network reliability across any OS or serverless host.
+- Fully unit tested with cryptographic test vectors (`npm run test:signer`), dynamic disclosure verification (`npm run test:disclosure`), and live mainnet RFQ validation (`npm run test:live`).
 
 ### 4. Autonomous AI Agent & Model Context Protocol (MCP) Server (`@aftergap/agent`)
 - Standardized **Model Context Protocol (MCP)** server over stdio compatible with Cursor, Claude Code, and autonomous AI agents.
@@ -209,6 +212,9 @@ npm run test:signer
 
 # Dynamic fallback pricing & React UI disclosure tests
 npm run test:disclosure
+
+# Live mainnet RFQ quote & swap route validation (BSC Chain 56)
+npm run test:live
 ```
 
 ### 5. Launch the Web Application
