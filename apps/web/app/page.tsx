@@ -648,53 +648,36 @@ export default function Home() {
 
     setBroadcasts((prev) => ({ ...prev, [contract]: { loading: true, step: 'preparing' } }));
 
+    if (currentQuote.isFallback) {
+      setBroadcasts((prev) => ({
+        ...prev,
+        [contract]: {
+          loading: false,
+          step: 'error',
+          error: 'Swaps are locked in benchmark mode to protect user funds. Live Binance RFQ gateway is restricted on this cloud region (CloudFront 40304). Run AfterGap Agent CLI for live trading.',
+        },
+      }));
+      return;
+    }
+
     try {
-      // Step 1: Fetch or prepare the swap transaction to lock in the exact target spender
+      // Step 1: Fetch live swap transaction from secure server proxy
       let swapTx: { to: string; data: string; value?: string; gas?: string } | null = null;
       let targetSpender = currentQuote.spender || currentQuote.rawQuote?.approveTarget || '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5';
 
-      // Attempt 1: Direct Client-Side RFQ execution from user device (Zero datacenter restrictions)
       try {
-        const swapPath = `/build/api/v1/dex/aggregator/swap?quoteId=${currentQuote.quoteId}&binanceChainId=56&fromTokenAddress=${usdtContract}&toTokenAddress=${contract}&amount=${amountInSmallestUnit}&userWalletAddress=${wallet.address}&slippagePercent=1`;
-        const signRes = await fetch(`/api/rwa?action=sign&path=${encodeURIComponent(swapPath)}`);
-        if (signRes.ok) {
-          const signData = await signRes.json();
-          if (signData.requestUrl && signData.headers) {
-            const directRes = await fetch(signData.requestUrl, {
-              method: 'GET',
-              headers: signData.headers,
-            });
-            if (directRes.ok) {
-              const directJson = await directRes.json();
-              if (directJson?.code === 0 && directJson?.data?.tx?.data) {
-                swapTx = directJson.data.tx;
-                if (swapTx?.to) {
-                  targetSpender = swapTx.to;
-                }
-              }
-            }
+        const swapRes = await fetch(
+          `/api/rwa?action=swap&quoteId=${currentQuote.quoteId}&toTokenAddress=${contract}&amount=${amountInSmallestUnit}&userWalletAddress=${wallet.address}&slippagePercent=1`
+        );
+        const swapJson = await swapRes.json();
+        if (swapRes.ok && swapJson?.swap?.data?.tx?.data) {
+          swapTx = swapJson.swap.data.tx;
+          if (swapTx?.to) {
+            targetSpender = swapTx.to;
           }
         }
       } catch (e) {
-        console.warn('Direct client swap fetch failed, trying proxy...', e);
-      }
-
-      // Attempt 2: Server-side proxy execution
-      if (!swapTx || !swapTx.data) {
-        try {
-          const swapRes = await fetch(
-            `/api/rwa?action=swap&quoteId=${currentQuote.quoteId}&toTokenAddress=${contract}&amount=${amountInSmallestUnit}&userWalletAddress=${wallet.address}&slippagePercent=1`
-          );
-          const swapJson = await swapRes.json();
-          if (swapRes.ok && swapJson?.swap?.data?.tx?.data) {
-            swapTx = swapJson.swap.data.tx;
-            if (swapTx?.to) {
-              targetSpender = swapTx.to;
-            }
-          }
-        } catch (e) {
-          console.warn('Proxy swap fetch error:', e);
-        }
+        console.warn('Proxy swap fetch error:', e);
       }
 
       if (!swapTx || !swapTx.data) {
@@ -1111,52 +1094,26 @@ export default function Home() {
     let bestRoute: any = null;
     let isDirectLive = false;
 
-    // Attempt 1: Direct Client-Side RFQ execution from user's IP (bypasses datacenter 40304)
+    // Fetch quote via authenticated server API route (1-hop)
     try {
-      const quotePath = `/build/api/v1/dex/aggregator/quote?binanceChainId=56&fromTokenAddress=0x55d398326f99059fF775485246999027B3197955&toTokenAddress=${contract}&amount=${amountInSmallestUnit}&userWalletAddress=${walletAddress}&slippagePercent=1`;
-      const signRes = await fetch(`/api/rwa?action=sign&path=${encodeURIComponent(quotePath)}`);
-      if (signRes.ok) {
-        const signData = await signRes.json();
-        if (signData.requestUrl && signData.headers) {
-          const directRes = await fetch(signData.requestUrl, {
-            method: 'GET',
-            headers: signData.headers,
-          });
-          if (directRes.ok) {
-            const directJson = await directRes.json();
-            if (directJson?.code === 0 && Array.isArray(directJson.data) && directJson.data.length > 0) {
-              bestRoute = directJson.data[0];
-              isDirectLive = true;
-            }
-          }
+      const res = await fetch(
+        `/api/rwa?action=quote&toTokenAddress=${contract}&amount=${amountInSmallestUnit}&userWalletAddress=${walletAddress}&slippagePercent=1`
+      );
+      const json = await res.json();
+      if (res.ok && json.quote?.data) {
+        const routeList = Array.isArray(json.quote?.data) ? json.quote.data : [json.quote?.data];
+        if (routeList[0]?.quoteId) {
+          bestRoute = routeList[0];
+          isDirectLive = !Boolean(
+            json.isFallback ||
+            json.quote?.isFallback ||
+            json.quote?.debug?.fallbackUsed ||
+            bestRoute.isFallback
+          );
         }
       }
     } catch (e) {
-      console.warn('Direct client quote fetch failed, trying proxy...', e);
-    }
-
-    // Attempt 2: Server-side API route proxy
-    if (!bestRoute) {
-      try {
-        const res = await fetch(
-          `/api/rwa?action=quote&toTokenAddress=${contract}&amount=${amountInSmallestUnit}&userWalletAddress=${walletAddress}&slippagePercent=1`
-        );
-        const json = await res.json();
-        if (res.ok && json.quote?.data) {
-          const routeList = Array.isArray(json.quote?.data) ? json.quote.data : [json.quote?.data];
-          if (routeList[0]?.quoteId) {
-            bestRoute = routeList[0];
-            isDirectLive = !Boolean(
-              json.isFallback ||
-              json.quote?.isFallback ||
-              json.quote?.debug?.fallbackUsed ||
-              bestRoute.isFallback
-            );
-          }
-        }
-      } catch (e) {
-        console.warn('Proxy quote fetch error:', e);
-      }
+      console.warn('Proxy quote fetch error:', e);
     }
 
     if (bestRoute && bestRoute.quoteId) {
@@ -1248,31 +1205,8 @@ export default function Home() {
 
       let tx: any = null;
 
-      // 1. Try Direct Client-Side RFQ execution from user device
+      // Fetch swap calldata via secure server API proxy
       try {
-        const swapPath = `/build/api/v1/dex/aggregator/swap?quoteId=${currentQuote.quoteId}&binanceChainId=56&fromTokenAddress=${usdtContract}&toTokenAddress=${contract}&amount=${amountInSmallestUnit}&userWalletAddress=${walletAddress}&slippagePercent=1`;
-        const signRes = await fetch(`/api/rwa?action=sign&path=${encodeURIComponent(swapPath)}`);
-        if (signRes.ok) {
-          const signData = await signRes.json();
-          if (signData.requestUrl && signData.headers) {
-            const directRes = await fetch(signData.requestUrl, {
-              method: 'GET',
-              headers: signData.headers,
-            });
-            if (directRes.ok) {
-              const directJson = await directRes.json();
-              if (directJson?.code === 0 && directJson?.data?.tx?.data) {
-                tx = directJson.data.tx;
-              }
-            }
-          }
-        }
-      } catch (e) {
-        console.warn('Direct client swap simulation fetch failed, trying proxy...', e);
-      }
-
-      // 2. Try proxy /api/rwa?action=swap
-      if (!tx || !tx.data) {
         const swapRes = await fetch(
           `/api/rwa?action=swap&quoteId=${currentQuote.quoteId}&toTokenAddress=${contract}&amount=${amountInSmallestUnit}&userWalletAddress=${walletAddress}&slippagePercent=1`
         );
@@ -1280,6 +1214,8 @@ export default function Home() {
         if (swapRes.ok && swapJson.swap?.data?.tx?.data) {
           tx = swapJson.swap.data.tx;
         }
+      } catch (e) {
+        console.warn('Proxy swap simulation fetch error:', e);
       }
 
       if (!tx || !tx.data) {
@@ -2139,44 +2075,60 @@ export default function Home() {
                                         ) : bc?.step === 'error' ? (
                                           <p className="text-[10px] text-[#C45C26]">{bc.error}</p>
                                         ) : (
-                                          <MetalFx variant="button" preset="gold" strength={0.85}>
-                                            <button
-                                              type="button"
-                                              onClick={() => wallet.connected ? handleApproveAndExecute(t) : connectWallet()}
-                                              disabled={bc?.loading || (quote.ttlRemaining || 0) <= 0}
-                                              className={`w-full py-1.5 px-3 rounded text-[11px] font-mono font-semibold transition disabled:opacity-40 flex items-center justify-center gap-1.5 ${
-                                                wallet.connected
-                                                  ? 'bg-[#3D9A6A]/15 hover:bg-[#3D9A6A]/25 border border-[#3D9A6A]/40 text-[#3D9A6A]'
-                                                  : 'bg-[#F5C542]/10 hover:bg-[#F5C542]/20 border border-[#F5C542]/30 text-[#F5C542]'
-                                              }`}
-                                            >
-                                              {bc?.loading ? (
-                                                <>
-                                                  <ThinkingOrb state="connecting" size={20} theme="dark" />
-                                                  <span className="truncate">
-                                                    {bc.step === 'preparing'
-                                                      ? 'Preparing Route...'
-                                                      : bc.step === 'approving'
-                                                      ? 'Approve USDT in wallet...'
-                                                      : bc.step === 'waiting_receipt'
-                                                      ? 'Confirming on BSC (~3s)...'
-                                                      : bc.step === 'approved'
-                                                      ? 'Approved! Next: Confirm swap...'
-                                                      : bc.step === 'swapping'
-                                                      ? 'Confirm swap in wallet...'
-                                                      : 'Broadcasting...'}
+                                          <>
+                                            <MetalFx variant="button" preset="gold" strength={0.85}>
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  if (quote.isFallback) return;
+                                                  wallet.connected ? handleApproveAndExecute(t) : connectWallet();
+                                                }}
+                                                disabled={bc?.loading || (quote.ttlRemaining || 0) <= 0 || Boolean(quote.isFallback)}
+                                                className={`w-full py-1.5 px-3 rounded text-[11px] font-mono font-semibold transition disabled:opacity-50 flex items-center justify-center gap-1.5 ${
+                                                  quote.isFallback
+                                                    ? 'bg-white/[0.04] text-[#A1A1AA] border border-white/[0.08] cursor-not-allowed'
+                                                    : wallet.connected
+                                                    ? 'bg-[#3D9A6A]/15 hover:bg-[#3D9A6A]/25 border border-[#3D9A6A]/40 text-[#3D9A6A]'
+                                                    : 'bg-[#F5C542]/10 hover:bg-[#F5C542]/20 border border-[#F5C542]/30 text-[#F5C542]'
+                                                }`}
+                                              >
+                                                {bc?.loading ? (
+                                                  <>
+                                                    <ThinkingOrb state="connecting" size={20} theme="dark" />
+                                                    <span className="truncate">
+                                                      {bc.step === 'preparing'
+                                                        ? 'Preparing Route...'
+                                                        : bc.step === 'approving'
+                                                        ? 'Approve USDT in wallet...'
+                                                        : bc.step === 'waiting_receipt'
+                                                        ? 'Confirming on BSC (~3s)...'
+                                                        : bc.step === 'approved'
+                                                        ? 'Approved! Next: Confirm swap...'
+                                                        : bc.step === 'swapping'
+                                                        ? 'Confirm swap in wallet...'
+                                                        : 'Broadcasting...'}
+                                                    </span>
+                                                  </>
+                                                ) : quote.isFallback ? (
+                                                  <span className="flex items-center justify-center gap-1.5 text-[#A1A1AA]">
+                                                    <span>🛡️ Benchmark Mode (Trading Locked)</span>
                                                   </span>
-                                                </>
-                                              ) : wallet.connected ? (
-                                                '🚀 Execute Live Swap on BSC'
-                                              ) : (
-                                                <span className="flex items-center justify-center gap-1.5">
-                                                  <Wallet className="w-3.5 h-3.5" />
-                                                  <span>Connect Wallet to Execute</span>
-                                                </span>
-                                              )}
-                                            </button>
-                                          </MetalFx>
+                                                ) : wallet.connected ? (
+                                                  '🚀 Execute Live Swap on BSC'
+                                                ) : (
+                                                  <span className="flex items-center justify-center gap-1.5">
+                                                    <Wallet className="w-3.5 h-3.5" />
+                                                    <span>Connect Wallet to Execute</span>
+                                                  </span>
+                                                )}
+                                              </button>
+                                            </MetalFx>
+                                            {quote.isFallback && (
+                                              <p className="text-[10px] text-[#A1A1AA] text-center pt-1 leading-tight">
+                                                Live RFQ is restricted in this cloud region (40304). Trades are locked for fund safety. Run AfterGap Agent CLI for live execution.
+                                              </p>
+                                            )}
+                                          </>
                                         )}
                                       </div>
                                     );
@@ -2534,44 +2486,60 @@ export default function Home() {
                                         ) : bc?.step === 'error' ? (
                                           <p className="text-[10px] text-[#C45C26]">{bc.error}</p>
                                         ) : (
-                                          <MetalFx variant="button" preset="gold" strength={0.85}>
-                                            <button
-                                              type="button"
-                                              onClick={() => wallet.connected ? handleApproveAndExecute(t) : connectWallet()}
-                                              disabled={bc?.loading || (quote.ttlRemaining || 0) <= 0}
-                                              className={`w-full py-1.5 px-3 rounded text-[11px] font-mono font-semibold transition disabled:opacity-40 flex items-center justify-center gap-1.5 ${
-                                                wallet.connected
-                                                  ? 'bg-[#3D9A6A]/15 hover:bg-[#3D9A6A]/25 border border-[#3D9A6A]/40 text-[#3D9A6A]'
-                                                  : 'bg-[#F5C542]/10 hover:bg-[#F5C542]/20 border border-[#F5C542]/30 text-[#F5C542]'
-                                              }`}
-                                            >
-                                              {bc?.loading ? (
-                                                <>
-                                                  <ThinkingOrb state="connecting" size={20} theme="dark" />
-                                                  <span className="truncate">
-                                                    {bc.step === 'preparing'
-                                                      ? 'Preparing Route...'
-                                                      : bc.step === 'approving'
-                                                      ? 'Approve USDT in wallet...'
-                                                      : bc.step === 'waiting_receipt'
-                                                      ? 'Confirming on BSC (~3s)...'
-                                                      : bc.step === 'approved'
-                                                      ? 'Approved! Next: Confirm swap...'
-                                                      : bc.step === 'swapping'
-                                                      ? 'Confirm swap in wallet...'
-                                                      : 'Broadcasting...'}
+                                          <>
+                                            <MetalFx variant="button" preset="gold" strength={0.85}>
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  if (quote.isFallback) return;
+                                                  wallet.connected ? handleApproveAndExecute(t) : connectWallet();
+                                                }}
+                                                disabled={bc?.loading || (quote.ttlRemaining || 0) <= 0 || Boolean(quote.isFallback)}
+                                                className={`w-full py-1.5 px-3 rounded text-[11px] font-mono font-semibold transition disabled:opacity-50 flex items-center justify-center gap-1.5 ${
+                                                  quote.isFallback
+                                                    ? 'bg-white/[0.04] text-[#A1A1AA] border border-white/[0.08] cursor-not-allowed'
+                                                    : wallet.connected
+                                                    ? 'bg-[#3D9A6A]/15 hover:bg-[#3D9A6A]/25 border border-[#3D9A6A]/40 text-[#3D9A6A]'
+                                                    : 'bg-[#F5C542]/10 hover:bg-[#F5C542]/20 border border-[#F5C542]/30 text-[#F5C542]'
+                                                }`}
+                                              >
+                                                {bc?.loading ? (
+                                                  <>
+                                                    <ThinkingOrb state="connecting" size={20} theme="dark" />
+                                                    <span className="truncate">
+                                                      {bc.step === 'preparing'
+                                                        ? 'Preparing Route...'
+                                                        : bc.step === 'approving'
+                                                        ? 'Approve USDT in wallet...'
+                                                        : bc.step === 'waiting_receipt'
+                                                        ? 'Confirming on BSC (~3s)...'
+                                                        : bc.step === 'approved'
+                                                        ? 'Approved! Next: Confirm swap...'
+                                                        : bc.step === 'swapping'
+                                                        ? 'Confirm swap in wallet...'
+                                                        : 'Broadcasting...'}
+                                                    </span>
+                                                  </>
+                                                ) : quote.isFallback ? (
+                                                  <span className="flex items-center justify-center gap-1.5 text-[#A1A1AA]">
+                                                    <span>🛡️ Benchmark Mode (Trading Locked)</span>
                                                   </span>
-                                                </>
-                                              ) : wallet.connected ? (
-                                                '🚀 Execute Live Swap on BSC'
-                                              ) : (
-                                                <span className="flex items-center justify-center gap-1.5">
-                                                  <Wallet className="w-3.5 h-3.5" />
-                                                  <span>Connect Wallet to Execute</span>
-                                                </span>
-                                              )}
-                                            </button>
-                                          </MetalFx>
+                                                ) : wallet.connected ? (
+                                                  '🚀 Execute Live Swap on BSC'
+                                                ) : (
+                                                  <span className="flex items-center justify-center gap-1.5">
+                                                    <Wallet className="w-3.5 h-3.5" />
+                                                    <span>Connect Wallet to Execute</span>
+                                                  </span>
+                                                )}
+                                              </button>
+                                            </MetalFx>
+                                            {quote.isFallback && (
+                                              <p className="text-[10px] text-[#A1A1AA] text-center pt-1 leading-tight">
+                                                Live RFQ is restricted in this cloud region (40304). Trades are locked for fund safety. Run AfterGap Agent CLI for live execution.
+                                              </p>
+                                            )}
+                                          </>
                                         )}
                                       </div>
                                     );

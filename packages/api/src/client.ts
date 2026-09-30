@@ -186,8 +186,8 @@ export class BinanceRwaClient {
           requestTimestamp: timestamp,
           hasAuth,
           sentHeaders: {
-            ...headers,
-            'X-OC-SIGN': headers['X-OC-SIGN'] ? `${headers['X-OC-SIGN'].slice(0, 8)}...` : (undefined as any),
+            'Content-Type': headers['Content-Type'],
+            Accept: headers['Accept'],
           },
         },
       };
@@ -292,8 +292,8 @@ export class BinanceRwaClient {
           requestTimestamp: timestamp,
           hasAuth,
           sentHeaders: {
-            ...headers,
-            'X-OC-SIGN': headers['X-OC-SIGN'] ? `${headers['X-OC-SIGN'].slice(0, 8)}...` : (undefined as any),
+            'Content-Type': headers['Content-Type'],
+            Accept: headers['Accept'],
           },
         },
       };

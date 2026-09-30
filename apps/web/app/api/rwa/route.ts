@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { BinanceRwaClient, signRequest } from '@aftergap/api';
+import { BinanceRwaClient } from '@aftergap/api';
 
 export const dynamic = 'force-dynamic';
 
@@ -603,32 +603,6 @@ export async function GET(request: NextRequest) {
     const simulate40304 = searchParams.get('simulate40304') === 'true';
     const simulateLive = searchParams.get('simulateLive') === 'true';
 
-    if (action === 'sign') {
-      const pathWithQuery = searchParams.get('path') || '';
-      if (!pathWithQuery) {
-        return NextResponse.json({ error: 'Missing path parameter' }, { status: 400 });
-      }
-      if (!apiKey || !secretKey) {
-        return NextResponse.json({ error: 'API credentials not configured' }, { status: 500 });
-      }
-      const timestamp = new Date().toISOString();
-      const signed = signRequest(
-        {
-          method: 'GET',
-          pathWithQuery,
-          timestamp,
-        },
-        apiKey,
-        secretKey
-      );
-
-      return NextResponse.json({
-        success: true,
-        requestUrl: signed.fullUrl,
-        headers: signed.headers,
-        timestamp,
-      });
-    }
 
     if (action === 'platforms') {
       let platformsRes = simulateLive

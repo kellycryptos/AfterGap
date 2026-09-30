@@ -72,7 +72,7 @@ AfterGap is an end-to-end institutional-grade arbitrage terminal, smart order ro
 
 ### 2. Intelligent Smart Order Routing & Real-Time Execution
 - **Binance Web3 Trading API Integration:** Direct connectivity with `/dex/aggregator/quote` and `/dex/aggregator/swap` for real-time executable spot quotes.
-- **Client-Side Direct Signed RFQ Architecture (`action=sign`):** Server signs requests with HMAC-SHA256 while client browsers fetch directly from `web3.binance.com` using residential/mobile IPs, cleanly bypassing datacenter WAF restrictions (HTTP 40304) without exposing API secrets.
+- **Secure Server-Side Architecture:** The Next.js API route securely holds API credentials, signs canonical requests server-side via HMAC-SHA256, queries Binance Trading APIs directly from the server, and returns structured data to the browser. The browser never receives signed headers or calls Binance directly.
 - **Verified LiquidMesh Protocol Routing:** Trades execute directly through Binance's LiquidMesh router (`0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5`, selector `0xad43f73d`), aggregating multi-pool liquidity across PancakeSwap V3/V4 and Uniswap V4.
 - **Absolute Trade Safety Invariant:** Zero fallback token swaps. Unlike early prototypes that routed unfillable orders through PancakeSwap WBNB, all trades strictly execute into the requested token (`NVDAB` or `NVDAon`) or cleanly abort with actionable diagnostics.
 - **Live Quote TTL Engine:** Built-in 30-second TTL countdown with synchronized auto-refresh to prevent stale quote execution.
