@@ -7,43 +7,81 @@ async function verifyUiRendering() {
   console.log('   AFTERGAP REACT UI DYNAMIC BADGE RENDERING VERIFICATION       ');
   console.log('================================================================\n');
 
-  // Verify that Home component can be evaluated and server-rendered
-  const html = renderToString(React.createElement(Home));
+  // 1. Verify Pro Mode rendering and disclosures
+  (globalThis as any).__AFTERGAP_TEST_MODE__ = 'pro';
+  const proHtml = renderToString(React.createElement(Home));
 
-  console.log('Rendered length:', html.length, 'bytes');
+  console.log('--- TEST 1: PRO MODE (Terminal UI) ---');
+  console.log('Rendered length:', proHtml.length, 'bytes');
 
-  // Verify benchmark pricing disclosures and verified on-chain badges:
-  const hasBenchmarkTitle = html.includes('Benchmark Reference Pricing');
-  const hasDatacenter40304Text = html.includes('Binance Web3 Gateway restricts serverless datacenter IPs (40304)');
-  const hasBstocksFallback = html.includes('data-testid="bstocks-fallback-badge"');
-  const hasOndoFallback = html.includes('data-testid="ondo-fallback-badge"');
-  const hasOnChainVerified = html.includes('On-Chain Verified');
-  const noMisleadingLiveFeed = !html.includes('Live Binance Web3 Feed');
+  const hasBenchmarkTitle = proHtml.includes('Benchmark Reference Pricing');
+  const hasDatacenter40304Text = proHtml.includes('Binance Web3 Gateway restricts serverless datacenter IPs (40304)');
+  const hasBstocksFallback = proHtml.includes('data-testid="bstocks-fallback-badge"');
+  const hasOndoFallback = proHtml.includes('data-testid="ondo-fallback-badge"');
+  const hasOnChainVerified = proHtml.includes('On-Chain Verified');
+  const noMisleadingLiveFeed = !proHtml.includes('Live Binance Web3 Feed');
 
-  console.log(`Benchmark Reference Pricing Title in HTML: ${hasBenchmarkTitle}`);
-  console.log(`40304 Datacenter Disclosure Explanation in HTML: ${hasDatacenter40304Text}`);
-  console.log(`bStocks Fallback Badge: ${hasBstocksFallback}`);
-  console.log(`Ondo Fallback Badge: ${hasOndoFallback}`);
-  console.log(`On-Chain Verified Badges Present: ${hasOnChainVerified}`);
-  console.log(`Misleading "Live Binance Web3 Feed" Removed: ${noMisleadingLiveFeed}`);
+  console.log(`Benchmark Reference Pricing Title: ${hasBenchmarkTitle}`);
+  console.log(`40304 Datacenter Disclosure:       ${hasDatacenter40304Text}`);
+  console.log(`bStocks Fallback Badge:            ${hasBstocksFallback}`);
+  console.log(`Ondo Fallback Badge:               ${hasOndoFallback}`);
+  console.log(`On-Chain Verified Badges Present:  ${hasOnChainVerified}`);
+  console.log(`Misleading Live Feed Removed:      ${noMisleadingLiveFeed}`);
 
   if (
-    hasBenchmarkTitle &&
-    hasDatacenter40304Text &&
-    hasBstocksFallback &&
-    hasOndoFallback &&
-    hasOnChainVerified &&
-    noMisleadingLiveFeed
+    !hasBenchmarkTitle ||
+    !hasDatacenter40304Text ||
+    !hasBstocksFallback ||
+    !hasOndoFallback ||
+    !hasOnChainVerified ||
+    !noMisleadingLiveFeed
   ) {
-    console.log('\n✅ PASS: Benchmark reference pricing disclosure banners render cleanly on BOTH bStocks and Ondo cards.');
-    console.log('✅ PASS: Badges accurately point to On-Chain Verified contracts without misleading "Live" claims.');
-  } else {
-    console.error('❌ FAIL: Expected honest benchmark disclosures and on-chain verified status in rendered markup.');
+    console.error('❌ FAIL: Expected honest benchmark disclosures and on-chain verified status in Pro Mode markup.');
     process.exit(1);
   }
+  console.log('✅ PASS: Pro Mode terminal renders complete benchmark disclosures and verified on-chain badges.\n');
 
-  console.log('\n================================================================');
-  console.log('   REACT UI DISCLOSURE VERIFICATION COMPLETED SUCCESSFULLY       ');
+  // 2. Verify Simple Mode rendering (Retail UI)
+  (globalThis as any).__AFTERGAP_TEST_MODE__ = 'simple';
+  const simpleHtml = renderToString(React.createElement(Home));
+
+  console.log('--- TEST 2: SIMPLE MODE (Retail UI) ---');
+  console.log('Rendered length:', simpleHtml.length, 'bytes');
+
+  const hasSimpleHero = simpleHtml.includes('Buy US Stocks on BNB Chain');
+  const hasCompanyName = simpleHtml.includes('Nvidia Corp');
+  const hasTicker = simpleHtml.includes('NVDA');
+  const hasSavingsLine = simpleHtml.includes('Buying this way saves you');
+  const hasBuyButton = simpleHtml.includes('Buy NVDA');
+  const hasPlainWrapper = simpleHtml.includes('gets dividends added as extra shares');
+  const noRawAddress = !simpleHtml.includes('0x02fca66c1d1afb4e2a7884261eb00f63598a7436');
+  const noRouterTerms = !simpleHtml.includes('LiquidMesh') && !simpleHtml.includes('RFQ') && !simpleHtml.includes('40304');
+
+  console.log(`Simple Mode Hero Present:          ${hasSimpleHero}`);
+  console.log(`Company Name & Ticker Present:     ${hasCompanyName && hasTicker}`);
+  console.log(`Plain Savings Line Present:        ${hasSavingsLine}`);
+  console.log(`Buy [TICKER] Button Present:       ${hasBuyButton}`);
+  console.log(`Plain Wrapper Dividend Sentence:   ${hasPlainWrapper}`);
+  console.log(`No Raw Contract Hex Address:       ${noRawAddress}`);
+  console.log(`No Technical RFQ/Router Jargon:    ${noRouterTerms}`);
+
+  if (
+    !hasSimpleHero ||
+    !hasCompanyName ||
+    !hasTicker ||
+    !hasSavingsLine ||
+    !hasBuyButton ||
+    !hasPlainWrapper ||
+    !noRawAddress ||
+    !noRouterTerms
+  ) {
+    console.error('❌ FAIL: Simple Mode failed compliance checks (found jargon, missing plain language, or missing card elements).');
+    process.exit(1);
+  }
+  console.log('✅ PASS: Simple Mode renders approachable stock card with zero technical jargon.\n');
+
+  console.log('================================================================');
+  console.log('   REACT UI DUAL-MODE VERIFICATION COMPLETED SUCCESSFULLY       ');
   console.log('================================================================');
 }
 

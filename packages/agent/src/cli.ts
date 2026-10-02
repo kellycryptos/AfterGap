@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { AfterGapAgentTools } from './tools.js';
+import { AfterGapAgentTools } from './tools';
 
 // Load .env.local or .env if present
 for (const envFile of ['.env.local', '.env', '../../.env.local', '../../.env']) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { BinanceRwaClient } from '@aftergap/api';
+import { AfterGapAgentTools } from '@aftergap/agent';
 
 export const dynamic = 'force-dynamic';
 
@@ -603,6 +604,24 @@ export async function GET(request: NextRequest) {
     const simulate40304 = searchParams.get('simulate40304') === 'true';
     const simulateLive = searchParams.get('simulateLive') === 'true';
 
+    if (action === 'agent') {
+      const prompt = searchParams.get('prompt') || '';
+      try {
+        const agent = new AfterGapAgentTools(apiKey, secretKey);
+        const result = await agent.processNaturalLanguage(prompt);
+        return NextResponse.json({
+          success: result.success,
+          data: result,
+          timestamp: new Date().toISOString(),
+        });
+      } catch (err: any) {
+        return NextResponse.json({
+          success: false,
+          error: err?.message || 'Agent failed to process command',
+          timestamp: new Date().toISOString(),
+        }, { status: 500 });
+      }
+    }
 
     if (action === 'platforms') {
       let platformsRes = simulateLive

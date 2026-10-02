@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@aftergap/agent": "*",
     "@aftergap/api": "*",
     "border-beam": "^1.4.1",
     "bot-avatars": "^0.1.1",

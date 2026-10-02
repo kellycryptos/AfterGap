@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { AfterGapAgentTools } from './tools.js';
+import { AfterGapAgentTools } from './tools';
 import * as readline from 'readline';
 
 // Load .env.local or .env if present

@@ -1,4 +1,5 @@
 import { BinanceRwaClient } from '@aftergap/api';
+import { parseNaturalLanguageIntent, ParseIntentResult, ParsedAgentIntent, FailedAgentIntent } from './parser';
 
 export interface TokenPriceInfo {
   tokenSymbol: string;
@@ -509,6 +510,88 @@ export class AfterGapAgentTools {
         cheapestWrapper: topOpportunity.cheapestWrapper,
         savingsUsdt: topOpportunity.directSavingsUsdt,
       },
+    };
+  }
+
+  /**
+   * Process a natural language input end-to-end:
+   * 1. Parses intent strictly (rejecting ambiguous/malformed inputs).
+   * 2. Calls existing inspectStockGap or scanThematicBasket functions.
+   * 3. Returns structured rationale, selected wrapper, and execution parameters.
+   */
+  async processNaturalLanguage(input: string) {
+    const intentResult = parseNaturalLanguageIntent(input);
+    if (!intentResult.success) {
+      return {
+        success: false as const,
+        error: intentResult.error,
+        reason: intentResult.reason,
+        rawInput: intentResult.rawInput,
+        suggestedExamples: intentResult.suggestedExamples,
+      };
+    }
+
+    const intent = intentResult;
+
+    if (intent.action === 'BASKET_SCAN') {
+      const basket = await this.scanThematicBasket(intent.basketKey || 'mag7');
+      const plainReason = `Scanned ${basket.basketName} on BSC. Top arbitrage opportunity is ${basket.topArbitrageOpportunity.ticker}: buying ${basket.topArbitrageOpportunity.cheapestWrapper} saves $${basket.topArbitrageOpportunity.savingsUsdt.toFixed(2)} vs competing wrapper.`;
+
+      return {
+        success: true as const,
+        intent,
+        basketResult: basket,
+        plainLanguageReason: plainReason,
+      };
+    }
+
+    // For BUY, SELL, or COMPARE: run inspectStockGap
+    const gap = await this.inspectStockGap(intent.ticker || 'NVDA');
+
+    // Pick target wrapper: honor explicit wrapper first, then preference, then default
+    let selectedToken = gap.tokens[0]; // default cheapest
+    if (intent.explicitWrapperSymbol) {
+      const explicit = gap.tokens.find(
+        (t) => t.tokenSymbol.toUpperCase() === intent.explicitWrapperSymbol!.toUpperCase()
+      );
+      if (explicit) selectedToken = explicit;
+    } else if (intent.targetWrapperPreference === 'bstock') {
+      selectedToken = gap.tokens.find((t) => t.platformId === 'bstock') || gap.tokens[0];
+    } else if (intent.targetWrapperPreference === 'ondo') {
+      selectedToken = gap.tokens.find((t) => t.platformId === 'ondo') || gap.tokens[0];
+    }
+
+    let plainReason = '';
+    if (intent.action === 'SELL') {
+      if (intent.explicitWrapperSymbol) {
+        plainReason = `Confirmed intent to sell ${intent.amountShares || '0.0218'} shares of ${selectedToken.tokenSymbol} (${selectedToken.platformId}) at current on-chain bid of $${selectedToken.onChainPrice.toFixed(2)}/share.`;
+      } else if (gap.tokens.length > 1) {
+        const highestExit = gap.tokens[gap.tokens.length - 1];
+        const lowestExit = gap.tokens[0];
+        const diff = highestExit.onChainPrice - lowestExit.onChainPrice;
+        plainReason = `For selling ${intent.ticker}, ${highestExit.tokenSymbol} (${highestExit.platformId}) currently pays the highest exit price at $${highestExit.onChainPrice.toFixed(2)}/share (+$${diff.toFixed(2)} vs ${lowestExit.tokenSymbol}).`;
+      } else {
+        plainReason = `Sell ${intent.amountShares || '0.0218'} shares of ${selectedToken.tokenSymbol} at $${selectedToken.onChainPrice.toFixed(2)}/share on BNB Smart Chain.`;
+      }
+    } else if (gap.otherWrapper && gap.directSavingsUsdt > 0) {
+      plainReason = `${gap.cheapestWrapper.symbol} (${gap.cheapestWrapper.platform}) is $${gap.directSavingsUsdt.toFixed(2)} (${gap.directSavingsPercent.toFixed(2)}%) cheaper per share than ${gap.otherWrapper.symbol} (${gap.otherWrapper.platform}) right now.`;
+    } else {
+      plainReason = `${selectedToken.tokenSymbol} is trading at $${selectedToken.onChainPrice.toFixed(2)} on BNB Smart Chain.`;
+    }
+
+    return {
+      success: true as const,
+      intent,
+      gapResult: gap,
+      selectedWrapper: {
+        symbol: selectedToken.tokenSymbol,
+        name: selectedToken.tokenName,
+        platformId: selectedToken.platformId,
+        contractAddress: selectedToken.contractAddress,
+        price: selectedToken.onChainPrice,
+        referencePrice: selectedToken.referencePrice,
+      },
+      plainLanguageReason: plainReason,
     };
   }
 }

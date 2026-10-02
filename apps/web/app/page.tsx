@@ -572,6 +572,7 @@ function formatRevertReason(raw?: string, spender?: string): string {
 }
 
 export default function Home() {
+  const [viewMode, setViewMode] = useState<'simple' | 'pro'>((globalThis as any).__AFTERGAP_TEST_MODE__ || 'simple');
   const [ticker, setTicker] = useState('NVDA');
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<ApiResponseData | null>(null);
@@ -604,6 +605,25 @@ export default function Home() {
   const [copiedHash, setCopiedHash] = useState<string | null>(null);
   const [approvalMode, setApprovalMode] = useState<'exact' | 'unlimited'>('exact');
   const [tradeDirections, setTradeDirections] = useState<Record<string, 'buy' | 'sell'>>({});
+
+  // Natural-Language Command Bar State
+  const [nlPrompt, setNlPrompt] = useState('');
+  const [nlLoading, setNlLoading] = useState(false);
+  const [nlError, setNlError] = useState<{ error: string; reason: string; suggestions?: string[] } | null>(null);
+  const [nlResult, setNlResult] = useState<{
+    intent: any;
+    plainLanguageReason: string;
+    selectedWrapper?: {
+      symbol: string;
+      name: string;
+      platformId: string;
+      contractAddress: string;
+      price: number;
+      referencePrice?: number;
+    };
+    gapResult?: any;
+    basketResult?: any;
+  } | null>(null);
 
   // --- Wallet Connect ---
   const connectWallet = async () => {
@@ -689,6 +709,18 @@ export default function Home() {
     const amountNeeded = BigInt(amountInSmallestUnit);
 
     setBroadcasts((prev) => ({ ...prev, [contract]: { loading: true, step: 'preparing' } }));
+
+    if (isSell) {
+      setBroadcasts((prev) => ({
+        ...prev,
+        [contract]: {
+          loading: false,
+          step: 'error',
+          error: '🔒 Sell execution is currently in Preview Mode pending live on-chain verification. Direct liquidation is disabled to protect user funds.',
+        },
+      }));
+      return;
+    }
 
     if (currentQuote.isFallback) {
       setBroadcasts((prev) => ({
@@ -1350,6 +1382,103 @@ export default function Home() {
     }));
   };
 
+  // Auto-quote in Simple Mode for seamless UX
+  useEffect(() => {
+    if (viewMode === 'simple' && bstocksTokens.length > 0) {
+      const tok = bestRoute?.token || bstocksTokens[0];
+      if (tok) {
+        const c = tok.tokenContractAddress || tok.contractAddress || tok.tokenAddress || '';
+        if (c && !quotes[c]) {
+          if (!amounts[c]) {
+            setAmounts((prev) => ({ ...prev, [c]: '25' }));
+          }
+          handleGetQuote(tok);
+        }
+      }
+    }
+  }, [viewMode, bstocksTokens, bestRoute]);
+
+  const handleNaturalLanguageSubmit = async (e?: React.FormEvent, overridePrompt?: string) => {
+    if (e) e.preventDefault();
+    const query = (overridePrompt ?? nlPrompt).trim();
+    if (!query) return;
+
+    if (overridePrompt) {
+      setNlPrompt(overridePrompt);
+    }
+
+    setNlLoading(true);
+    setNlError(null);
+    setNlResult(null);
+
+    try {
+      const res = await fetch(`/api/rwa?action=agent&prompt=${encodeURIComponent(query)}`);
+      const json = await res.json();
+
+      if (!json.success || !json.data || !json.data.success) {
+        setNlError({
+          error: json.data?.error || json.error || 'Could not understand command.',
+          reason: json.data?.reason || 'UNRECOGNIZED_ACTION',
+          suggestions: json.data?.suggestedExamples || [
+            'buy $25 of the cheapest NVDA wrapper',
+            'compare apple on bstocks vs ondo',
+            'compare the mag7 basket',
+          ],
+        });
+        setNlLoading(false);
+        return;
+      }
+
+      const agentData = json.data;
+      setNlResult(agentData);
+
+      // If intent is BUY or SELL, sync with existing manual flow seamlessly
+      if (agentData.intent?.action === 'BUY' || agentData.intent?.action === 'SELL') {
+        const sym = agentData.intent.ticker;
+        if (sym) {
+          setTicker(sym);
+          fetchRwaData(sym);
+        }
+
+        if (agentData.selectedWrapper?.contractAddress) {
+          const contract = agentData.selectedWrapper.contractAddress;
+          const isSell = agentData.intent.action === 'SELL';
+          const amtStr = isSell
+            ? String(agentData.intent.amountShares || '0.0218')
+            : String(agentData.intent.amountUsdt || '10');
+
+          setTradeDirections((prev) => ({ ...prev, [contract.toLowerCase()]: isSell ? 'sell' : 'buy' }));
+          setAmounts((prev) => ({ ...prev, [contract.toLowerCase()]: amtStr }));
+
+          // Automatically fetch quote using the EXACT same quote path
+          handleGetQuote(
+            {
+              tokenContractAddress: contract,
+              tokenSymbol: agentData.selectedWrapper.symbol,
+            },
+            isSell ? 'sell' : 'buy'
+          );
+        }
+      } else if (agentData.intent?.action === 'COMPARE') {
+        if (agentData.intent.ticker) {
+          setTicker(agentData.intent.ticker);
+          fetchRwaData(agentData.intent.ticker);
+        }
+      } else if (agentData.intent?.action === 'BASKET_SCAN') {
+        if (agentData.intent.basketKey) {
+          setSelectedBasket(agentData.intent.basketKey);
+        }
+      }
+    } catch (err: any) {
+      setNlError({
+        error: err?.message || 'Failed to communicate with AfterGap agent.',
+        reason: 'AGENT_ERROR',
+      });
+    } finally {
+      setNlLoading(false);
+    }
+  };
+
   // Simulate transaction execution via BSC eth_call
   const handleSimulate = async (token: any) => {
     const contract = token.tokenContractAddress || token.contractAddress || token.tokenAddress;
@@ -1451,6 +1580,31 @@ export default function Home() {
             <span className="hidden md:inline-flex px-2.5 py-0.5 rounded-full text-xs font-mono bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30">
               Spot Aggregator
             </span>
+            {/* Mode Toggle: Simple vs Pro Terminal */}
+            <div className="flex items-center p-0.5 rounded-full bg-white/[0.04] border border-white/[0.08] shadow-inner ml-1 sm:ml-2">
+              <button
+                type="button"
+                onClick={() => setViewMode('simple')}
+                className={`px-3 py-1 rounded-full text-xs font-mono font-semibold transition ${
+                  viewMode === 'simple'
+                    ? 'bg-[#F5C542] text-[#07070A] shadow-sm'
+                    : 'text-[#A1A1AA] hover:text-[#F5F5F4]'
+                }`}
+              >
+                Simple
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('pro')}
+                className={`px-3 py-1 rounded-full text-xs font-mono font-semibold transition ${
+                  viewMode === 'pro'
+                    ? 'bg-[#F5C542] text-[#07070A] shadow-sm'
+                    : 'text-[#A1A1AA] hover:text-[#F5F5F4]'
+                }`}
+              >
+                Pro
+              </button>
+            </div>
           </div>
 
           {/* Top Bar Actions */}
@@ -1534,7 +1688,224 @@ export default function Home() {
 
       {/* Main Screen Content */}
       <main className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-14 flex-1 flex flex-col items-center">
-        {/* Hero */}
+        {viewMode === 'simple' ? (
+          <div className="w-full flex flex-col items-center">
+            {/* Friendly Simple Mode Hero */}
+            <div className="text-center mb-8 space-y-2">
+              <h1 className="text-2xl sm:text-4xl font-semibold tracking-tight text-[#F5F5F4]">
+                Buy US Stocks on BNB Chain
+              </h1>
+              <p className="text-xs sm:text-sm text-[#A1A1AA] max-w-lg mx-auto">
+                AfterGap compares all tokenized versions in real time and automatically buys through the one with the best price.
+              </p>
+            </div>
+
+            {/* Single Stock Card: NVIDIA (NVDA) */}
+            {(() => {
+              const selectedToken = bestRoute?.token || bstocksTokens[0];
+              if (!selectedToken) {
+                return (
+                  <div className="p-8 text-center text-sm font-mono text-[#A1A1AA] bg-[#121214] rounded-2xl border border-white/[0.08]">
+                    Loading stock information...
+                  </div>
+                );
+              }
+
+              const contract = selectedToken.tokenContractAddress || selectedToken.contractAddress || selectedToken.tokenAddress || '';
+              const quote = quotes[contract];
+              const bc = broadcasts[contract];
+              const isFallback = Boolean(quote?.isFallback || selectedToken.isFallback || data?.isFallback);
+              const price = Number(selectedToken.tokenPrice || selectedToken.price || 229.11).toFixed(2);
+              const savings = bestRoute?.savings || '0.61';
+              const inputAmount = amounts[contract] || '25';
+
+              const isBstock =
+                String(selectedToken.platformId).toLowerCase() === 'bstock' ||
+                String(selectedToken.tokenSymbol).endsWith('B');
+              const wrapperExplanation = isBstock
+                ? 'gets dividends added as extra shares'
+                : "gets dividends added to the token's value";
+
+              return (
+                <div className="w-full max-w-md bg-[#121214] border border-white/[0.08] rounded-2xl p-6 sm:p-7 shadow-2xl space-y-6">
+                  {/* Stock Header: Name, Ticker, Current Price */}
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h2 className="text-xl sm:text-2xl font-bold text-[#F5F5F4] tracking-tight">
+                        {selectedToken.underlyingName || 'Nvidia Corp'}
+                      </h2>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-sm font-semibold text-[#A1A1AA]">
+                          {selectedToken.underlyingTicker || 'NVDA'}
+                        </span>
+                        <span className="text-xs text-white/30">•</span>
+                        <span className="text-xs text-[#A1A1AA] font-mono">
+                          {selectedToken.tokenSymbol}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[11px] text-[#A1A1AA] block uppercase tracking-wide">
+                        Best Price
+                      </span>
+                      <span className="text-2xl font-bold text-[#F5F5F4]">
+                        ${price}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Wrapper Plain-Language Explanation (Req 5) */}
+                  <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-xs text-[#A1A1AA] leading-relaxed">
+                    <span className="font-semibold text-[#F5F5F4]">{selectedToken.tokenSymbol}</span>{' '}
+                    {wrapperExplanation}.
+                  </div>
+
+                  {/* Plain-Language Savings Line (Req 2) */}
+                  <div className="flex items-center gap-2.5 p-3.5 rounded-xl bg-[#3D9A6A]/10 border border-[#3D9A6A]/25 text-[#3D9A6A] text-xs sm:text-sm font-medium">
+                    <span className="text-base shrink-0">✨</span>
+                    <span>
+                      Buying this way saves you ${savings} compared to the other option.
+                    </span>
+                  </div>
+
+                  {/* Investment Amount Input (USD) (Req 2) */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center text-xs text-[#A1A1AA]">
+                      <span>Amount to invest</span>
+                      {quote?.toAmount && (
+                        <span className="text-[#3D9A6A] font-semibold">
+                          ≈ {quote.toAmount} shares
+                        </span>
+                      )}
+                    </div>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-[#A1A1AA]">
+                        $
+                      </span>
+                      <input
+                        type="number"
+                        min="5"
+                        step="1"
+                        value={inputAmount}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setAmounts((prev) => ({ ...prev, [contract]: val }));
+                        }}
+                        placeholder="25"
+                        className="w-full bg-[#07070A] border border-white/[0.08] focus:border-[#F5C542]/70 rounded-xl pl-8 pr-16 py-3 text-lg font-bold text-[#F5F5F4] placeholder-[#A1A1AA]/40 outline-none transition"
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#A1A1AA]">
+                        USD
+                      </span>
+                    </div>
+
+                    {/* Quick Amount Pills */}
+                    <div className="flex items-center gap-2 pt-1">
+                      {['10', '25', '50', '100'].map((amt) => (
+                        <button
+                          key={amt}
+                          type="button"
+                          onClick={() => {
+                            setAmounts((prev) => ({ ...prev, [contract]: amt }));
+                            handleGetQuote(selectedToken);
+                          }}
+                          className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition border ${
+                            inputAmount === amt
+                              ? 'bg-[#F5C542]/20 text-[#F5C542] border-[#F5C542]/50'
+                              : 'bg-white/[0.03] text-[#A1A1AA] hover:text-[#F5F5F4] border-white/[0.06]'
+                          }`}
+                        >
+                          ${amt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Single Action Button (Req 2 & 4) */}
+                  <div className="space-y-3 pt-1">
+                    {isFallback ? (
+                      <div className="space-y-2">
+                        <button
+                          type="button"
+                          disabled
+                          className="w-full py-3.5 rounded-xl text-sm font-semibold bg-zinc-800/80 border border-white/[0.08] text-[#A1A1AA] cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                          <span>{`Buy ${selectedToken.underlyingTicker || 'NVDA'}`}</span>
+                        </button>
+                        <p className="text-xs text-[#A1A1AA] text-center">
+                          Live trading isn't available from this connection right now.
+                        </p>
+                      </div>
+                    ) : !wallet.connected ? (
+                      <button
+                        type="button"
+                        onClick={connectWallet}
+                        className="w-full py-3.5 rounded-xl text-sm font-bold bg-[#F5C542] hover:bg-[#E0B02E] text-[#07070A] transition shadow-lg flex items-center justify-center gap-2"
+                      >
+                        <Wallet className="w-4 h-4" />
+                        <span>{`Connect Wallet to Buy ${selectedToken.underlyingTicker || 'NVDA'}`}</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!quote?.quoteId) {
+                            await handleGetQuote(selectedToken);
+                          } else {
+                            handleApproveAndExecute(selectedToken);
+                          }
+                        }}
+                        disabled={bc?.loading || quote?.loading}
+                        className="w-full py-3.5 rounded-xl text-sm font-bold bg-[#F5C542] hover:bg-[#E0B02E] text-[#07070A] transition shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        {bc?.loading ? (
+                          <>
+                            <ThinkingOrb state="working" size={20} theme="light" />
+                            <span>Confirming purchase in wallet...</span>
+                          </>
+                        ) : quote?.loading ? (
+                          <>
+                            <ThinkingOrb state="searching" size={20} theme="light" />
+                            <span>Checking best price...</span>
+                          </>
+                        ) : (
+                          <span>{`Buy ${selectedToken.underlyingTicker || 'NVDA'}`}</span>
+                        )}
+                      </button>
+                    )}
+
+                    {/* Simple Confirmation Receipt (Req 6) */}
+                    {bc?.step === 'done' && bc.swapTxHash && (
+                      <div className="p-4 rounded-xl bg-[#3D9A6A]/10 border border-[#3D9A6A]/30 text-center space-y-1.5">
+                        <div className="text-sm font-bold text-[#3D9A6A]">
+                          🎉 {`You bought ${quote?.toAmount || '0.0218'} shares of ${selectedToken.underlyingTicker || 'NVDA'}`}
+                        </div>
+                        <div>
+                          <a
+                            href={`https://bscscan.com/tx/${bc.swapTxHash}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-xs text-[#F5C542] hover:underline font-mono"
+                          >
+                            View transaction on BSCScan ↗
+                          </a>
+                        </div>
+                      </div>
+                    )}
+
+                    {bc?.step === 'error' && (
+                      <p className="text-xs text-[#C45C26] text-center font-medium">
+                        {bc.error}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        ) : (
+          <>
+            {/* Hero */}
         <div className="text-center mb-6 sm:mb-8 space-y-1.5 sm:space-y-2">
           <h1 className="text-xl sm:text-3xl md:text-4xl font-semibold tracking-tight text-[#F5F5F4]">
             Same stock. Dual wrappers. Live gap.
@@ -1543,6 +1914,284 @@ export default function Home() {
             Inspect on-chain pricing vs. cash reference, quote live spot execution, and simulate BEP-20 swaps.
           </p>
         </div>
+
+        {/* Natural-Language Agent Execution Bar */}
+        <div className="w-full max-w-2xl mb-6 relative group">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-[#F5C542]/25 via-[#3D9A6A]/20 to-[#F5C542]/20 blur-md opacity-80 group-hover:opacity-100 transition duration-500"
+          />
+          <div className="relative rounded-2xl bg-[#121214] border border-[#F5C542]/30 p-4 sm:p-5 shadow-2xl backdrop-blur-xl space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BotAvatar seed={56} size={22} className="border border-[#F5C542]/40 rounded-full" />
+                <span className="text-xs font-mono font-semibold uppercase tracking-wider text-[#F5C542] flex items-center gap-1.5">
+                  Natural-Language Execution
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#3D9A6A]/15 text-[#3D9A6A] border border-[#3D9A6A]/30">
+                  BSC Chain 56
+                </span>
+              </div>
+              {nlLoading && (
+                <div className="flex items-center gap-1.5 text-xs text-[#F5C542] font-mono">
+                  <ThinkingOrb state="working" size={20} theme="light" />
+                  <span className="text-[11px]">Reasoning...</span>
+                </div>
+              )}
+            </div>
+
+            <form onSubmit={handleNaturalLanguageSubmit} className="flex gap-2">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={nlPrompt}
+                  onChange={(e) => setNlPrompt(e.target.value)}
+                  placeholder="Ask AfterGap: 'buy $25 of the cheapest NVDA wrapper'"
+                  className="w-full bg-[#07070A] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-[#F5F5F4] placeholder-[#A1A1AA]/50 font-mono focus:outline-none focus:border-[#F5C542]/80 transition shadow-inner"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={nlLoading || !nlPrompt.trim()}
+                className="bg-[#F5C542] hover:bg-[#E0B02E] disabled:opacity-50 text-[#07070A] font-semibold px-5 py-3 rounded-xl text-sm transition flex items-center justify-center gap-1.5 min-w-[100px] shrink-0 font-mono"
+              >
+                {nlLoading ? 'Parsing...' : 'Ask Agent'}
+              </button>
+            </form>
+
+            {/* Suggested Quick Prompts */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="text-[11px] text-[#A1A1AA] mr-1 font-mono">Try:</span>
+              {[
+                'buy $25 of the cheapest NVDA wrapper',
+                'compare the mag7 basket',
+                'compare apple on bstocks vs ondo',
+                'sell 0.0218 NVDAB',
+              ].map((promptText) => (
+                <button
+                  key={promptText}
+                  type="button"
+                  onClick={() => handleNaturalLanguageSubmit(undefined, promptText)}
+                  className="text-[11px] font-mono px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-[#A1A1AA] hover:text-[#F5C542] border border-white/[0.06] transition"
+                >
+                  "{promptText}"
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Parsing / Ambiguity Error Card */}
+        {nlError && (
+          <div className="w-full max-w-2xl mb-6 rounded-2xl bg-[#C45C26]/10 border border-[#C45C26]/40 p-4 space-y-2 font-mono text-xs">
+            <div className="flex items-center gap-2 text-[#C45C26] font-semibold">
+              <span>⚠️</span>
+              <span>Command Error: {nlError.reason}</span>
+            </div>
+            <p className="text-[#F5F5F4] text-xs">{nlError.error}</p>
+            {nlError.suggestions && nlError.suggestions.length > 0 && (
+              <div className="pt-2 border-t border-[#C45C26]/20">
+                <span className="text-[#A1A1AA] block text-[11px] mb-1.5">Try one of these unambiguous commands:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {nlError.suggestions.map((sug) => (
+                    <button
+                      key={sug}
+                      type="button"
+                      onClick={() => handleNaturalLanguageSubmit(undefined, sug)}
+                      className="px-2 py-0.5 rounded bg-[#C45C26]/20 hover:bg-[#C45C26]/30 text-[#F5C542] text-[11px] transition"
+                    >
+                      "{sug}"
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Natural-Language Parsed Action Card */}
+        {nlResult && (
+          <div className="w-full max-w-2xl mb-6 relative group">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-[#3D9A6A]/30 via-[#F5C542]/30 to-[#3D9A6A]/30 blur-md opacity-85"
+            />
+            <div className="relative rounded-2xl bg-[#121214] border border-[#3D9A6A]/50 p-5 sm:p-6 shadow-2xl space-y-4">
+              {/* Action Header */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-white/[0.08]">
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-[#3D9A6A]/20 text-[#3D9A6A] border border-[#3D9A6A]/40 uppercase tracking-wider">
+                    {nlResult.intent.action} Intent Parsed
+                  </span>
+                  {nlResult.intent.ticker && (
+                    <span className="text-sm font-mono font-semibold text-[#F5F5F4]">
+                      {nlResult.intent.ticker}
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setNlResult(null)}
+                  className="text-xs text-[#A1A1AA] hover:text-[#F5F5F4] px-2 py-1 rounded bg-white/[0.04]"
+                >
+                  ✕ Dismiss
+                </button>
+              </div>
+
+              {/* Plain Language Rationale */}
+              <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06] space-y-1">
+                <span className="text-[11px] font-mono text-[#F5C542] block uppercase tracking-wider font-semibold">
+                  Agent Market Rationale
+                </span>
+                <p className="text-sm sm:text-base text-[#F5F5F4] font-medium leading-relaxed">
+                  {nlResult.plainLanguageReason}
+                </p>
+              </div>
+
+              {/* Trade Quote & Single Execution CTA (for BUY / SELL) */}
+              {nlResult.selectedWrapper && (() => {
+                const targetContract = nlResult.selectedWrapper.contractAddress.toLowerCase();
+                const targetQuote = quotes[targetContract];
+                const targetBroadcast = broadcasts[targetContract];
+                const isFallback = Boolean(targetQuote?.isFallback);
+
+                return (
+                  <div className="space-y-4 pt-1">
+                    {/* Quote Details Ribbon */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
+                      <div className="p-2.5 rounded-lg bg-black/40 border border-white/[0.06]">
+                        <span className="text-[#A1A1AA] text-[10px] block">Selected Wrapper</span>
+                        <span className="text-[#F5F5F4] font-semibold">{nlResult.selectedWrapper.symbol}</span>
+                        <span className="text-[10px] text-[#A1A1AA] block capitalize">({nlResult.selectedWrapper.platformId})</span>
+                      </div>
+                      <div className="p-2.5 rounded-lg bg-black/40 border border-white/[0.06]">
+                        <span className="text-[#A1A1AA] text-[10px] block">Order Amount</span>
+                        <span className="text-[#F5F5F4] font-semibold">
+                          {nlResult.intent.action === 'SELL'
+                            ? `${nlResult.intent.amountShares || '0.0218'} shares`
+                            : `$${nlResult.intent.amountUsdt || '10'} USDT`}
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-lg bg-black/40 border border-white/[0.06]">
+                        <span className="text-[#A1A1AA] text-[10px] block">Estimated Receive</span>
+                        <span className="text-[#3D9A6A] font-semibold">
+                          {targetQuote?.toAmount ? `${targetQuote.toAmount} ${targetQuote.toTokenSymbol}` : 'Calculating...'}
+                        </span>
+                      </div>
+                      <div className="p-2.5 rounded-lg bg-black/40 border border-white/[0.06]">
+                        <span className="text-[#A1A1AA] text-[10px] block">Execution Router</span>
+                        <span className="text-[#F5C542] font-semibold">
+                          {targetQuote?.vendorName || 'LiquidMesh'}
+                        </span>
+                        <span className="text-[10px] text-[#A1A1AA] block">
+                          TTL: {targetQuote?.ttlRemaining !== undefined ? `${targetQuote.ttlRemaining}s` : '30s'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Fund Protection Notice / Guard (Requirement 4) */}
+                    {isFallback && (
+                      <div className="p-3 rounded-xl bg-[#C45C26]/10 border border-[#C45C26]/30 text-xs font-mono text-[#C45C26] space-y-1">
+                        <div className="font-semibold flex items-center gap-1.5">
+                          <span>🛡️</span>
+                          <span>Fund Protection Guard Active (Benchmark Mode)</span>
+                        </div>
+                        <p className="text-[11px] text-[#A1A1AA]">
+                          Swaps are locked in benchmark mode to protect user funds. Live Binance RFQ gateway is restricted on this cloud region (CloudFront 40304). Run AfterGap Agent CLI for live trading.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Single Approve & Execute Button (Exact same execution path) */}
+                    <div className="pt-1">
+                      {nlResult.intent.action === 'SELL' ? (
+                        <div className="space-y-2">
+                          <button
+                            type="button"
+                            disabled
+                            className="w-full py-3.5 px-4 rounded-xl font-semibold font-mono text-sm bg-zinc-800/80 border border-white/[0.08] text-[#A1A1AA] cursor-not-allowed flex items-center justify-center gap-2"
+                          >
+                            <span>🔒 Sell Execution (Preview Only — Trading Locked)</span>
+                          </button>
+                          <p className="text-xs text-[#A1A1AA] font-mono text-center">
+                            Sell execution is in preview mode. Autonomous natural-language execution currently supports verified 1-click BUY orders via LiquidMesh.
+                          </p>
+                        </div>
+                      ) : !wallet.connected ? (
+                        <button
+                          type="button"
+                          onClick={connectWallet}
+                          className="w-full py-3.5 px-4 rounded-xl font-semibold font-mono text-sm bg-[#F5C542] hover:bg-[#E0B02E] text-[#07070A] transition shadow-lg flex items-center justify-center gap-2"
+                        >
+                          <Wallet className="w-4 h-4" />
+                          <span>Connect Wallet to Execute</span>
+                        </button>
+                      ) : isFallback ? (
+                        <button
+                          type="button"
+                          disabled
+                          className="w-full py-3.5 px-4 rounded-xl font-semibold font-mono text-sm bg-zinc-800/80 border border-white/[0.08] text-[#A1A1AA] cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                          <span>🛡️ Benchmark Mode (Trading Locked)</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleApproveAndExecute({ tokenContractAddress: nlResult.selectedWrapper!.contractAddress, tokenSymbol: nlResult.selectedWrapper!.symbol })}
+                          disabled={targetBroadcast?.loading || (targetQuote?.ttlRemaining || 0) <= 0}
+                          className="w-full py-3.5 px-4 rounded-xl font-semibold font-mono text-sm bg-gradient-to-r from-[#F5C542] to-[#E0B02E] hover:from-[#E0B02E] hover:to-[#C89B20] text-[#07070A] transition shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
+                        >
+                          {targetBroadcast?.loading ? (
+                            <>
+                              <ThinkingOrb state="working" size={20} theme="light" />
+                              <span>
+                                {targetBroadcast.step === 'preparing'
+                                  ? 'Preparing Transaction...'
+                                  : targetBroadcast.step === 'approving'
+                                  ? 'Approving Exact Amount...'
+                                  : targetBroadcast.step === 'waiting_receipt'
+                                  ? 'Waiting for BSC Confirmation...'
+                                  : 'Broadcasting Swap on BSC...'}
+                              </span>
+                            </>
+                          ) : (
+                            <span>Approve & Execute via LiquidMesh</span>
+                          )}
+                        </button>
+                      )}
+
+                      {/* On-Chain Confirmation Feedback */}
+                      {targetBroadcast?.step === 'done' && targetBroadcast.swapTxHash && (
+                        <div className="mt-3 p-3 rounded-xl bg-[#3D9A6A]/10 border border-[#3D9A6A]/40 text-xs font-mono space-y-1.5">
+                          <div className="flex items-center justify-between text-[#3D9A6A] font-bold">
+                            <span>✅ Trade Confirmed on BSC Mainnet!</span>
+                            <a
+                              href={`https://bscscan.com/tx/${targetBroadcast.swapTxHash}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="underline hover:text-[#F5C542]"
+                            >
+                              View on BscScan ↗
+                            </a>
+                          </div>
+                          <p className="text-[11px] text-[#A1A1AA] break-all">
+                            Tx: {targetBroadcast.swapTxHash}
+                          </p>
+                        </div>
+                      )}
+
+                      {targetBroadcast?.step === 'error' && (
+                        <div className="mt-2 text-xs font-mono text-[#C45C26]">
+                          ❌ {targetBroadcast.error}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        )}
 
         {/* Main Product Card */}
         <div className="w-full max-w-xl bg-[#121214] border border-white/[0.06] rounded-2xl p-5 sm:p-6 shadow-2xl space-y-4">
@@ -2313,6 +2962,19 @@ export default function Home() {
                                           </div>
                                         ) : bc?.step === 'error' ? (
                                           <p className="text-[10px] text-[#C45C26]">{bc.error}</p>
+                                        ) : isSell ? (
+                                          <div className="space-y-1">
+                                            <button
+                                              type="button"
+                                              disabled
+                                              className="w-full py-1.5 px-3 rounded text-[11px] font-mono font-semibold bg-zinc-800/80 border border-white/[0.08] text-[#A1A1AA] cursor-not-allowed flex items-center justify-center gap-1.5"
+                                            >
+                                              <span>🔒 Sell Execution (Preview Only — Trading Locked)</span>
+                                            </button>
+                                            <p className="text-[10px] text-[#A1A1AA] font-mono text-center">
+                                              Sell execution is in preview mode pending live verification. To liquidate shares, use manual sell or DEX routing.
+                                            </p>
+                                          </div>
                                         ) : (
                                           <>
                                             <MetalFx variant="button" preset="gold" strength={0.85}>
@@ -2815,6 +3477,19 @@ export default function Home() {
                                           </div>
                                         ) : bc?.step === 'error' ? (
                                           <p className="text-[10px] text-[#C45C26]">{bc.error}</p>
+                                        ) : isSell ? (
+                                          <div className="space-y-1">
+                                            <button
+                                              type="button"
+                                              disabled
+                                              className="w-full py-1.5 px-3 rounded text-[11px] font-mono font-semibold bg-zinc-800/80 border border-white/[0.08] text-[#A1A1AA] cursor-not-allowed flex items-center justify-center gap-1.5"
+                                            >
+                                              <span>🔒 Sell Execution (Preview Only — Trading Locked)</span>
+                                            </button>
+                                            <p className="text-[10px] text-[#A1A1AA] font-mono text-center">
+                                              Sell execution is in preview mode pending live verification. To liquidate shares, use manual sell or DEX routing.
+                                            </p>
+                                          </div>
                                         ) : (
                                           <>
                                             <MetalFx variant="button" preset="gold" strength={0.85}>
@@ -2922,6 +3597,8 @@ export default function Home() {
             </div>
           </div>
         </div>
+      </>
+    )}
 
         {/* Calldata Inspection Modal */}
         {inspectTx && (

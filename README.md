@@ -64,6 +64,18 @@ AfterGap is an end-to-end institutional-grade arbitrage terminal, smart order ro
   └──────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
+### Binance Web3 API Modules & Tools Utilized
+
+AfterGap deeply integrates **5 core Binance Web3 API modules and tools** on BNB Smart Chain (`binanceChainId: 56`):
+
+| Binance Web3 Module | Endpoints & Interface | Role in AfterGap & On-Chain Execution |
+| :--- | :--- | :--- |
+| **Trading API** | `GET /build/api/v1/dex/aggregator/quote`<br>`GET /build/api/v1/dex/aggregator/swap` | Powers real-time DEX Aggregator RFQ quotes and calldata construction for Binance's LiquidMesh router (`0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5`). Verified live on BSC mainnet: [0x4933433f...](https://bscscan.com/tx/0x4933433f5b1991bc319775faef8cd2a9b5186bed1261d4f9b58cc980fce52444). |
+| **RWA Data API** | `GET /build/api/v1/dex/market/rwa/platforms`<br>`GET /build/api/v1/dex/market/rwa/tokens`<br>`GET /build/api/v1/dex/market/rwa/search` | Discovers and indexes bStocks & Ondo token catalogs, metadata, underlying ticker mapping, and market hours status. |
+| **Market API** | `/build/api/v1/dex/market/rwa/*` | Real-time RWA pricing, NYSE/NASDAQ cash-hours benchmark reference data, and off-market basis drift tracking. |
+| **Wallet API** | `GET /build/api/v1/dex/balance/all-token-balances-by-address` | Fetches multi-token balances across non-custodial Web3 user wallets for USDT, NVDAB, and other equity wrappers. |
+| **Agentic Wallet / Wallet Skills** | `@aftergap/agent` MCP Server & CLI (`skill.json`) | Standalone Model Context Protocol (MCP) server & skill suite for autonomous arbitrage inspection, thematic basket execution, and gasless `eth_call` simulation. |
+
 ### 1. Real-Time Dual-Wrapper Comparison Engine
 - **Live Side-by-Side Analytics:** Simultaneously tracks both wrappers (`bStock` vs. `Ondo`) alongside the official NYSE/NASDAQ cash-hours close.
 - **Basis Spread & Dollar Savings:** Computes the exact percentage basis spread and cash dollar difference per share in real time.
