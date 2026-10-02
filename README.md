@@ -2,7 +2,7 @@
 
 > Same stock, dual wrappers, live gap.
 
-Real-time dual-wrapper US stock price comparison, reference gap analysis, and best-execution routing across **bStocks** and **Ondo** on BNB Smart Chain (`binanceChainId=56`).
+Real-time dual-wrapper US stock price comparison, reference gap analysis, best-execution routing, and **natural-language trade execution** across **bStocks** and **Ondo** on BNB Smart Chain (`binanceChainId=56`).
 
 **Live Production App:** [https://www.aftergap.xyz/](https://www.aftergap.xyz/)  
 **Official X / Twitter:** [@aftergap](https://x.com/aftergap)  
@@ -30,7 +30,7 @@ Tokenized equities (Real World Assets / RWA) allow 24/7 global trading of US sto
 ### The Pricing Dilemma: Weekend & After-Hours Drift
 When traditional US equity markets (NYSE/NASDAQ) close at Friday 4:00 PM EST, on-chain RWA markets continue trading 24/7. During these off-market hours:
 - On-chain tokens **drift from the official US cash reference price** (`referencePrice`).
-- Crucially, the two wrappers **drift against each other**, opening significant basis spreads and price discrepancies for the exact same underlying company.
+- The two wrappers **drift against each other**, opening significant basis spreads for the exact same underlying company.
 - A trader wanting to buy $1,000 of Apple or Nvidia on BNB Smart Chain often overpays simply because there was no unified terminal comparing both wrappers and routing into the best executable quote.
 
 **AfterGap solves this.**
@@ -39,67 +39,106 @@ When traditional US equity markets (NYSE/NASDAQ) close at Friday 4:00 PM EST, on
 
 ## What We Built
 
-AfterGap is an end-to-end institutional-grade arbitrage terminal, smart order routing engine, and autonomous AI agent skill for tokenized stocks on BNB Smart Chain.
+AfterGap is an end-to-end arbitrage terminal, smart order routing engine, **natural-language execution layer**, and **simple-mode retail UI** for tokenized stocks on BNB Smart Chain.
 
 ```text
-┌────────────────────────────────────────────────────────────────────────────────────────┐
-│                                       AFTERGAP                                         │
-├────────────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                        │
-│   ┌─────────────────────┐    ┌─────────────────────┐    ┌──────────────────────────┐   │
-│   │   Web Terminal      │    │  Smart Routing &    │    │  Autonomous AI Agent     │   │
-│   │   (Next.js 15 UI)   │    │  Cryptographic SDK  │    │  (MCP Server & Skill)    │   │
-│   │                     │    │  (@aftergap/api)    │    │  (@aftergap/agent)       │   │
-│   │  • Dual-Wrapper Gap │    │                     │    │                          │   │
-│   │  • Thematic Baskets │◄──►│  • HMAC-SHA256 Auth │◄──►│  • Natural Language Chat │   │
-│   │  • Wallet Connect   │    │  • Market RWA API   │    │  • Basket Scanning       │   │
-│   │  • 1-Click Execute  │    │  • Trading Quote API│    │  • eth_call Simulation   │   │
-│   └─────────────────────┘    └─────────────────────┘    └──────────────────────────┘   │
-│              │                          │                            │                 │
-└──────────────┼──────────────────────────┼────────────────────────────┼─────────────────┘
-               ▼                          ▼                            ▼
-  ┌──────────────────────────────────────────────────────────────────────────────────────┐
-  │                 BNB Smart Chain (Chain ID: 56) & Binance Web3 Gateway                │
-  │     • bStocks (LiquidMesh / PcsXRfq)          • Ondo Global Markets (RFQ)            │
-  └──────────────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────┐
+│                                        AFTERGAP                                          │
+├──────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                          │
+│  ┌────────────────────────┐  ┌──────────────────────┐  ┌──────────────────────────────┐  │
+│  │  Simple Mode (Retail)  │  │  Pro Mode (Terminal) │  │  AI Agent / MCP Server       │  │
+│  │  9-stock catalog grid  │  │  Dual-wrapper cards  │  │  (@aftergap/agent)           │  │
+│  │  Plain-language UI     │  │  Thematic baskets    │  │                              │  │
+│  │  No crypto jargon      │  │  Live gap analytics  │◄►│  • NL Intent Parser          │  │
+│  │  Best-wrapper auto-    │  │  On-chain calldata   │  │  • inspect_gap tool          │  │
+│  │  selected per stock    │  │  disclosure badges   │  │  • scan_thematic_basket tool │  │
+│  └────────────────────────┘  └──────────────────────┘  │  • quote_best_route tool     │  │
+│            ▲                          ▲                 │  • simulate_swap tool        │  │
+│            └──────────────────────────┘                 └──────────────────────────────┘  │
+│                    │ Natural-Language Execution Bar                   │                   │
+│         "buy $25 of the cheapest NVDA wrapper"  ──► intent parser ──► agent tools         │
+│                                                                                          │
+└──────────────────────────────────────────────────────────────────────────────────────────┘
+                               │                    │
+              ┌────────────────▼────────────────────▼──────────────────┐
+              │    BNB Smart Chain (Chain ID: 56) & Binance Web3 API    │
+              │   bStocks (LiquidMesh/PcsXRfq)  •  Ondo (RFQ)          │
+              └────────────────────────────────────────────────────────┘
 ```
 
 ### Binance Web3 API Modules & Tools Utilized
 
-AfterGap deeply integrates **5 core Binance Web3 API modules and tools** on BNB Smart Chain (`binanceChainId: 56`):
+AfterGap deeply integrates **5 core Binance Web3 API modules** on BNB Smart Chain (`binanceChainId: 56`):
 
-| Binance Web3 Module | Endpoints & Interface | Role in AfterGap & On-Chain Execution |
+| Binance Web3 Module | Endpoints & Interface | Role in AfterGap |
 | :--- | :--- | :--- |
-| **Trading API** | `GET /build/api/v1/dex/aggregator/quote`<br>`GET /build/api/v1/dex/aggregator/swap` | Powers real-time DEX Aggregator RFQ quotes and calldata construction for Binance's LiquidMesh router (`0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5`). Verified live on BSC mainnet: [0x4933433f...](https://bscscan.com/tx/0x4933433f5b1991bc319775faef8cd2a9b5186bed1261d4f9b58cc980fce52444). |
+| **Trading API** | `GET /build/api/v1/dex/aggregator/quote`<br>`GET /build/api/v1/dex/aggregator/swap` | Powers real-time DEX Aggregator RFQ quotes and calldata construction for Binance's LiquidMesh router. Verified live on BSC mainnet: [0x4933433f...](https://bscscan.com/tx/0x4933433f5b1991bc319775faef8cd2a9b5186bed1261d4f9b58cc980fce52444). |
 | **RWA Data API** | `GET /build/api/v1/dex/market/rwa/platforms`<br>`GET /build/api/v1/dex/market/rwa/tokens`<br>`GET /build/api/v1/dex/market/rwa/search` | Discovers and indexes bStocks & Ondo token catalogs, metadata, underlying ticker mapping, and market hours status. |
 | **Market API** | `/build/api/v1/dex/market/rwa/*` | Real-time RWA pricing, NYSE/NASDAQ cash-hours benchmark reference data, and off-market basis drift tracking. |
 | **Wallet API** | `GET /build/api/v1/dex/balance/all-token-balances-by-address` | Fetches multi-token balances across non-custodial Web3 user wallets for USDT, NVDAB, and other equity wrappers. |
-| **Agentic Wallet / Wallet Skills** | `@aftergap/agent` MCP Server & CLI (`skill.json`) | Standalone Model Context Protocol (MCP) server & skill suite for autonomous arbitrage inspection, thematic basket execution, and gasless `eth_call` simulation. |
+| **Agent Tools** | `@aftergap/agent` MCP Server & CLI | Standalone Model Context Protocol (MCP) server for autonomous arbitrage inspection, thematic basket execution, and gasless `eth_call` simulation. |
 
-### 1. Real-Time Dual-Wrapper Comparison Engine
-- **Live Side-by-Side Analytics:** Simultaneously tracks both wrappers (`bStock` vs. `Ondo`) alongside the official NYSE/NASDAQ cash-hours close.
-- **Basis Spread & Dollar Savings:** Computes the exact percentage basis spread and cash dollar difference per share in real time.
-- **Dynamic Best Route Identification:** Instantly highlights which wrapper is trading at a discount and computes total savings.
-- **Thematic Baskets:** Pre-configured clusters (**Mag 7**, **AI & Semiconductors**, **Buffett / Value**, **Liquid Growth**) ranked in real time by basis spread to spot arbitrage opportunities across entire sectors at a glance.
+---
 
-### 2. Intelligent Smart Order Routing & Real-Time Execution
-- **Binance Web3 Trading API Integration:** Direct connectivity with `/dex/aggregator/quote` and `/dex/aggregator/swap` for real-time executable spot quotes.
-- **Secure Server-Side Architecture:** The Next.js API route securely holds API credentials, signs canonical requests server-side via HMAC-SHA256, queries Binance Trading APIs directly from the server, and returns structured data to the browser. The browser never receives signed headers or calls Binance directly.
-- **Verified LiquidMesh Protocol Routing:** Trades execute directly through Binance's LiquidMesh router (`0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5`, selector `0xad43f73d`), aggregating multi-pool liquidity across PancakeSwap V3/V4 and Uniswap V4.
-- **Absolute Trade Safety Invariant:** Zero fallback token swaps. Unlike early prototypes that routed unfillable orders through PancakeSwap WBNB, all trades strictly execute into the requested token (`NVDAB` or `NVDAon`) or cleanly abort with actionable diagnostics.
-- **Live Quote TTL Engine:** Built-in 30-second TTL countdown with synchronized auto-refresh to prevent stale quote execution.
-- **Native Web3 Wallet Execution:** EIP-1193 browser wallet connection (Binance Web3 Wallet & MetaMask) supporting auto-network switching to BSC Mainnet (`0x38` / `56`).
-- **Two-Step On-Chain Execution:** Seamless in-browser token approval (`USDT` $\to$ spender) and atomic swap execution with real-time transaction state feedback, one-tap copy button, and direct BSCScan explorer links.
+### 1. Simple Mode — Retail-Friendly Stock Catalog
 
-### 3. Cryptographic API Client & Signer (`@aftergap/api`)
-- Enterprise TypeScript client for Binance Web3 Developer APIs (Market RWA, Trading Aggregator, and Wallet Balances).
+A clean, jargon-free entry point for users who just want to buy a US stock on BNB Chain.
+
+- **9-Stock Catalog Grid:** NVDA, TSLA, AAPL, MSFT, AMZN, GOOGL, META, AMD, TSM — one card per company, displayed in a responsive 1→2→3 column grid.
+- **Auto Best-Wrapper Selection:** Each card independently compares bStock vs. Ondo prices and pre-selects the cheaper wrapper — no user configuration required.
+- **Zero Crypto Jargon:** No contract addresses, no router names, no calldata, no RFQ/LiquidMesh terminology. Plain English: company name, price, savings line, one `Buy [TICKER]` button.
+- **Plain-Language Dividend Explanation:** Each card explains wrapper mechanics in a single human-readable sentence (e.g. "NVDAB gets dividends added as extra shares").
+- **Upfront Fallback Disclosure:** When live pricing is unavailable, cards show "Estimated Price / Reference price, updates delayed" *before* any interaction — not as a surprise after a failed click.
+- **Quick-Amount Pills:** $10 / $25 / $50 / $100 pre-fill buttons for instant quote refresh.
+
+### 2. Natural-Language Execution Bar
+
+Type a plain-English command; AfterGap parses it into a structured intent and routes it through the same agent tools the CLI uses.
+
+```
+"buy $25 of the cheapest NVDA wrapper"      → BUY · NVDA · $25 · cheapest
+"compare the mag7 basket"                    → BASKET_SCAN · mag7
+"sell 0.0218 NVDAB"                          → SELL · NVDA · NVDAB explicit
+"buy stocks"                                 → REJECTED (ambiguous — no ticker)
+```
+
+- **Intent Parser** (`packages/agent/src/parser.ts`): Extracts action (BUY/SELL/COMPARE/BASKET_SCAN), ticker, explicit wrapper token (NVDAB → bstock, NVDAon → ondo), and USD or share amount.
+- **Explicit Wrapper Preservation:** If a user names `NVDAB` specifically, the parser preserves that preference instead of overriding it with "cheapest."
+- **Ambiguity Guards:** Rejects underspecified commands with actionable suggestions rather than guessing with real funds.
+- **Sell Direction Rationale:** SELL commands produce bid-price reasoning ("current on-chain bid of $229.11/share"), not buy-comparison output.
+- **Fail-Closed Sell Lock:** Sell execution is locked pending live end-to-end verification — the guard lives inside `handleApproveAndExecute` (not just the UI layer), so it fires regardless of entry point.
+
+### 3. Pro Mode — Institutional Terminal (unchanged)
+
+The full dual-wrapper analytics terminal, toggled on via the Simple / Pro pill in the header.
+
+- **Live Side-by-Side Analytics:** Simultaneously tracks both wrappers alongside the official NYSE/NASDAQ cash-hours close.
+- **Basis Spread & Dollar Savings:** Computes exact percentage basis spread and cash dollar difference per share.
+- **Thematic Baskets:** Pre-configured clusters (**Mag 7**, **AI & Semiconductors**, **Buffett / Value**, **Liquid Growth**) ranked in real time by basis spread.
+- **On-Chain Calldata Inspection:** Full unsigned EVM calldata viewer before any wallet signing.
+- **Benchmark Reference Pricing Disclosure:** Prominent banner when live Binance feed is unavailable (40304 datacenter restriction), showing reference prices rather than live quotes.
+
+### 4. Intelligent Smart Order Routing & Real-Time Execution
+
+- **Binance Web3 Trading API Integration:** Direct connectivity with `/dex/aggregator/quote` and `/dex/aggregator/swap`.
+- **Secure Server-Side Architecture:** API credentials are held server-side, signed via HMAC-SHA256, and never exposed to the browser.
+- **Verified LiquidMesh Protocol Routing:** Trades execute through Binance's LiquidMesh router (`0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5`, selector `0xad43f73d`).
+- **Absolute Trade Safety Invariant:** Zero fallback token swaps. All trades execute into the requested equity wrapper or abort cleanly.
+- **Live Quote TTL Engine:** 30-second TTL countdown with auto-refresh to prevent stale quote execution.
+- **Two-Step On-Chain Execution:** Least-privilege USDT approval + atomic swap with real-time state feedback and BSCScan links.
+
+### 5. Cryptographic API Client & Signer (`@aftergap/api`)
+
+- Enterprise TypeScript client for Binance Web3 Developer APIs.
 - Strict canonical request pre-hashing and HMAC-SHA256 Base64 signing.
-- Built-in DNS-over-HTTPS (DoH) and verified CloudFront edge routing to ensure zero-hang network reliability across any OS or serverless host.
-- Fully unit tested with cryptographic test vectors (`npm run test:signer`), dynamic disclosure verification (`npm run test:disclosure`), and live mainnet RFQ validation (`npm run test:live`).
+- Built-in DNS-over-HTTPS (DoH) and verified CloudFront edge routing.
+- Fully unit tested with cryptographic test vectors, dynamic disclosure verification, and live mainnet RFQ validation.
 
-### 4. Autonomous AI Agent & Model Context Protocol (MCP) Server (`@aftergap/agent`)
+### 6. Autonomous AI Agent & Model Context Protocol (MCP) Server (`@aftergap/agent`)
+
 - Standardized **Model Context Protocol (MCP)** server over stdio compatible with Cursor, Claude Code, and autonomous AI agents.
-- **Binance Skills Hub** compliant manifest (`skill.json`) targeting BNB Smart Chain (`binanceChainId: 56`).
+- Custom `skill.json` manifest targeting BNB Smart Chain (`binanceChainId: 56`).
 - 4 composable tools exposed to LLMs:
   - `inspect_gap`: Inspects price discrepancies, wrapper mechanics, and dollar savings for any equity ticker.
   - `scan_thematic_basket`: Scans entire thematic baskets and ranks constituents by arbitrage spread.
@@ -113,7 +152,7 @@ AfterGap deeply integrates **5 core Binance Web3 API modules and tools** on BNB 
 | Wrapper | Suffix | Trading API Type | Execution Mode | Backing & Price Mechanics | RWA Data Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **bStocks** | `B` (e.g. `NVDAB`) | `3` | Mixed `SWAP` (LiquidMesh) + `RFQ` (PcsXRfq) | 1:1 backed, rebase for dividends | Supported (`platformId=bstock`) |
-| **Ondo** | `on` (e.g. `NVDAon`) | `1` | `RFQ` (Always quote $\to$ swap $\to$ typedData $\to$ submit) | Total-return tracker, can drift from cash | Supported (`platformId=ondo`) |
+| **Ondo** | `on` (e.g. `NVDAon`) | `1` | `RFQ` (Always quote → swap → typedData → submit) | Total-return tracker, can drift from cash | Supported (`platformId=ondo`) |
 
 > **Protocol Landscape Note:** While tokenized equity literature mentions bStocks, Ondo, and xStocks, ecosystem catalog verification confirms that **xStocks** is absent from the Binance Web3 Market RWA Data catalog (`/rwa/platforms`) and lacks active spot liquidity on BSC mainnet. AfterGap focuses exclusively on the two verified, fully operational protocols: **bStocks** and **Ondo**.
 
@@ -121,7 +160,7 @@ AfterGap deeply integrates **5 core Binance Web3 API modules and tools** on BNB 
 
 ## 🏆 Live BSC Mainnet Execution Proof
 
-AfterGap features 100% verified, real-world on-chain execution on BNB Smart Chain Mainnet (`Chain ID: 56`). The end-to-end user journey—retrieving real-time executable RFQ quotes, least-privilege token approval, and atomic swap execution into tokenized US equities via Binance LiquidMesh—is permanently verified on-chain:
+AfterGap features 100% verified, real-world on-chain execution on BNB Smart Chain Mainnet (`Chain ID: 56`):
 
 | Field | Mainnet Proof & On-Chain Record |
 | :--- | :--- |
@@ -135,12 +174,6 @@ AfterGap features 100% verified, real-world on-chain execution on BNB Smart Chai
 | **Output Received** | **`0.021835450815514278 NVDAB`** (~$5.00 NVIDIA Corp tokenized stock wrapper) |
 | **User Signer Wallet** | [`0x0478047BB937E4e292275c6d09b997deb72D759d`](https://bscscan.com/address/0x0478047bb937e4e292275c6d09b997deb72d759d) |
 | **Transaction Fee** | `0.0000235275157 BNB` (~**$0.02 USD**) |
-| **BscScan Explorer** | [https://bscscan.com/tx/0x4933433f5b1991bc319775faef8cd2a9b5186bed1261d4f9b58cc980fce52444](https://bscscan.com/tx/0x4933433f5b1991bc319775faef8cd2a9b5186bed1261d4f9b58cc980fce52444) |
-
-### On-Chain Verifications & Security Guarantees
-1. **Direct Stock Wrapper Settlement:** Authentic BEP-8056 `NVDAB` shares were minted and transferred directly to user custody (`0x0478...D759d`).
-2. **Least-Privilege Approval Invariant:** Approval was limited strictly to the required trade amount ($5.00 USDT), automatically resetting remaining router allowance to `0` upon settlement.
-3. **No Intermediary Asset Slippage:** Rather than fallback trades to WBNB, execution routed directly into the target equity wrapper at institutional pricing with ultra-low gas ($0.02).
 
 ---
 
@@ -152,7 +185,7 @@ AfterGap/
 │   └── web/                 # Next.js 15 App Router frontend & server-side API proxy
 │       ├── app/
 │       │   ├── api/rwa/     # Secure server route executing authenticated Binance Web3 calls
-│       │   ├── page.tsx     # Terminal UI: live tickers, dual-wrapper cards, baskets visualizer
+│       │   ├── page.tsx     # Simple Mode catalog + Pro Mode terminal + NL execution bar
 │       │   ├── layout.tsx   # Root metadata and font configuration
 │       │   └── globals.css  # Dark terminal theme and styling
 ├── packages/
@@ -162,13 +195,18 @@ AfterGap/
 │   │   │   ├── signer.test.ts # Automated test vectors for signature validation
 │   │   │   ├── client.ts    # BinanceRwaClient implementation (RWA, Trading, Balances)
 │   │   │   └── types.ts     # Complete TypeScript interfaces for Binance Web3 APIs
-│   └── agent/               # Autonomous Agentic Wallet Skill & MCP Server
+│   └── agent/               # AI Agent, NL Intent Parser & MCP Server
 │       ├── src/
+│       │   ├── parser.ts    # Natural-language intent parser (BUY/SELL/COMPARE/BASKET_SCAN)
 │       │   ├── tools.ts     # Arbitrage inspection, best-route quoting & basket ranking
 │       │   ├── server.ts    # Model Context Protocol (MCP) JSON-RPC 2.0 stdio server
 │       │   ├── cli.ts       # Interactive command-line test runner
-│       │   └── skill.json   # Binance Skills Hub manifest (BSC Chain 56)
+│       │   └── skill.json   # Agent skill manifest (BSC Chain 56)
 │       └── README.md
+├── scripts/
+│   ├── verify-disclosure.ts # Dynamic fallback pricing disclosure test suite (4 tests)
+│   ├── verify-ui-render.ts  # React SSR dual-mode UI compliance tests (8 assertions)
+│   └── test-nlp-intent.ts   # NL intent parser & ambiguity guard tests (6 tests)
 ├── docs/
 │   └── DEVEX.md             # Developer Experience & Engineering Report
 ├── .env.example             # Environment variable template
@@ -177,7 +215,7 @@ AfterGap/
 
 ---
 
-## 🤖 Autonomous AI Agent & MCP Integration
+## 🤖 AI Agent & MCP Integration
 
 AfterGap can be used directly as an MCP server by any LLM or AI agent (Cursor, Claude Code, BNB Agent Studio):
 
@@ -196,22 +234,34 @@ Add to your `claude_desktop_config.json` or Cursor MCP settings:
 ```
 
 ### CLI Command Runner
-You can also run the agent tools interactively from the command line:
 
 ```bash
-# 1. Inspect price gap and identify cheapest wrapper for any ticker
+# Inspect price gap and identify cheapest wrapper for any ticker
 npx tsx packages/agent/src/cli.ts inspect NVDA
 
-# 2. Scan and rank thematic baskets by arbitrage spread
+# Scan and rank thematic baskets by arbitrage spread
 npx tsx packages/agent/src/cli.ts basket mag7
 npx tsx packages/agent/src/cli.ts basket ai_semis
 
-# 3. Request executable spot quote for the best wrapper
+# Request executable spot quote for the best wrapper
 npx tsx packages/agent/src/cli.ts quote NVDA 10
 
-# 4. Perform gasless BSC eth_call simulation
+# Perform gasless BSC eth_call simulation
 npx tsx packages/agent/src/cli.ts simulate NVDA 10
 ```
+
+### Natural-Language Command Bar (Web App)
+
+Type directly into the command bar in the web app:
+
+```
+"buy $25 of the cheapest NVDA wrapper"
+"compare the mag7 basket"
+"buy $50 TSLA"
+"sell 0.0218 NVDAB"
+```
+
+The parser extracts a structured intent and routes it through the same `@aftergap/agent` tools used by the CLI and MCP server.
 
 ---
 
@@ -222,18 +272,15 @@ npx tsx packages/agent/src/cli.ts simulate NVDA 10
 - **npm**: `>= 10`
 
 ### 2. Installation
-Install dependencies across all workspaces:
 ```bash
 npm install
 ```
 
 ### 3. Environment Configuration
-Copy `.env.example` to `.env.local`:
 ```bash
 cp .env.example .env.local
 ```
 
-Configure your environment variables:
 ```env
 BINANCE_WEB3_API_KEY=your_api_key_here
 BINANCE_WEB3_API_SECRET=your_secret_key_here
@@ -241,28 +288,36 @@ WALLET_ADDRESS=0x0000000000000000000000000000000000000000
 BSC_RPC=https://bsc-dataseed.binance.org/
 ```
 
-### 4. Verify Cryptographic Signer & Dynamic Disclosure Test Suite
-Run the automated test vectors to confirm signature generation, path canonicalization, and fallback disclosures:
+### 4. Run the Test Suite
+
 ```bash
-# Cryptographic HMAC-SHA256 test vectors
+# Cryptographic HMAC-SHA256 signer test vectors
 npm run test:signer
 
-# Dynamic fallback pricing & React UI disclosure tests
+# Dynamic fallback pricing & React UI disclosure tests (Pro + Simple Mode)
 npm run test:disclosure
+
+# NL intent parser & ambiguity guard tests (6 scenarios)
+npx tsx scripts/test-nlp-intent.ts
 
 # Live mainnet RFQ quote & swap route validation (BSC Chain 56)
 npm run test:live
 ```
 
 ### 5. Launch the Web Application
-Start the local development server:
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000) in your browser. The app launches in **Simple Mode** by default — click **Pro** in the header to switch to the full terminal.
 
 ---
 
 ## Technical Report & Documentation
 For a deep dive into API latency profiles, authentication specifications, gateway behavior, and the full engineering log, see [`docs/DEVEX.md`](./docs/DEVEX.md).
+
+---
+
+## Disclaimer
+
+AfterGap is an experimental project built for the BNB Hack: Tokenized Stocks Edition hackathon. It is not financial advice. Tokenized RWA trading involves smart contract risk, liquidity risk, and off-market pricing risk. Sell execution is currently locked pending live end-to-end verification. Never invest more than you can afford to lose.
