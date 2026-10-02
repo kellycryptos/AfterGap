@@ -1942,15 +1942,11 @@ export default function Home() {
           <div className="w-full flex flex-col items-center">
             {/* Friendly Simple Mode Hero */}
             <div className="text-center mb-6 sm:mb-8 space-y-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F5C542]/10 border border-[#F5C542]/30 text-xs font-semibold text-[#F5C542] mb-1">
-                <span>⚡</span>
-                <span>Binance Web3 DEX Dual-Wrapper Execution</span>
-              </div>
-              <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-[#F5F5F4]">
-                Trade US Stocks on BNB Chain
+              <h1 className="text-2xl sm:text-4xl font-semibold tracking-tight text-[#F5F5F4]">
+                Buy US Stocks on BNB Chain
               </h1>
               <p className="text-xs sm:text-sm text-[#A1A1AA] max-w-lg mx-auto">
-                Select any stock to trade. AfterGap scans bStocks vs. Ondo in real time and routes your transaction through the lowest price.
+                AfterGap compares all tokenized versions in real time and automatically buys through the one with the best price.
               </p>
             </div>
 
@@ -2051,8 +2047,8 @@ export default function Home() {
                 String(cheaperTok.platformId).toLowerCase() === 'bstock' ||
                 String(cheaperTok.tokenSymbol).endsWith('B');
               const wrapperExplanation = isBstockCard
-                ? 'bStocks: Dividends auto-reinvested as extra shares on-chain'
-                : "Ondo: Dividends accumulate into the token's net value";
+                ? 'gets dividends added as extra shares'
+                : "gets dividends added to the token's value";
 
               return (
                 <div className="w-full max-w-lg bg-[#121214] border border-white/[0.1] rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5">
@@ -2070,20 +2066,22 @@ export default function Home() {
                         </span>
                         <span className="text-xs text-white/30">•</span>
                         <span className="text-xs px-2 py-0.5 rounded-full bg-white/[0.06] text-[#A1A1AA] font-mono font-semibold">
-                          Best: {cheaperTok.tokenSymbol} ({cheaperTok.platformId.toUpperCase()})
+                          {cheaperTok.tokenSymbol}
                         </span>
                       </div>
                     </div>
                     <div className="text-right shrink-0 ml-2">
                       <span className="text-[10px] text-[#A1A1AA] block uppercase tracking-wide">
-                        {cardIsFallback ? 'Estimated Price' : 'Best On-Chain Price'}
+                        {cardIsFallback ? 'Estimated Price' : 'Best Price'}
                       </span>
                       <span className="text-2xl sm:text-3xl font-extrabold text-[#F5F5F4]">
                         ${cardPrice}
                       </span>
-                      <span className="text-[10px] text-[#3D9A6A] font-medium block">
-                        ✓ Optimal execution route
-                      </span>
+                      {cardIsFallback && (
+                        <span className="text-[9px] text-[#A1A1AA]/80 block leading-tight mt-0.5">
+                          Reference price, updates delayed
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -2121,15 +2119,17 @@ export default function Home() {
 
                   {/* Wrapper Explanation & Savings */}
                   <div className="space-y-2">
-                    <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/[0.06] text-xs text-[#A1A1AA] leading-relaxed flex items-center justify-between">
-                      <span>{wrapperExplanation}</span>
-                      <span className="text-[10px] text-[#F5C542] font-semibold uppercase tracking-wider shrink-0 ml-2">1:1 Backed</span>
+                    <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/[0.06] text-xs text-[#A1A1AA] leading-relaxed">
+                      <span className="font-semibold text-[#F5F5F4]">{cheaperTok.tokenSymbol}</span>{' '}
+                      {wrapperExplanation}.
                     </div>
 
                     <div className="flex items-center gap-2 p-3 rounded-2xl bg-[#3D9A6A]/10 border border-[#3D9A6A]/25 text-[#3D9A6A] text-xs font-medium">
                       <span className="shrink-0 text-base">✨</span>
                       <span>
-                        Saves you ~${cardSavings} per share vs. {otherTok?.tokenSymbol || 'the alternative wrapper'}.
+                        {cardIsFallback
+                          ? `Estimated savings: ~$${cardSavings} vs. the other option.`
+                          : `Saves you $${cardSavings} vs. the other option.`}
                       </span>
                     </div>
                   </div>
@@ -2226,7 +2226,7 @@ export default function Home() {
                             <span>Checking best price...</span>
                           </>
                         ) : (
-                          <span>{`${isSell ? 'Sell' : 'Buy'} ${cheaperTok.underlyingTicker || selectedSimpleTicker} via ${quote?.vendorName || 'LiquidMesh'}`}</span>
+                          <span>{`${isSell ? 'Sell' : 'Buy'} ${cheaperTok.underlyingTicker || selectedSimpleTicker}`}</span>
                         )}
                       </button>
                     )}
@@ -2261,7 +2261,7 @@ export default function Home() {
             {/* Simple Mode Natural-Language Assistant */}
             <div className="w-full max-w-lg mt-6 bg-[#07070A] border border-white/[0.08] rounded-2xl p-4 space-y-3">
               <div className="flex items-center gap-2 text-xs font-semibold text-[#F5C542]">
-                <ThinkingOrb state="working" size={16} theme="dark" />
+                <ThinkingOrb state="working" size={20} theme="dark" />
                 <span>AfterGap AI Assistant</span>
               </div>
               <div className="relative">
@@ -2272,14 +2272,14 @@ export default function Home() {
                   placeholder={`Try: "Buy $25 ${selectedSimpleTicker}" or "Find biggest gap"`}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && nlPrompt.trim()) {
-                      handleNlSubmit();
+                      handleNaturalLanguageSubmit();
                     }
                   }}
                   className="w-full bg-[#121214] border border-white/[0.08] focus:border-[#F5C542]/60 rounded-xl px-3.5 py-2.5 text-xs text-[#F5F5F4] placeholder-[#A1A1AA]/50 outline-none transition pr-16"
                 />
                 <button
                   type="button"
-                  onClick={handleNlSubmit}
+                  onClick={() => handleNaturalLanguageSubmit()}
                   disabled={nlLoading || !nlPrompt.trim()}
                   className="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg bg-[#F5C542] hover:bg-[#E0B02E] text-[#07070A] text-xs font-bold transition disabled:opacity-40"
                 >
@@ -2291,7 +2291,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => {
-                    setNlPrompt(`Buy $25 of the cheapest ${selectedSimpleTicker} wrapper`);
+                    handleNaturalLanguageSubmit(undefined, `Buy $25 of the cheapest ${selectedSimpleTicker} wrapper`);
                   }}
                   className="px-2 py-0.5 rounded bg-white/[0.04] text-[#A1A1AA] hover:text-[#F5F5F4] hover:bg-white/[0.08] border border-white/[0.06] transition font-mono"
                 >
@@ -2300,7 +2300,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => {
-                    setNlPrompt('Find the biggest gap between bStocks and Ondo right now');
+                    handleNaturalLanguageSubmit(undefined, 'Find the biggest gap between bStocks and Ondo right now');
                   }}
                   className="px-2 py-0.5 rounded bg-white/[0.04] text-[#A1A1AA] hover:text-[#F5F5F4] hover:bg-white/[0.08] border border-white/[0.06] transition font-mono"
                 >
