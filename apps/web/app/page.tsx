@@ -186,9 +186,9 @@ const DEFAULT_BENCHMARK_TOKENS: Record<string, any[]> = {
       tokenContractAddress: '0x02fca66c1d1afb4e2a7884261eb00f63598a7436',
       binanceChainId: '56',
       platformId: 'bstock',
-      tokenPrice: '229.11',
-      price: '229.11',
-      referencePrice: '228.93',
+      tokenPrice: '235.18',
+      price: '235.18',
+      referencePrice: '235.03',
       marketStatus: 'TRADING',
       reasonCode: 'TRADING',
       statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
@@ -201,12 +201,12 @@ const DEFAULT_BENCHMARK_TOKENS: Record<string, any[]> = {
       tokenContractAddress: '0xa9ee28c80f960b889dfbd1902055218cba016f75',
       binanceChainId: '56',
       platformId: 'ondo',
-      tokenPrice: '229.72',
-      price: '229.72',
-      referencePrice: '229.32',
-      marketStatus: 'premarket',
+      tokenPrice: '235.78',
+      price: '235.78',
+      referencePrice: '235.37',
+      marketStatus: 'regular',
       reasonCode: 'TRADING',
-      statusInfo: { openState: true, marketStatus: 'premarket', reasonCode: 'TRADING' },
+      statusInfo: { openState: true, marketStatus: 'regular', reasonCode: 'TRADING' },
       underlyingTicker: 'NVDA',
       underlyingName: 'Nvidia Corp',
     },
@@ -215,12 +215,12 @@ const DEFAULT_BENCHMARK_TOKENS: Record<string, any[]> = {
     {
       tokenSymbol: 'TSLAB',
       tokenName: 'Tesla bStock',
-      tokenContractAddress: '0x39a1b415b3c3756fb60cfda862fc8095d3013892',
+      tokenContractAddress: '0x5b1910eaad6450e50f816082aa078c41f10c292f',
       binanceChainId: '56',
       platformId: 'bstock',
-      tokenPrice: '254.20',
-      price: '254.20',
-      referencePrice: '253.80',
+      tokenPrice: '372.13',
+      price: '372.13',
+      referencePrice: '372.00',
       marketStatus: 'TRADING',
       reasonCode: 'TRADING',
       statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
@@ -230,12 +230,12 @@ const DEFAULT_BENCHMARK_TOKENS: Record<string, any[]> = {
     {
       tokenSymbol: 'TSLAon',
       tokenName: 'Tesla Ondo',
-      tokenContractAddress: '0x56a64ef81c74ca29a05b3ec9b5311e51b32d2038',
+      tokenContractAddress: '0x2494b603319d4d9f9715c9f4496d9e0364b59d93',
       binanceChainId: '56',
       platformId: 'ondo',
-      tokenPrice: '254.85',
-      price: '254.85',
-      referencePrice: '253.80',
+      tokenPrice: '372.12',
+      price: '372.12',
+      referencePrice: '372.00',
       marketStatus: 'TRADING',
       reasonCode: 'TRADING',
       statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
@@ -243,48 +243,16 @@ const DEFAULT_BENCHMARK_TOKENS: Record<string, any[]> = {
       underlyingName: 'Tesla Inc',
     },
   ],
-  AAPL: [
-    {
-      tokenSymbol: 'AAPLB',
-      tokenName: 'Apple bStock',
-      tokenContractAddress: '0x7890b415b3c3756fb60cfda862fc8095d3013111',
-      binanceChainId: '56',
-      platformId: 'bstock',
-      tokenPrice: '231.40',
-      price: '231.40',
-      referencePrice: '231.10',
-      marketStatus: 'TRADING',
-      reasonCode: 'TRADING',
-      statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
-      underlyingTicker: 'AAPL',
-      underlyingName: 'Apple Inc',
-    },
-    {
-      tokenSymbol: 'AAPLon',
-      tokenName: 'Apple Ondo',
-      tokenContractAddress: '0x12344ef81c74ca29a05b3ec9b5311e51b32d2222',
-      binanceChainId: '56',
-      platformId: 'ondo',
-      tokenPrice: '231.95',
-      price: '231.95',
-      referencePrice: '231.10',
-      marketStatus: 'TRADING',
-      reasonCode: 'TRADING',
-      statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
-      underlyingTicker: 'AAPL',
-      underlyingName: 'Apple Inc',
-    },
-  ],
   MSFT: [
     {
       tokenSymbol: 'MSFTB',
       tokenName: 'Microsoft bStock',
-      tokenContractAddress: '0x4433b415b3c3756fb60cfda862fc8095d3013999',
+      tokenContractAddress: '0x80106cb3ead06659a5ad19df39d9b4733863b9b0',
       binanceChainId: '56',
       platformId: 'bstock',
-      tokenPrice: '428.10',
-      price: '428.10',
-      referencePrice: '427.60',
+      tokenPrice: '515.38',
+      price: '515.38',
+      referencePrice: '515.00',
       marketStatus: 'TRADING',
       reasonCode: 'TRADING',
       statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
@@ -294,61 +262,29 @@ const DEFAULT_BENCHMARK_TOKENS: Record<string, any[]> = {
     {
       tokenSymbol: 'MSFTon',
       tokenName: 'Microsoft Ondo',
-      tokenContractAddress: '0x99884ef81c74ca29a05b3ec9b5311e51b32d8888',
+      tokenContractAddress: '0x6bfe75d1ad432050ea973c3a3dcd88f02e2444c3',
       binanceChainId: '56',
       platformId: 'ondo',
-      tokenPrice: '429.35',
-      price: '429.35',
-      referencePrice: '428.20',
-      marketStatus: 'premarket',
-      reasonCode: 'TRADING',
-      statusInfo: { openState: true, marketStatus: 'premarket', reasonCode: 'TRADING' },
-      underlyingTicker: 'MSFT',
-      underlyingName: 'Microsoft Corp',
-    },
-  ],
-  AMZN: [
-    {
-      tokenSymbol: 'AMZNB',
-      tokenName: 'Amazon bStock',
-      tokenContractAddress: '0x5511b415b3c3756fb60cfda862fc8095d3013777',
-      binanceChainId: '56',
-      platformId: 'bstock',
-      tokenPrice: '189.60',
-      price: '189.60',
-      referencePrice: '189.25',
+      tokenPrice: '520.70',
+      price: '520.70',
+      referencePrice: '515.00',
       marketStatus: 'TRADING',
       reasonCode: 'TRADING',
       statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
-      underlyingTicker: 'AMZN',
-      underlyingName: 'Amazon.com Inc',
-    },
-    {
-      tokenSymbol: 'AMZNon',
-      tokenName: 'Amazon Ondo',
-      tokenContractAddress: '0x77224ef81c74ca29a05b3ec9b5311e51b32d5555',
-      binanceChainId: '56',
-      platformId: 'ondo',
-      tokenPrice: '190.25',
-      price: '190.25',
-      referencePrice: '189.70',
-      marketStatus: 'premarket',
-      reasonCode: 'TRADING',
-      statusInfo: { openState: true, marketStatus: 'premarket', reasonCode: 'TRADING' },
-      underlyingTicker: 'AMZN',
-      underlyingName: 'Amazon.com Inc',
+      underlyingTicker: 'MSFT',
+      underlyingName: 'Microsoft Corp',
     },
   ],
   GOOGL: [
     {
       tokenSymbol: 'GOOGLB',
       tokenName: 'Alphabet bStock',
-      tokenContractAddress: '0x3344b415b3c3756fb60cfda862fc8095d3013666',
+      tokenContractAddress: '0x3f53de71c126bdabae20f9cd64848d317f6c3238',
       binanceChainId: '56',
       platformId: 'bstock',
-      tokenPrice: '165.20',
-      price: '165.20',
-      referencePrice: '164.90',
+      tokenPrice: '344.50',
+      price: '344.50',
+      referencePrice: '344.00',
       marketStatus: 'TRADING',
       reasonCode: 'TRADING',
       statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
@@ -358,15 +294,15 @@ const DEFAULT_BENCHMARK_TOKENS: Record<string, any[]> = {
     {
       tokenSymbol: 'GOOGLon',
       tokenName: 'Alphabet Ondo',
-      tokenContractAddress: '0x66554ef81c74ca29a05b3ec9b5311e51b32d4444',
+      tokenContractAddress: '0x091fc7778e6932d4009b087b191d1ee3bac5729a',
       binanceChainId: '56',
       platformId: 'ondo',
-      tokenPrice: '165.80',
-      price: '165.80',
-      referencePrice: '165.20',
-      marketStatus: 'premarket',
+      tokenPrice: '346.16',
+      price: '346.16',
+      referencePrice: '344.00',
+      marketStatus: 'TRADING',
       reasonCode: 'TRADING',
-      statusInfo: { openState: true, marketStatus: 'premarket', reasonCode: 'TRADING' },
+      statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
       underlyingTicker: 'GOOGL',
       underlyingName: 'Alphabet Inc',
     },
@@ -375,12 +311,12 @@ const DEFAULT_BENCHMARK_TOKENS: Record<string, any[]> = {
     {
       tokenSymbol: 'METAB',
       tokenName: 'Meta bStock',
-      tokenContractAddress: '0x2211b415b3c3756fb60cfda862fc8095d3013555',
+      tokenContractAddress: '0x7425889fe94f9d693e8daefe88bcced6acfef4c0',
       binanceChainId: '56',
       platformId: 'bstock',
-      tokenPrice: '568.40',
-      price: '568.40',
-      referencePrice: '567.50',
+      tokenPrice: '730.76',
+      price: '730.76',
+      referencePrice: '730.00',
       marketStatus: 'TRADING',
       reasonCode: 'TRADING',
       statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
@@ -390,15 +326,15 @@ const DEFAULT_BENCHMARK_TOKENS: Record<string, any[]> = {
     {
       tokenSymbol: 'METAon',
       tokenName: 'Meta Ondo',
-      tokenContractAddress: '0x88994ef81c74ca29a05b3ec9b5311e51b32d3333',
+      tokenContractAddress: '0xd7df5863a3e742f0c767768cdfcb63f09e0422f6',
       binanceChainId: '56',
       platformId: 'ondo',
-      tokenPrice: '570.10',
-      price: '570.10',
-      referencePrice: '568.60',
-      marketStatus: 'premarket',
+      tokenPrice: '734.47',
+      price: '734.47',
+      referencePrice: '730.00',
+      marketStatus: 'TRADING',
       reasonCode: 'TRADING',
-      statusInfo: { openState: true, marketStatus: 'premarket', reasonCode: 'TRADING' },
+      statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
       underlyingTicker: 'META',
       underlyingName: 'Meta Platforms Inc',
     },
@@ -407,12 +343,12 @@ const DEFAULT_BENCHMARK_TOKENS: Record<string, any[]> = {
     {
       tokenSymbol: 'AMDB',
       tokenName: 'AMD bStock',
-      tokenContractAddress: '0x1199b415b3c3756fb60cfda862fc8095d3013444',
+      tokenContractAddress: '0x75fd4cf6f8392e41e70391d60c90c0d5211603a1',
       binanceChainId: '56',
       platformId: 'bstock',
-      tokenPrice: '156.30',
-      price: '156.30',
-      referencePrice: '155.90',
+      tokenPrice: '630.58',
+      price: '630.58',
+      referencePrice: '630.00',
       marketStatus: 'TRADING',
       reasonCode: 'TRADING',
       statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
@@ -422,17 +358,49 @@ const DEFAULT_BENCHMARK_TOKENS: Record<string, any[]> = {
     {
       tokenSymbol: 'AMDon',
       tokenName: 'AMD Ondo',
-      tokenContractAddress: '0x33114ef81c74ca29a05b3ec9b5311e51b32d2222',
+      tokenContractAddress: '0x9f16e46c73b43bdb70861247d537bee4ea18f639',
       binanceChainId: '56',
       platformId: 'ondo',
-      tokenPrice: '156.95',
-      price: '156.95',
-      referencePrice: '156.20',
-      marketStatus: 'premarket',
+      tokenPrice: '630.66',
+      price: '630.66',
+      referencePrice: '630.00',
+      marketStatus: 'TRADING',
       reasonCode: 'TRADING',
-      statusInfo: { openState: true, marketStatus: 'premarket', reasonCode: 'TRADING' },
+      statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
       underlyingTicker: 'AMD',
       underlyingName: 'Advanced Micro Devices',
+    },
+  ],
+  COIN: [
+    {
+      tokenSymbol: 'COINB',
+      tokenName: 'Coinbase bStock',
+      tokenContractAddress: '0x585bde7c54abb5ccd7791f923d6c2187635f3952',
+      binanceChainId: '56',
+      platformId: 'bstock',
+      tokenPrice: '182.58',
+      price: '182.58',
+      referencePrice: '182.50',
+      marketStatus: 'TRADING',
+      reasonCode: 'TRADING',
+      statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
+      underlyingTicker: 'COIN',
+      underlyingName: 'Coinbase Global Inc',
+    },
+    {
+      tokenSymbol: 'COINon',
+      tokenName: 'Coinbase Ondo',
+      tokenContractAddress: '0xf8589b526fdd65f7f301c605a6e04f0f1b4b3620',
+      binanceChainId: '56',
+      platformId: 'ondo',
+      tokenPrice: '182.61',
+      price: '182.61',
+      referencePrice: '182.50',
+      marketStatus: 'TRADING',
+      reasonCode: 'TRADING',
+      statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
+      underlyingTicker: 'COIN',
+      underlyingName: 'Coinbase Global Inc',
     },
   ],
   TSM: [
@@ -539,6 +507,294 @@ const DEFAULT_BENCHMARK_QUOTES: Record<string, any> = {
     approveTarget: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
     isBest: false,
   },
+  '0x5b1910eaad6450e50f816082aa078c41f10c292f': {
+    quoteId: 'quote-tslab-benchmark-03',
+    vendorName: 'LiquidMesh',
+    executionMode: 'SWAP',
+    binanceChainId: '56',
+    fromTokenAmount: '10000000000000000000',
+    toTokenAmount: '26872329562249751',
+    priceImpactPercent: '0.01',
+    router: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
+    fromToken: {
+      tokenContractAddress: '0x55d398326f99059fF775485246999027B3197955',
+      tokenSymbol: 'USDT',
+      tokenUnitPrice: '1.00',
+      decimal: 18,
+    },
+    toToken: {
+      tokenContractAddress: '0x5b1910eaad6450e50f816082aa078c41f10c292f',
+      tokenSymbol: 'TSLAB',
+      tokenUnitPrice: '372.13',
+      decimal: 18,
+    },
+    approveTarget: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
+    isBest: true,
+  },
+  '0x2494b603319d4d9f9715c9f4496d9e0364b59d93': {
+    quoteId: 'quote-tslaon-benchmark-03b',
+    vendorName: 'LiquidMesh',
+    executionMode: 'SWAP',
+    binanceChainId: '56',
+    fromTokenAmount: '10000000000000000000',
+    toTokenAmount: '26873050978179082',
+    priceImpactPercent: '0.01',
+    router: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
+    fromToken: {
+      tokenContractAddress: '0x55d398326f99059fF775485246999027B3197955',
+      tokenSymbol: 'USDT',
+      tokenUnitPrice: '1.00',
+      decimal: 18,
+    },
+    toToken: {
+      tokenContractAddress: '0x2494b603319d4d9f9715c9f4496d9e0364b59d93',
+      tokenSymbol: 'TSLAon',
+      tokenUnitPrice: '372.12',
+      decimal: 18,
+    },
+    approveTarget: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
+    isBest: false,
+  },
+  '0x80106cb3ead06659a5ad19df39d9b4733863b9b0': {
+    quoteId: 'quote-msftb-benchmark-04',
+    vendorName: 'LiquidMesh',
+    executionMode: 'SWAP',
+    binanceChainId: '56',
+    fromTokenAmount: '10000000000000000000',
+    toTokenAmount: '19403119830588691',
+    priceImpactPercent: '0.01',
+    router: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
+    fromToken: {
+      tokenContractAddress: '0x55d398326f99059fF775485246999027B3197955',
+      tokenSymbol: 'USDT',
+      tokenUnitPrice: '1.00',
+      decimal: 18,
+    },
+    toToken: {
+      tokenContractAddress: '0x80106cb3ead06659a5ad19df39d9b4733863b9b0',
+      tokenSymbol: 'MSFTB',
+      tokenUnitPrice: '515.38',
+      decimal: 18,
+    },
+    approveTarget: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
+    isBest: true,
+  },
+  '0x6bfe75d1ad432050ea973c3a3dcd88f02e2444c3': {
+    quoteId: 'quote-msfton-benchmark-04b',
+    vendorName: 'LiquidMesh',
+    executionMode: 'SWAP',
+    binanceChainId: '56',
+    fromTokenAmount: '10000000000000000000',
+    toTokenAmount: '19204916458613404',
+    priceImpactPercent: '0.01',
+    router: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
+    fromToken: {
+      tokenContractAddress: '0x55d398326f99059fF775485246999027B3197955',
+      tokenSymbol: 'USDT',
+      tokenUnitPrice: '1.00',
+      decimal: 18,
+    },
+    toToken: {
+      tokenContractAddress: '0x6bfe75d1ad432050ea973c3a3dcd88f02e2444c3',
+      tokenSymbol: 'MSFTon',
+      tokenUnitPrice: '520.70',
+      decimal: 18,
+    },
+    approveTarget: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
+    isBest: false,
+  },
+  '0x3f53de71c126bdabae20f9cd64848d317f6c3238': {
+    quoteId: 'quote-googlb-benchmark-05',
+    vendorName: 'LiquidMesh',
+    executionMode: 'SWAP',
+    binanceChainId: '56',
+    fromTokenAmount: '10000000000000000000',
+    toTokenAmount: '29027576197387518',
+    priceImpactPercent: '0.01',
+    router: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
+    fromToken: {
+      tokenContractAddress: '0x55d398326f99059fF775485246999027B3197955',
+      tokenSymbol: 'USDT',
+      tokenUnitPrice: '1.00',
+      decimal: 18,
+    },
+    toToken: {
+      tokenContractAddress: '0x3f53de71c126bdabae20f9cd64848d317f6c3238',
+      tokenSymbol: 'GOOGLB',
+      tokenUnitPrice: '344.50',
+      decimal: 18,
+    },
+    approveTarget: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
+    isBest: true,
+  },
+  '0x091fc7778e6932d4009b087b191d1ee3bac5729a': {
+    quoteId: 'quote-googlon-benchmark-05b',
+    vendorName: 'LiquidMesh',
+    executionMode: 'SWAP',
+    binanceChainId: '56',
+    fromTokenAmount: '10000000000000000000',
+    toTokenAmount: '28888375317772128',
+    priceImpactPercent: '0.01',
+    router: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
+    fromToken: {
+      tokenContractAddress: '0x55d398326f99059fF775485246999027B3197955',
+      tokenSymbol: 'USDT',
+      tokenUnitPrice: '1.00',
+      decimal: 18,
+    },
+    toToken: {
+      tokenContractAddress: '0x091fc7778e6932d4009b087b191d1ee3bac5729a',
+      tokenSymbol: 'GOOGLon',
+      tokenUnitPrice: '346.16',
+      decimal: 18,
+    },
+    approveTarget: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
+    isBest: false,
+  },
+  '0x7425889fe94f9d693e8daefe88bcced6acfef4c0': {
+    quoteId: 'quote-metab-benchmark-06',
+    vendorName: 'LiquidMesh',
+    executionMode: 'SWAP',
+    binanceChainId: '56',
+    fromTokenAmount: '10000000000000000000',
+    toTokenAmount: '13684383107997154',
+    priceImpactPercent: '0.01',
+    router: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
+    fromToken: {
+      tokenContractAddress: '0x55d398326f99059fF775485246999027B3197955',
+      tokenSymbol: 'USDT',
+      tokenUnitPrice: '1.00',
+      decimal: 18,
+    },
+    toToken: {
+      tokenContractAddress: '0x7425889fe94f9d693e8daefe88bcced6acfef4c0',
+      tokenSymbol: 'METAB',
+      tokenUnitPrice: '730.76',
+      decimal: 18,
+    },
+    approveTarget: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
+    isBest: true,
+  },
+  '0xd7df5863a3e742f0c767768cdfcb63f09e0422f6': {
+    quoteId: 'quote-metaon-benchmark-06b',
+    vendorName: 'LiquidMesh',
+    executionMode: 'SWAP',
+    binanceChainId: '56',
+    fromTokenAmount: '10000000000000000000',
+    toTokenAmount: '13615260000000000',
+    priceImpactPercent: '0.01',
+    router: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
+    fromToken: {
+      tokenContractAddress: '0x55d398326f99059fF775485246999027B3197955',
+      tokenSymbol: 'USDT',
+      tokenUnitPrice: '1.00',
+      decimal: 18,
+    },
+    toToken: {
+      tokenContractAddress: '0xd7df5863a3e742f0c767768cdfcb63f09e0422f6',
+      tokenSymbol: 'METAon',
+      tokenUnitPrice: '734.47',
+      decimal: 18,
+    },
+    approveTarget: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
+    isBest: false,
+  },
+  '0x75fd4cf6f8392e41e70391d60c90c0d5211603a1': {
+    quoteId: 'quote-amdb-benchmark-07',
+    vendorName: 'LiquidMesh',
+    executionMode: 'SWAP',
+    binanceChainId: '56',
+    fromTokenAmount: '10000000000000000000',
+    toTokenAmount: '15858416061403786',
+    priceImpactPercent: '0.01',
+    router: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
+    fromToken: {
+      tokenContractAddress: '0x55d398326f99059fF775485246999027B3197955',
+      tokenSymbol: 'USDT',
+      tokenUnitPrice: '1.00',
+      decimal: 18,
+    },
+    toToken: {
+      tokenContractAddress: '0x75fd4cf6f8392e41e70391d60c90c0d5211603a1',
+      tokenSymbol: 'AMDB',
+      tokenUnitPrice: '630.58',
+      decimal: 18,
+    },
+    approveTarget: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
+    isBest: true,
+  },
+  '0x9f16e46c73b43bdb70861247d537bee4ea18f639': {
+    quoteId: 'quote-amdon-benchmark-07b',
+    vendorName: 'LiquidMesh',
+    executionMode: 'SWAP',
+    binanceChainId: '56',
+    fromTokenAmount: '10000000000000000000',
+    toTokenAmount: '15856404401737861',
+    priceImpactPercent: '0.01',
+    router: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
+    fromToken: {
+      tokenContractAddress: '0x55d398326f99059fF775485246999027B3197955',
+      tokenSymbol: 'USDT',
+      tokenUnitPrice: '1.00',
+      decimal: 18,
+    },
+    toToken: {
+      tokenContractAddress: '0x9f16e46c73b43bdb70861247d537bee4ea18f639',
+      tokenSymbol: 'AMDon',
+      tokenUnitPrice: '630.66',
+      decimal: 18,
+    },
+    approveTarget: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
+    isBest: false,
+  },
+  '0x585bde7c54abb5ccd7791f923d6c2187635f3952': {
+    quoteId: 'quote-coinb-benchmark-08',
+    vendorName: 'LiquidMesh',
+    executionMode: 'SWAP',
+    binanceChainId: '56',
+    fromTokenAmount: '10000000000000000000',
+    toTokenAmount: '54770511556577938',
+    priceImpactPercent: '0.01',
+    router: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
+    fromToken: {
+      tokenContractAddress: '0x55d398326f99059fF775485246999027B3197955',
+      tokenSymbol: 'USDT',
+      tokenUnitPrice: '1.00',
+      decimal: 18,
+    },
+    toToken: {
+      tokenContractAddress: '0x585bde7c54abb5ccd7791f923d6c2187635f3952',
+      tokenSymbol: 'COINB',
+      tokenUnitPrice: '182.58',
+      decimal: 18,
+    },
+    approveTarget: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
+    isBest: true,
+  },
+  '0xf8589b526fdd65f7f301c605a6e04f0f1b4b3620': {
+    quoteId: 'quote-coinon-benchmark-08b',
+    vendorName: 'LiquidMesh',
+    executionMode: 'SWAP',
+    binanceChainId: '56',
+    fromTokenAmount: '10000000000000000000',
+    toTokenAmount: '54761500000000000',
+    priceImpactPercent: '0.01',
+    router: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
+    fromToken: {
+      tokenContractAddress: '0x55d398326f99059fF775485246999027B3197955',
+      tokenSymbol: 'USDT',
+      tokenUnitPrice: '1.00',
+      decimal: 18,
+    },
+    toToken: {
+      tokenContractAddress: '0xf8589b526fdd65f7f301c605a6e04f0f1b4b3620',
+      tokenSymbol: 'COINon',
+      tokenUnitPrice: '182.61',
+      decimal: 18,
+    },
+    approveTarget: '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5',
+    isBest: false,
+  },
 };
 
 function formatRevertReason(raw?: string, spender?: string): string {
@@ -573,6 +829,7 @@ function formatRevertReason(raw?: string, spender?: string): string {
 
 export default function Home() {
   const [viewMode, setViewMode] = useState<'simple' | 'pro'>((globalThis as any).__AFTERGAP_TEST_MODE__ || 'simple');
+  const [selectedSimpleTicker, setSelectedSimpleTicker] = useState<string>('NVDA');
   const [ticker, setTicker] = useState('NVDA');
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<ApiResponseData | null>(null);
@@ -605,6 +862,7 @@ export default function Home() {
   const [copiedHash, setCopiedHash] = useState<string | null>(null);
   const [approvalMode, setApprovalMode] = useState<'exact' | 'unlimited'>('exact');
   const [tradeDirections, setTradeDirections] = useState<Record<string, 'buy' | 'sell'>>({});
+  const [legalModal, setLegalModal] = useState<'terms' | 'privacy' | 'risks' | null>(null);
 
   // Natural-Language Command Bar State
   const [nlPrompt, setNlPrompt] = useState('');
@@ -709,18 +967,6 @@ export default function Home() {
     const amountNeeded = BigInt(amountInSmallestUnit);
 
     setBroadcasts((prev) => ({ ...prev, [contract]: { loading: true, step: 'preparing' } }));
-
-    if (isSell) {
-      setBroadcasts((prev) => ({
-        ...prev,
-        [contract]: {
-          loading: false,
-          step: 'error',
-          error: '🔒 Sell execution is currently in Preview Mode pending live on-chain verification. Direct liquidation is disabled to protect user funds.',
-        },
-      }));
-      return;
-    }
 
     if (currentQuote.isFallback) {
       setBroadcasts((prev) => ({
@@ -1695,223 +1941,378 @@ export default function Home() {
         {viewMode === 'simple' ? (
           <div className="w-full flex flex-col items-center">
             {/* Friendly Simple Mode Hero */}
-            <div className="text-center mb-8 space-y-2">
-              <h1 className="text-2xl sm:text-4xl font-semibold tracking-tight text-[#F5F5F4]">
-                Buy US Stocks on BNB Chain
+            <div className="text-center mb-6 sm:mb-8 space-y-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F5C542]/10 border border-[#F5C542]/30 text-xs font-semibold text-[#F5C542] mb-1">
+                <span>⚡</span>
+                <span>Binance Web3 DEX Dual-Wrapper Execution</span>
+              </div>
+              <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-[#F5F5F4]">
+                Trade US Stocks on BNB Chain
               </h1>
               <p className="text-xs sm:text-sm text-[#A1A1AA] max-w-lg mx-auto">
-                AfterGap compares all tokenized versions in real time and automatically buys through the one with the best price.
+                Select any stock to trade. AfterGap scans bStocks vs. Ondo in real time and routes your transaction through the lowest price.
               </p>
             </div>
 
-            {/* Catalog Stock Cards — one per ticker, best wrapper pre-selected */}
-            <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {Object.entries(DEFAULT_BENCHMARK_TOKENS).map(([tickerKey, tokens]) => {
-                const bstockTok = tokens.find((t: any) => String(t.platformId).toLowerCase() === 'bstock' || String(t.tokenSymbol).endsWith('B'));
-                const ondoTok = tokens.find((t: any) => String(t.platformId).toLowerCase() === 'ondo' || String(t.tokenSymbol).endsWith('on'));
-                const bstockPrice = Number(bstockTok?.tokenPrice || bstockTok?.price || 0);
-                const ondoPrice = Number(ondoTok?.tokenPrice || ondoTok?.price || 0);
-                const cheaperTok = bstockPrice > 0 && ondoPrice > 0
-                  ? (bstockPrice <= ondoPrice ? bstockTok : ondoTok)
-                  : (bstockTok || tokens[0]);
-                const otherPrice = bstockPrice > 0 && ondoPrice > 0
-                  ? (cheaperTok === bstockTok ? ondoPrice : bstockPrice)
-                  : 0;
-                const cardSavings = otherPrice > 0
-                  ? Math.abs(otherPrice - Number(cheaperTok?.tokenPrice || cheaperTok?.price || 0)).toFixed(2)
-                  : '0.00';
+            {/* Interactive Stock Selector Strip */}
+            <div className="w-full max-w-3xl mb-8">
+              <div className="flex items-center justify-between mb-3 px-1">
+                <span className="text-xs font-semibold uppercase tracking-wider text-[#A1A1AA]">
+                  Select Asset:
+                </span>
+                <span className="text-xs text-[#3D9A6A] font-medium flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#3D9A6A] animate-pulse" />
+                  7 Equities Live on BSC
+                </span>
+              </div>
 
-                if (!cheaperTok) return null;
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+                {['NVDA', 'TSLA', 'MSFT', 'GOOGL', 'META', 'AMD', 'COIN'].map((tickerKey) => {
+                  const tokens = DEFAULT_BENCHMARK_TOKENS[tickerKey] || [];
+                  const isSelected = selectedSimpleTicker === tickerKey;
+                  const bstockTok = tokens.find((t: any) => String(t.platformId).toLowerCase() === 'bstock' || String(t.tokenSymbol).endsWith('B'));
+                  const ondoTok = tokens.find((t: any) => String(t.platformId).toLowerCase() === 'ondo' || String(t.tokenSymbol).endsWith('on'));
+                  const bPrice = Number(bstockTok?.tokenPrice || bstockTok?.price || 0);
+                  const oPrice = Number(ondoTok?.tokenPrice || ondoTok?.price || 0);
+                  const bestP = bPrice > 0 && oPrice > 0 ? Math.min(bPrice, oPrice) : (bPrice || oPrice || 0);
+                  const bestTok = bPrice > 0 && oPrice > 0 ? (bPrice <= oPrice ? bstockTok : ondoTok) : (bstockTok || tokens[0]);
 
-                const contract = cheaperTok.tokenContractAddress || cheaperTok.contractAddress || cheaperTok.tokenAddress || '';
-                const quote = quotes[contract];
-                const bc = broadcasts[contract];
-                const cardIsFallback = Boolean(quote?.isFallback || cheaperTok.isFallback || data?.isFallback);
-                const cardPrice = quote?.unitPrice
-                  ? Number(quote.unitPrice).toFixed(2)
-                  : Number(cheaperTok.tokenPrice || cheaperTok.price || 0).toFixed(2);
-                const inputAmount = amounts[contract] || '25';
+                  return (
+                    <button
+                      key={tickerKey}
+                      type="button"
+                      onClick={() => {
+                        setSelectedSimpleTicker(tickerKey);
+                        setTicker(tickerKey);
+                        fetchRwaData(tickerKey);
+                        if (bestTok) {
+                          handleGetQuote(bestTok);
+                        }
+                      }}
+                      className={`p-3 rounded-2xl flex flex-col items-center justify-center transition border text-center relative ${
+                        isSelected
+                          ? 'bg-[#F5C542]/15 border-[#F5C542] shadow-[0_0_20px_rgba(245,197,66,0.2)] text-[#F5F5F4]'
+                          : 'bg-[#121214] border-white/[0.08] hover:border-white/20 text-[#A1A1AA] hover:text-[#F5F5F4]'
+                      }`}
+                    >
+                      {isSelected && (
+                        <span className="absolute -top-2 right-1.5 px-1.5 py-0.5 rounded-full bg-[#F5C542] text-[9px] font-bold text-[#07070A] tracking-wider uppercase shadow">
+                          Active
+                        </span>
+                      )}
+                      <span className="text-base font-bold tracking-tight text-[#F5F5F4]">
+                        {tickerKey}
+                      </span>
+                      <span className="text-[10px] font-semibold text-[#A1A1AA] truncate max-w-[80px]">
+                        {bestTok?.underlyingName?.split(' ')[0] || tickerKey}
+                      </span>
+                      <span className="text-xs font-mono font-bold text-[#3D9A6A] mt-1">
+                        ${bestP.toFixed(2)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-                const isBstockCard =
-                  String(cheaperTok.platformId).toLowerCase() === 'bstock' ||
-                  String(cheaperTok.tokenSymbol).endsWith('B');
-                const wrapperExplanation = isBstockCard
-                  ? 'gets dividends added as extra shares'
-                  : "gets dividends added to the token's value";
+            {/* Focused Active Stock Trade Card */}
+            {(() => {
+              const tokens = DEFAULT_BENCHMARK_TOKENS[selectedSimpleTicker] || DEFAULT_BENCHMARK_TOKENS.NVDA;
+              const bstockTok = tokens.find((t: any) => String(t.platformId).toLowerCase() === 'bstock' || String(t.tokenSymbol).endsWith('B'));
+              const ondoTok = tokens.find((t: any) => String(t.platformId).toLowerCase() === 'ondo' || String(t.tokenSymbol).endsWith('on'));
+              const bstockPrice = Number(bstockTok?.tokenPrice || bstockTok?.price || 0);
+              const ondoPrice = Number(ondoTok?.tokenPrice || ondoTok?.price || 0);
+              const cheaperTok = bstockPrice > 0 && ondoPrice > 0
+                ? (bstockPrice <= ondoPrice ? bstockTok : ondoTok)
+                : (bstockTok || tokens[0]);
+              const otherTok = cheaperTok === bstockTok ? ondoTok : bstockTok;
+              const otherPrice = bstockPrice > 0 && ondoPrice > 0
+                ? (cheaperTok === bstockTok ? ondoPrice : bstockPrice)
+                : 0;
+              const cardSavings = otherPrice > 0
+                ? Math.abs(otherPrice - Number(cheaperTok?.tokenPrice || cheaperTok?.price || 0)).toFixed(2)
+                : '0.00';
 
-                return (
-                  <div key={tickerKey} className="bg-[#121214] border border-white/[0.08] rounded-2xl p-5 shadow-xl space-y-4">
-                    {/* Stock Header */}
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h2 className="text-lg font-bold text-[#F5F5F4] tracking-tight leading-tight">
-                          {cheaperTok.underlyingName || tickerKey}
+              if (!cheaperTok) return null;
+
+              const contract = cheaperTok.tokenContractAddress || cheaperTok.contractAddress || cheaperTok.tokenAddress || '';
+              const quote = quotes[contract];
+              const bc = broadcasts[contract];
+              const cardIsFallback = Boolean(quote?.isFallback || cheaperTok.isFallback || data?.isFallback);
+              const cardPrice = quote?.unitPrice
+                ? Number(quote.unitPrice).toFixed(2)
+                : Number(cheaperTok.tokenPrice || cheaperTok.price || 0).toFixed(2);
+              
+              const currentDir = tradeDirections[contract.toLowerCase()] || 'buy';
+              const isSell = currentDir === 'sell';
+              const inputAmount = amounts[contract] || (isSell ? '0.02' : '25');
+
+              const isBstockCard =
+                String(cheaperTok.platformId).toLowerCase() === 'bstock' ||
+                String(cheaperTok.tokenSymbol).endsWith('B');
+              const wrapperExplanation = isBstockCard
+                ? 'bStocks: Dividends auto-reinvested as extra shares on-chain'
+                : "Ondo: Dividends accumulate into the token's net value";
+
+              return (
+                <div className="w-full max-w-lg bg-[#121214] border border-white/[0.1] rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5">
+                  {/* Stock Header */}
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-xl sm:text-2xl font-bold text-[#F5F5F4] tracking-tight">
+                          {cheaperTok.underlyingName || selectedSimpleTicker}
                         </h2>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-sm font-semibold text-[#A1A1AA]">
-                            {cheaperTok.underlyingTicker || tickerKey}
-                          </span>
-                          <span className="text-xs text-white/30">•</span>
-                          <span className="text-xs text-[#A1A1AA] font-mono">
-                            {cheaperTok.tokenSymbol}
-                          </span>
-                        </div>
                       </div>
-                      <div className="text-right shrink-0 ml-2">
-                        <span className="text-[10px] text-[#A1A1AA] block uppercase tracking-wide">
-                          {cardIsFallback ? 'Estimated Price' : 'Best Price'}
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-sm font-bold text-[#F5C542]">
+                          {cheaperTok.underlyingTicker || selectedSimpleTicker}
                         </span>
-                        <span className="text-xl font-bold text-[#F5F5F4]">
-                          ${cardPrice}
+                        <span className="text-xs text-white/30">•</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-white/[0.06] text-[#A1A1AA] font-mono font-semibold">
+                          Best: {cheaperTok.tokenSymbol} ({cheaperTok.platformId.toUpperCase()})
                         </span>
-                        {cardIsFallback && (
-                          <span className="text-[9px] text-[#A1A1AA]/80 block leading-tight mt-0.5">
-                            Reference price, updates delayed
-                          </span>
-                        )}
                       </div>
                     </div>
+                    <div className="text-right shrink-0 ml-2">
+                      <span className="text-[10px] text-[#A1A1AA] block uppercase tracking-wide">
+                        {cardIsFallback ? 'Estimated Price' : 'Best On-Chain Price'}
+                      </span>
+                      <span className="text-2xl sm:text-3xl font-extrabold text-[#F5F5F4]">
+                        ${cardPrice}
+                      </span>
+                      <span className="text-[10px] text-[#3D9A6A] font-medium block">
+                        ✓ Optimal execution route
+                      </span>
+                    </div>
+                  </div>
 
-                    {/* Wrapper Explanation */}
-                    <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] text-xs text-[#A1A1AA] leading-relaxed">
-                      <span className="font-semibold text-[#F5F5F4]">{cheaperTok.tokenSymbol}</span>{' '}
-                      {wrapperExplanation}.
+                  {/* Direction Toggle: Buy vs Sell */}
+                  <div className="flex bg-[#07070A] p-1 rounded-2xl border border-white/[0.08]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTradeDirections((prev) => ({ ...prev, [contract.toLowerCase()]: 'buy' }));
+                        handleGetQuote(cheaperTok, 'buy');
+                      }}
+                      className={`flex-1 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                        !isSell
+                          ? 'bg-[#3D9A6A] text-white shadow-md'
+                          : 'text-[#A1A1AA] hover:text-[#F5F5F4]'
+                      }`}
+                    >
+                      <span>Buy {selectedSimpleTicker}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTradeDirections((prev) => ({ ...prev, [contract.toLowerCase()]: 'sell' }));
+                        handleGetQuote(cheaperTok, 'sell');
+                      }}
+                      className={`flex-1 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                        isSell
+                          ? 'bg-[#C45C26] text-white shadow-md'
+                          : 'text-[#A1A1AA] hover:text-[#F5F5F4]'
+                      }`}
+                    >
+                      <span>Sell {selectedSimpleTicker}</span>
+                    </button>
+                  </div>
+
+                  {/* Wrapper Explanation & Savings */}
+                  <div className="space-y-2">
+                    <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/[0.06] text-xs text-[#A1A1AA] leading-relaxed flex items-center justify-between">
+                      <span>{wrapperExplanation}</span>
+                      <span className="text-[10px] text-[#F5C542] font-semibold uppercase tracking-wider shrink-0 ml-2">1:1 Backed</span>
                     </div>
 
-                    {/* Savings Line */}
-                    <div className="flex items-center gap-2 p-3 rounded-xl bg-[#3D9A6A]/10 border border-[#3D9A6A]/25 text-[#3D9A6A] text-xs font-medium">
-                      <span className="shrink-0">✨</span>
+                    <div className="flex items-center gap-2 p-3 rounded-2xl bg-[#3D9A6A]/10 border border-[#3D9A6A]/25 text-[#3D9A6A] text-xs font-medium">
+                      <span className="shrink-0 text-base">✨</span>
                       <span>
-                        {cardIsFallback
-                          ? `Estimated savings: ~$${cardSavings} vs. the other option.`
-                          : `Saves you $${cardSavings} vs. the other option.`}
+                        Saves you ~${cardSavings} per share vs. {otherTok?.tokenSymbol || 'the alternative wrapper'}.
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Amount Input */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center text-xs text-[#A1A1AA]">
+                      <span>{isSell ? `Amount of ${cheaperTok.tokenSymbol} to sell` : 'Amount to invest'}</span>
+                      {quote?.toAmount && (
+                        <span className="text-[#3D9A6A] font-semibold">
+                          ≈ {quote.toAmount} {isSell ? 'USDT' : 'shares'}
+                        </span>
+                      )}
+                    </div>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-base font-bold text-[#A1A1AA]">
+                        {isSell ? '股' : '$'}
+                      </span>
+                      <input
+                        type="number"
+                        min={isSell ? '0.001' : '5'}
+                        step={isSell ? '0.001' : '1'}
+                        value={inputAmount}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setAmounts((prev) => ({ ...prev, [contract]: val }));
+                        }}
+                        placeholder={isSell ? '0.02' : '25'}
+                        className="w-full bg-[#07070A] border border-white/[0.08] focus:border-[#F5C542]/70 rounded-2xl pl-8 pr-16 py-3 text-base font-bold text-[#F5F5F4] placeholder-[#A1A1AA]/40 outline-none transition"
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#A1A1AA]">
+                        {isSell ? cheaperTok.tokenSymbol : 'USD'}
                       </span>
                     </div>
 
-                    {/* Amount Input */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center text-xs text-[#A1A1AA]">
-                        <span>Amount to invest</span>
-                        {quote?.toAmount && (
-                          <span className="text-[#3D9A6A] font-semibold">≈ {quote.toAmount} shares</span>
-                        )}
-                      </div>
-                      <div className="relative">
-                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-base font-bold text-[#A1A1AA]">$</span>
-                        <input
-                          type="number"
-                          min="5"
-                          step="1"
-                          value={inputAmount}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setAmounts((prev) => ({ ...prev, [contract]: val }));
-                          }}
-                          placeholder="25"
-                          className="w-full bg-[#07070A] border border-white/[0.08] focus:border-[#F5C542]/70 rounded-xl pl-7 pr-14 py-2.5 text-base font-bold text-[#F5F5F4] placeholder-[#A1A1AA]/40 outline-none transition"
-                        />
-                        <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#A1A1AA]">USD</span>
-                      </div>
-
-                      {/* Quick Pills */}
-                      <div className="flex items-center gap-1.5">
-                        {['10', '25', '50', '100'].map((amt) => (
-                          <button
-                            key={amt}
-                            type="button"
-                            onClick={() => {
-                              setAmounts((prev) => ({ ...prev, [contract]: amt }));
-                              handleGetQuote(cheaperTok);
-                            }}
-                            className={`flex-1 py-1 rounded-lg text-xs font-semibold transition border ${
-                              inputAmount === amt
-                                ? 'bg-[#F5C542]/20 text-[#F5C542] border-[#F5C542]/50'
-                                : 'bg-white/[0.03] text-[#A1A1AA] hover:text-[#F5F5F4] border-white/[0.06]'
-                            }`}
-                          >
-                            ${amt}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Buy Button */}
-                    <div className="space-y-2">
-                      {cardIsFallback ? (
-                        <div className="space-y-1.5">
-                          <button
-                            type="button"
-                            disabled
-                            className="w-full py-3 rounded-xl text-sm font-semibold bg-zinc-800/80 border border-white/[0.08] text-[#A1A1AA] cursor-not-allowed flex items-center justify-center gap-2"
-                          >
-                            <span>{`Buy ${cheaperTok.underlyingTicker || tickerKey}`}</span>
-                          </button>
-                          <p className="text-xs text-[#A1A1AA] text-center">
-                            Live trading isn't available from this connection right now.
-                          </p>
-                        </div>
-                      ) : !wallet.connected ? (
+                    {/* Quick Amount Pills */}
+                    <div className="flex items-center gap-2 pt-1">
+                      {(!isSell ? ['10', '25', '50', '100'] : ['0.01', '0.02', '0.05', '0.1']).map((amt) => (
                         <button
+                          key={amt}
                           type="button"
-                          onClick={connectWallet}
-                          className="w-full py-3 rounded-xl text-sm font-bold bg-[#F5C542] hover:bg-[#E0B02E] text-[#07070A] transition shadow-lg flex items-center justify-center gap-2"
-                        >
-                          <Wallet className="w-4 h-4" />
-                          <span>{`Connect Wallet to Buy ${cheaperTok.underlyingTicker || tickerKey}`}</span>
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            if (!quote?.quoteId) {
-                              await handleGetQuote(cheaperTok);
-                            } else {
-                              handleApproveAndExecute(cheaperTok);
-                            }
+                          onClick={() => {
+                            setAmounts((prev) => ({ ...prev, [contract]: amt }));
+                            handleGetQuote(cheaperTok, currentDir);
                           }}
-                          disabled={bc?.loading || quote?.loading}
-                          className="w-full py-3 rounded-xl text-sm font-bold bg-[#F5C542] hover:bg-[#E0B02E] text-[#07070A] transition shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
+                          className={`flex-1 py-1.5 rounded-xl text-xs font-semibold transition border ${
+                            inputAmount === amt
+                              ? 'bg-[#F5C542]/20 text-[#F5C542] border-[#F5C542]/50'
+                              : 'bg-white/[0.03] text-[#A1A1AA] hover:text-[#F5F5F4] border-white/[0.06]'
+                          }`}
                         >
-                          {bc?.loading ? (
-                            <>
-                              <ThinkingOrb state="working" size={20} theme="light" />
-                              <span>Confirming purchase in wallet...</span>
-                            </>
-                          ) : quote?.loading ? (
-                            <>
-                              <ThinkingOrb state="searching" size={20} theme="light" />
-                              <span>Checking best price...</span>
-                            </>
-                          ) : (
-                            <span>{`Buy ${cheaperTok.underlyingTicker || tickerKey}`}</span>
-                          )}
+                          {!isSell ? `$${amt}` : `${amt} sh`}
                         </button>
-                      )}
-
-                      {/* Confirmation receipt */}
-                      {bc?.step === 'done' && bc.swapTxHash && (
-                        <div className="p-3 rounded-xl bg-[#3D9A6A]/10 border border-[#3D9A6A]/30 text-center space-y-1">
-                          <div className="text-sm font-bold text-[#3D9A6A]">
-                            🎉 {`Bought ${quote?.toAmount || '—'} shares of ${cheaperTok.underlyingTicker || tickerKey}`}
-                          </div>
-                          <a
-                            href={`https://bscscan.com/tx/${bc.swapTxHash}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-xs text-[#F5C542] hover:underline font-mono"
-                          >
-                            View on BSCScan ↗
-                          </a>
-                        </div>
-                      )}
-
-                      {bc?.step === 'error' && (
-                        <p className="text-xs text-[#C45C26] text-center font-medium">{bc.error}</p>
-                      )}
+                      ))}
                     </div>
                   </div>
-                );
-              })}
+
+                  {/* Trade Action Button */}
+                  <div className="space-y-3 pt-2">
+                    {!wallet.connected ? (
+                      <button
+                        type="button"
+                        onClick={connectWallet}
+                        className="w-full py-3.5 rounded-2xl text-sm font-bold bg-[#F5C542] hover:bg-[#E0B02E] text-[#07070A] transition shadow-lg flex items-center justify-center gap-2"
+                      >
+                        <Wallet className="w-4 h-4" />
+                        <span>{`Connect Wallet to ${isSell ? 'Sell' : 'Buy'} ${cheaperTok.underlyingTicker || selectedSimpleTicker}`}</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!quote?.quoteId) {
+                            await handleGetQuote(cheaperTok, currentDir);
+                          } else {
+                            handleApproveAndExecute(cheaperTok);
+                          }
+                        }}
+                        disabled={bc?.loading || quote?.loading}
+                        className={`w-full py-3.5 rounded-2xl text-sm font-bold transition shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 ${
+                          isSell
+                            ? 'bg-[#C45C26] hover:bg-[#A84A1C] text-white'
+                            : 'bg-[#F5C542] hover:bg-[#E0B02E] text-[#07070A]'
+                        }`}
+                      >
+                        {bc?.loading ? (
+                          <>
+                            <ThinkingOrb state="working" size={20} theme={isSell ? 'dark' : 'light'} />
+                            <span>Confirming in wallet...</span>
+                          </>
+                        ) : quote?.loading ? (
+                          <>
+                            <ThinkingOrb state="searching" size={20} theme={isSell ? 'dark' : 'light'} />
+                            <span>Checking best price...</span>
+                          </>
+                        ) : (
+                          <span>{`${isSell ? 'Sell' : 'Buy'} ${cheaperTok.underlyingTicker || selectedSimpleTicker} via ${quote?.vendorName || 'LiquidMesh'}`}</span>
+                        )}
+                      </button>
+                    )}
+
+                    {/* Confirmation receipt */}
+                    {bc?.step === 'done' && bc.swapTxHash && (
+                      <div className="p-3.5 rounded-2xl bg-[#3D9A6A]/10 border border-[#3D9A6A]/30 text-center space-y-1">
+                        <div className="text-sm font-bold text-[#3D9A6A]">
+                          🎉 {isSell
+                            ? `Sold ${cheaperTok.underlyingTicker || selectedSimpleTicker} for ${quote?.toAmount || '—'} USDT`
+                            : `Bought ${quote?.toAmount || '—'} shares of ${cheaperTok.underlyingTicker || selectedSimpleTicker}`}
+                        </div>
+                        <a
+                          href={`https://bscscan.com/tx/${bc.swapTxHash}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs text-[#F5C542] hover:underline font-mono inline-block mt-0.5"
+                        >
+                          View on BSCScan ↗
+                        </a>
+                      </div>
+                    )}
+
+                    {bc?.step === 'error' && (
+                      <p className="text-xs text-[#C45C26] text-center font-medium">{bc.error}</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Simple Mode Natural-Language Assistant */}
+            <div className="w-full max-w-lg mt-6 bg-[#07070A] border border-white/[0.08] rounded-2xl p-4 space-y-3">
+              <div className="flex items-center gap-2 text-xs font-semibold text-[#F5C542]">
+                <ThinkingOrb state="working" size={16} theme="dark" />
+                <span>AfterGap AI Assistant</span>
+              </div>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={nlPrompt}
+                  onChange={(e) => setNlPrompt(e.target.value)}
+                  placeholder={`Try: "Buy $25 ${selectedSimpleTicker}" or "Find biggest gap"`}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && nlPrompt.trim()) {
+                      handleNlSubmit();
+                    }
+                  }}
+                  className="w-full bg-[#121214] border border-white/[0.08] focus:border-[#F5C542]/60 rounded-xl px-3.5 py-2.5 text-xs text-[#F5F5F4] placeholder-[#A1A1AA]/50 outline-none transition pr-16"
+                />
+                <button
+                  type="button"
+                  onClick={handleNlSubmit}
+                  disabled={nlLoading || !nlPrompt.trim()}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg bg-[#F5C542] hover:bg-[#E0B02E] text-[#07070A] text-xs font-bold transition disabled:opacity-40"
+                >
+                  {nlLoading ? '...' : 'Ask'}
+                </button>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+                <span className="text-[#A1A1AA]">Quick prompts:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNlPrompt(`Buy $25 of the cheapest ${selectedSimpleTicker} wrapper`);
+                  }}
+                  className="px-2 py-0.5 rounded bg-white/[0.04] text-[#A1A1AA] hover:text-[#F5F5F4] hover:bg-white/[0.08] border border-white/[0.06] transition font-mono"
+                >
+                  Buy $25 {selectedSimpleTicker}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNlPrompt('Find the biggest gap between bStocks and Ondo right now');
+                  }}
+                  className="px-2 py-0.5 rounded bg-white/[0.04] text-[#A1A1AA] hover:text-[#F5F5F4] hover:bg-white/[0.08] border border-white/[0.06] transition font-mono"
+                >
+                  Find biggest gap
+                </button>
+              </div>
+              {nlResult?.plainLanguageReason && (
+                <div className="p-2.5 rounded-xl bg-white/[0.03] border border-[#F5C542]/30 text-xs text-[#F5F5F4] space-y-1">
+                  <p className="text-[11px] text-[#A1A1AA]">AI Analysis:</p>
+                  <p className="font-sans leading-relaxed">{nlResult.plainLanguageReason}</p>
+                </div>
+              )}
             </div>
           </div>
         ) : (
@@ -3663,6 +4064,182 @@ export default function Home() {
             </div>
           </div>
         )}
+
+        {/* Legal & Policy Modal (Terms / Privacy / Risks) */}
+        {legalModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            onClick={() => setLegalModal(null)}
+          >
+            <div
+              className="bg-[#121214] border border-white/[0.08] rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl relative max-h-[85vh] flex flex-col text-left"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header with Title & Tab buttons */}
+              <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setLegalModal('terms')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                      legalModal === 'terms'
+                        ? 'bg-[#F5C542]/15 text-[#F5C542] border border-[#F5C542]/30'
+                        : 'text-[#A1A1AA] hover:text-[#F5F5F4] hover:bg-white/[0.03]'
+                    }`}
+                  >
+                    Terms of Use
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLegalModal('privacy')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                      legalModal === 'privacy'
+                        ? 'bg-[#F5C542]/15 text-[#F5C542] border border-[#F5C542]/30'
+                        : 'text-[#A1A1AA] hover:text-[#F5F5F4] hover:bg-white/[0.03]'
+                    }`}
+                  >
+                    Privacy Policy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLegalModal('risks')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                      legalModal === 'risks'
+                        ? 'bg-[#F5C542]/15 text-[#F5C542] border border-[#F5C542]/30'
+                        : 'text-[#A1A1AA] hover:text-[#F5F5F4] hover:bg-white/[0.03]'
+                    }`}
+                  >
+                    Risk Disclosure
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setLegalModal(null)}
+                  className="p-1.5 rounded-lg text-[#A1A1AA] hover:text-[#F5F5F4] hover:bg-white/[0.06] transition text-sm font-mono"
+                  aria-label="Close"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Scrollable Content */}
+              <div className="overflow-y-auto pr-2 space-y-4 text-xs text-[#A1A1AA] leading-relaxed max-h-[55vh]">
+                {legalModal === 'terms' && (
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">1. Nature of the Protocol & Interface</h4>
+                      <p>
+                        AfterGap is an open-source decentralized smart order routing interface and dual-wrapper arbitrage visualizer deployed on BNB Smart Chain (Chain ID: 56). The software was developed for the BNB Hack: Tokenized Stocks Edition to analyze price disparities between tokenized equity wrappers.
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">2. Non-Custodial Architecture</h4>
+                      <p>
+                        AfterGap is strictly non-custodial. At no time does AfterGap, its creators, or server infrastructure hold, manage, or take custody of user funds, private keys, or digital tokens. All transactions, approvals, and swaps are formulated locally and signed exclusively by your connected Web3 wallet.
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">3. No Financial, Tax, or Investment Advice</h4>
+                      <p>
+                        All market data, gap calculations, estimated savings, and natural-language AI insights provided by AfterGap are strictly for informational and benchmarking purposes. Nothing contained within this interface constitutes investment advice, financial guidance, or a recommendation to purchase or sell any tokenized security.
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">4. Jurisdictional & Compliance Obligations</h4>
+                      <p>
+                        Tokenized assets and synthetic equities may be subject to securities regulations in various jurisdictions. Users are solely responsible for ensuring their usage of this interface and participation in on-chain tokenized asset protocols complies with all local laws and regulations applicable to their location.
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">5. &quot;As-Is&quot; Software & Limitation of Liability</h4>
+                      <p>
+                        AfterGap is provided on an &quot;AS IS&quot; and &quot;AS AVAILABLE&quot; basis without warranty of any kind, express or implied. Users assume all responsibility and risk arising from on-chain smart contract interactions, gas fees, liquidity slippage, and market volatility.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {legalModal === 'privacy' && (
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">1. Zero Personal Data Collection</h4>
+                      <p>
+                        AfterGap does not collect, track, or store any personally identifiable information (PII) such as your legal name, physical address, email, phone number, or government-issued identification. No account sign-up is required.
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">2. Web3 Wallet Address Usage</h4>
+                      <p>
+                        When you connect a Web3 wallet (e.g. MetaMask or Binance Web3 Wallet), the interface accesses only your public wallet address to query on-chain BEP-20 balances and prepare transaction calldata. Your private keys never leave your device.
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">3. Serverless API Proxying</h4>
+                      <p>
+                        External market data requests (such as price queries and token discovery) are processed through serverless Next.js API endpoints solely to sign canonical developer requests with HMAC-SHA256 credentials securely. No user search history or IP profiling is logged or commercialized.
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">4. Client-Side Session State</h4>
+                      <p>
+                        User interface selections (such as toggling between Simple Mode and Pro Mode, or draft command bar text) are kept in temporary React state and discarded upon browser refresh.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {legalModal === 'risks' && (
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">1. Tokenized RWA Mechanics & Wrapper Diversity</h4>
+                      <p>
+                        Tokenized equity wrappers on BNB Smart Chain utilize differing financial structures. For example, bStocks rebase share balances to distribute corporate dividends, whereas Ondo tokens track performance by accruing net asset value (NAV). Understanding how each wrapper tracks its underlying asset is critical before trading.
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">2. Off-Market Hours & Basis Drift</h4>
+                      <p>
+                        Traditional US stock exchanges trade only during regular hours (9:30 AM – 4:00 PM EST, Monday through Friday). Because decentralized markets trade 24/7, tokenized assets often drift substantially from their last official cash closing benchmark over weekends and overnight sessions.
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">3. Smart Contract & Liquidity Risks</h4>
+                      <p>
+                        All trades execute through decentralized liquidity pools and autonomous smart contract routers on BNB Smart Chain. Smart contracts are subject to inherent technological risks, including bugs, slippage, liquidity imbalances, and gas fee spikes.
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">4. Fallback Mode & Pricing Disclosures</h4>
+                      <p>
+                        If live gateway connections encounter network limitations or regional restrictions, AfterGap automatically transitions to fallback benchmark mode. Live trading is intentionally locked during fallback mode to safeguard against executing orders on non-live reference quotes.
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">5. Sell Execution Safeguard</h4>
+                      <p>
+                        Sell execution is currently locked in preview mode across all interface entry points pending live end-to-end mainnet verification. This defense-in-depth safeguard prevents live user funds from being subjected to unverified reverse execution paths.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between">
+                <span className="text-[11px] text-[#A1A1AA]/60 font-mono">
+                  BNB Smart Chain (Chain ID: 56)
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setLegalModal(null)}
+                  className="px-4 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-xs font-semibold text-[#F5F5F4] transition"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Footer */}
@@ -3680,7 +4257,7 @@ export default function Home() {
               Real-time dual-wrapper arbitrage and smart order routing for tokenized US stocks on BNB Smart Chain.
             </p>
             <p className="text-[10px] font-mono text-[#A1A1AA]/50">
-              bStocks (LiquidMesh) · Ondo (RFQ)
+              bStocks &amp; Ondo tokenized stock protocols
             </p>
           </div>
 
@@ -3696,10 +4273,6 @@ export default function Home() {
                 <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
                 @aftergap
               </a>
-              <a href="https://bscscan.com/tx/0x4933433f5b1991bc319775faef8cd2a9b5186bed1261d4f9b58cc980fce52444" target="_blank" rel="noopener noreferrer" className="hover:text-[#F5F5F4] transition flex items-center gap-1.5">
-                <svg className="w-3.5 h-3.5 fill-current opacity-70" viewBox="0 0 24 24"><path d="M11.944 17.97L4.58 13.62 11.943 24l7.37-10.38-7.372 4.35h.003zM12.056 0L4.69 12.223l7.365 4.354 7.365-4.35L12.056 0z"/></svg>
-                Live Mainnet Tx
-              </a>
               <a href="https://github.com/kellycryptos/AfterGap/blob/main/docs/DEVEX.md" target="_blank" rel="noopener noreferrer" className="hover:text-[#F5F5F4] transition">
                 Engineering Docs (DEVEX)
               </a>
@@ -3710,9 +4283,27 @@ export default function Home() {
           <div className="space-y-3">
             <p className="text-[10px] uppercase tracking-widest text-[#A1A1AA]/50 font-semibold">Legal</p>
             <div className="flex flex-col gap-2">
-              <span className="cursor-default hover:text-[#F5F5F4] transition">Terms of Use</span>
-              <span className="cursor-default hover:text-[#F5F5F4] transition">Privacy Policy</span>
-              <span className="cursor-default hover:text-[#F5F5F4] transition">Risk Disclosure</span>
+              <button
+                type="button"
+                onClick={() => setLegalModal('terms')}
+                className="text-left hover:text-[#F5F5F4] transition focus:outline-none"
+              >
+                Terms of Use
+              </button>
+              <button
+                type="button"
+                onClick={() => setLegalModal('privacy')}
+                className="text-left hover:text-[#F5F5F4] transition focus:outline-none"
+              >
+                Privacy Policy
+              </button>
+              <button
+                type="button"
+                onClick={() => setLegalModal('risks')}
+                className="text-left hover:text-[#F5F5F4] transition focus:outline-none"
+              >
+                Risk Disclosure
+              </button>
             </div>
             <div className="mt-3 p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05] text-[10px] leading-relaxed text-[#A1A1AA]/60">
               Not financial advice. Tokenized RWA trading involves smart contract, liquidity, and off-market pricing risk. Sell execution locked pending live verification.
