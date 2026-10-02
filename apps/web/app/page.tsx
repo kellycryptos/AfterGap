@@ -1382,21 +1382,25 @@ export default function Home() {
     }));
   };
 
-  // Auto-quote in Simple Mode for seamless UX
+  // Auto-quote in Simple Mode: pre-quote the best wrapper for every catalog ticker
   useEffect(() => {
-    if (viewMode === 'simple' && bstocksTokens.length > 0) {
-      const tok = bestRoute?.token || bstocksTokens[0];
-      if (tok) {
-        const c = tok.tokenContractAddress || tok.contractAddress || tok.tokenAddress || '';
-        if (c && !quotes[c]) {
-          if (!amounts[c]) {
-            setAmounts((prev) => ({ ...prev, [c]: '25' }));
-          }
-          handleGetQuote(tok);
-        }
-      }
-    }
-  }, [viewMode, bstocksTokens, bestRoute]);
+    if (viewMode !== 'simple') return;
+    Object.values(DEFAULT_BENCHMARK_TOKENS).forEach((tokens: any[]) => {
+      const bstockTok = tokens.find((t: any) => String(t.platformId).toLowerCase() === 'bstock' || String(t.tokenSymbol).endsWith('B'));
+      const ondoTok = tokens.find((t: any) => String(t.platformId).toLowerCase() === 'ondo' || String(t.tokenSymbol).endsWith('on'));
+      const bstockPrice = Number(bstockTok?.tokenPrice || bstockTok?.price || 0);
+      const ondoPrice = Number(ondoTok?.tokenPrice || ondoTok?.price || 0);
+      const cheaperTok = bstockPrice > 0 && ondoPrice > 0
+        ? (bstockPrice <= ondoPrice ? bstockTok : ondoTok)
+        : (bstockTok || tokens[0]);
+      if (!cheaperTok) return;
+      const c = cheaperTok.tokenContractAddress || cheaperTok.contractAddress || cheaperTok.tokenAddress || '';
+      if (!c || quotes[c]) return;
+      if (!amounts[c]) setAmounts((prev) => ({ ...prev, [c]: '25' }));
+      handleGetQuote(cheaperTok);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode]);
 
   const handleNaturalLanguageSubmit = async (e?: React.FormEvent, overridePrompt?: string) => {
     if (e) e.preventDefault();
@@ -1700,208 +1704,215 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Single Stock Card: NVIDIA (NVDA) */}
-            {(() => {
-              const selectedToken = bestRoute?.token || bstocksTokens[0];
-              if (!selectedToken) {
+            {/* Catalog Stock Cards — one per ticker, best wrapper pre-selected */}
+            <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {Object.entries(DEFAULT_BENCHMARK_TOKENS).map(([tickerKey, tokens]) => {
+                const bstockTok = tokens.find((t: any) => String(t.platformId).toLowerCase() === 'bstock' || String(t.tokenSymbol).endsWith('B'));
+                const ondoTok = tokens.find((t: any) => String(t.platformId).toLowerCase() === 'ondo' || String(t.tokenSymbol).endsWith('on'));
+                const bstockPrice = Number(bstockTok?.tokenPrice || bstockTok?.price || 0);
+                const ondoPrice = Number(ondoTok?.tokenPrice || ondoTok?.price || 0);
+                const cheaperTok = bstockPrice > 0 && ondoPrice > 0
+                  ? (bstockPrice <= ondoPrice ? bstockTok : ondoTok)
+                  : (bstockTok || tokens[0]);
+                const otherPrice = bstockPrice > 0 && ondoPrice > 0
+                  ? (cheaperTok === bstockTok ? ondoPrice : bstockPrice)
+                  : 0;
+                const cardSavings = otherPrice > 0
+                  ? Math.abs(otherPrice - Number(cheaperTok?.tokenPrice || cheaperTok?.price || 0)).toFixed(2)
+                  : '0.00';
+
+                if (!cheaperTok) return null;
+
+                const contract = cheaperTok.tokenContractAddress || cheaperTok.contractAddress || cheaperTok.tokenAddress || '';
+                const quote = quotes[contract];
+                const bc = broadcasts[contract];
+                const cardIsFallback = Boolean(quote?.isFallback || cheaperTok.isFallback || data?.isFallback);
+                const cardPrice = quote?.unitPrice
+                  ? Number(quote.unitPrice).toFixed(2)
+                  : Number(cheaperTok.tokenPrice || cheaperTok.price || 0).toFixed(2);
+                const inputAmount = amounts[contract] || '25';
+
+                const isBstockCard =
+                  String(cheaperTok.platformId).toLowerCase() === 'bstock' ||
+                  String(cheaperTok.tokenSymbol).endsWith('B');
+                const wrapperExplanation = isBstockCard
+                  ? 'gets dividends added as extra shares'
+                  : "gets dividends added to the token's value";
+
                 return (
-                  <div className="p-8 text-center text-sm font-mono text-[#A1A1AA] bg-[#121214] rounded-2xl border border-white/[0.08]">
-                    Loading stock information...
-                  </div>
-                );
-              }
-
-              const contract = selectedToken.tokenContractAddress || selectedToken.contractAddress || selectedToken.tokenAddress || '';
-              const quote = quotes[contract];
-              const bc = broadcasts[contract];
-              const isFallback = Boolean(quote?.isFallback || selectedToken.isFallback || data?.isFallback);
-              const price = Number(selectedToken.tokenPrice || selectedToken.price || 229.11).toFixed(2);
-              const savings = bestRoute?.savings || '0.61';
-              const inputAmount = amounts[contract] || '25';
-
-              const isBstock =
-                String(selectedToken.platformId).toLowerCase() === 'bstock' ||
-                String(selectedToken.tokenSymbol).endsWith('B');
-              const wrapperExplanation = isBstock
-                ? 'gets dividends added as extra shares'
-                : "gets dividends added to the token's value";
-
-              return (
-                <div className="w-full max-w-md bg-[#121214] border border-white/[0.08] rounded-2xl p-6 sm:p-7 shadow-2xl space-y-6">
-                  {/* Stock Header: Name, Ticker, Current Price */}
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h2 className="text-xl sm:text-2xl font-bold text-[#F5F5F4] tracking-tight">
-                        {selectedToken.underlyingName || 'Nvidia Corp'}
-                      </h2>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-sm font-semibold text-[#A1A1AA]">
-                          {selectedToken.underlyingTicker || 'NVDA'}
-                        </span>
-                        <span className="text-xs text-white/30">•</span>
-                        <span className="text-xs text-[#A1A1AA] font-mono">
-                          {selectedToken.tokenSymbol}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-[11px] text-[#A1A1AA] block uppercase tracking-wide">
-                        Best Price
-                      </span>
-                      <span className="text-2xl font-bold text-[#F5F5F4]">
-                        ${price}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Wrapper Plain-Language Explanation (Req 5) */}
-                  <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-xs text-[#A1A1AA] leading-relaxed">
-                    <span className="font-semibold text-[#F5F5F4]">{selectedToken.tokenSymbol}</span>{' '}
-                    {wrapperExplanation}.
-                  </div>
-
-                  {/* Plain-Language Savings Line (Req 2) */}
-                  <div className="flex items-center gap-2.5 p-3.5 rounded-xl bg-[#3D9A6A]/10 border border-[#3D9A6A]/25 text-[#3D9A6A] text-xs sm:text-sm font-medium">
-                    <span className="text-base shrink-0">✨</span>
-                    <span>
-                      Buying this way saves you ${savings} compared to the other option.
-                    </span>
-                  </div>
-
-                  {/* Investment Amount Input (USD) (Req 2) */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center text-xs text-[#A1A1AA]">
-                      <span>Amount to invest</span>
-                      {quote?.toAmount && (
-                        <span className="text-[#3D9A6A] font-semibold">
-                          ≈ {quote.toAmount} shares
-                        </span>
-                      )}
-                    </div>
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-[#A1A1AA]">
-                        $
-                      </span>
-                      <input
-                        type="number"
-                        min="5"
-                        step="1"
-                        value={inputAmount}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setAmounts((prev) => ({ ...prev, [contract]: val }));
-                        }}
-                        placeholder="25"
-                        className="w-full bg-[#07070A] border border-white/[0.08] focus:border-[#F5C542]/70 rounded-xl pl-8 pr-16 py-3 text-lg font-bold text-[#F5F5F4] placeholder-[#A1A1AA]/40 outline-none transition"
-                      />
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#A1A1AA]">
-                        USD
-                      </span>
-                    </div>
-
-                    {/* Quick Amount Pills */}
-                    <div className="flex items-center gap-2 pt-1">
-                      {['10', '25', '50', '100'].map((amt) => (
-                        <button
-                          key={amt}
-                          type="button"
-                          onClick={() => {
-                            setAmounts((prev) => ({ ...prev, [contract]: amt }));
-                            handleGetQuote(selectedToken);
-                          }}
-                          className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition border ${
-                            inputAmount === amt
-                              ? 'bg-[#F5C542]/20 text-[#F5C542] border-[#F5C542]/50'
-                              : 'bg-white/[0.03] text-[#A1A1AA] hover:text-[#F5F5F4] border-white/[0.06]'
-                          }`}
-                        >
-                          ${amt}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Single Action Button (Req 2 & 4) */}
-                  <div className="space-y-3 pt-1">
-                    {isFallback ? (
-                      <div className="space-y-2">
-                        <button
-                          type="button"
-                          disabled
-                          className="w-full py-3.5 rounded-xl text-sm font-semibold bg-zinc-800/80 border border-white/[0.08] text-[#A1A1AA] cursor-not-allowed flex items-center justify-center gap-2"
-                        >
-                          <span>{`Buy ${selectedToken.underlyingTicker || 'NVDA'}`}</span>
-                        </button>
-                        <p className="text-xs text-[#A1A1AA] text-center">
-                          Live trading isn't available from this connection right now.
-                        </p>
-                      </div>
-                    ) : !wallet.connected ? (
-                      <button
-                        type="button"
-                        onClick={connectWallet}
-                        className="w-full py-3.5 rounded-xl text-sm font-bold bg-[#F5C542] hover:bg-[#E0B02E] text-[#07070A] transition shadow-lg flex items-center justify-center gap-2"
-                      >
-                        <Wallet className="w-4 h-4" />
-                        <span>{`Connect Wallet to Buy ${selectedToken.underlyingTicker || 'NVDA'}`}</span>
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          if (!quote?.quoteId) {
-                            await handleGetQuote(selectedToken);
-                          } else {
-                            handleApproveAndExecute(selectedToken);
-                          }
-                        }}
-                        disabled={bc?.loading || quote?.loading}
-                        className="w-full py-3.5 rounded-xl text-sm font-bold bg-[#F5C542] hover:bg-[#E0B02E] text-[#07070A] transition shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
-                      >
-                        {bc?.loading ? (
-                          <>
-                            <ThinkingOrb state="working" size={20} theme="light" />
-                            <span>Confirming purchase in wallet...</span>
-                          </>
-                        ) : quote?.loading ? (
-                          <>
-                            <ThinkingOrb state="searching" size={20} theme="light" />
-                            <span>Checking best price...</span>
-                          </>
-                        ) : (
-                          <span>{`Buy ${selectedToken.underlyingTicker || 'NVDA'}`}</span>
-                        )}
-                      </button>
-                    )}
-
-                    {/* Simple Confirmation Receipt (Req 6) */}
-                    {bc?.step === 'done' && bc.swapTxHash && (
-                      <div className="p-4 rounded-xl bg-[#3D9A6A]/10 border border-[#3D9A6A]/30 text-center space-y-1.5">
-                        <div className="text-sm font-bold text-[#3D9A6A]">
-                          🎉 {`You bought ${quote?.toAmount || '0.0218'} shares of ${selectedToken.underlyingTicker || 'NVDA'}`}
+                  <div key={tickerKey} className="bg-[#121214] border border-white/[0.08] rounded-2xl p-5 shadow-xl space-y-4">
+                    {/* Stock Header */}
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h2 className="text-lg font-bold text-[#F5F5F4] tracking-tight leading-tight">
+                          {cheaperTok.underlyingName || tickerKey}
+                        </h2>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-sm font-semibold text-[#A1A1AA]">
+                            {cheaperTok.underlyingTicker || tickerKey}
+                          </span>
+                          <span className="text-xs text-white/30">•</span>
+                          <span className="text-xs text-[#A1A1AA] font-mono">
+                            {cheaperTok.tokenSymbol}
+                          </span>
                         </div>
-                        <div>
+                      </div>
+                      <div className="text-right shrink-0 ml-2">
+                        <span className="text-[10px] text-[#A1A1AA] block uppercase tracking-wide">
+                          {cardIsFallback ? 'Estimated Price' : 'Best Price'}
+                        </span>
+                        <span className="text-xl font-bold text-[#F5F5F4]">
+                          ${cardPrice}
+                        </span>
+                        {cardIsFallback && (
+                          <span className="text-[9px] text-[#A1A1AA]/80 block leading-tight mt-0.5">
+                            Reference price, updates delayed
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Wrapper Explanation */}
+                    <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] text-xs text-[#A1A1AA] leading-relaxed">
+                      <span className="font-semibold text-[#F5F5F4]">{cheaperTok.tokenSymbol}</span>{' '}
+                      {wrapperExplanation}.
+                    </div>
+
+                    {/* Savings Line */}
+                    <div className="flex items-center gap-2 p-3 rounded-xl bg-[#3D9A6A]/10 border border-[#3D9A6A]/25 text-[#3D9A6A] text-xs font-medium">
+                      <span className="shrink-0">✨</span>
+                      <span>
+                        {cardIsFallback
+                          ? `Estimated savings: ~$${cardSavings} vs. the other option.`
+                          : `Saves you $${cardSavings} vs. the other option.`}
+                      </span>
+                    </div>
+
+                    {/* Amount Input */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center text-xs text-[#A1A1AA]">
+                        <span>Amount to invest</span>
+                        {quote?.toAmount && (
+                          <span className="text-[#3D9A6A] font-semibold">≈ {quote.toAmount} shares</span>
+                        )}
+                      </div>
+                      <div className="relative">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-base font-bold text-[#A1A1AA]">$</span>
+                        <input
+                          type="number"
+                          min="5"
+                          step="1"
+                          value={inputAmount}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setAmounts((prev) => ({ ...prev, [contract]: val }));
+                          }}
+                          placeholder="25"
+                          className="w-full bg-[#07070A] border border-white/[0.08] focus:border-[#F5C542]/70 rounded-xl pl-7 pr-14 py-2.5 text-base font-bold text-[#F5F5F4] placeholder-[#A1A1AA]/40 outline-none transition"
+                        />
+                        <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#A1A1AA]">USD</span>
+                      </div>
+
+                      {/* Quick Pills */}
+                      <div className="flex items-center gap-1.5">
+                        {['10', '25', '50', '100'].map((amt) => (
+                          <button
+                            key={amt}
+                            type="button"
+                            onClick={() => {
+                              setAmounts((prev) => ({ ...prev, [contract]: amt }));
+                              handleGetQuote(cheaperTok);
+                            }}
+                            className={`flex-1 py-1 rounded-lg text-xs font-semibold transition border ${
+                              inputAmount === amt
+                                ? 'bg-[#F5C542]/20 text-[#F5C542] border-[#F5C542]/50'
+                                : 'bg-white/[0.03] text-[#A1A1AA] hover:text-[#F5F5F4] border-white/[0.06]'
+                            }`}
+                          >
+                            ${amt}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Buy Button */}
+                    <div className="space-y-2">
+                      {cardIsFallback ? (
+                        <div className="space-y-1.5">
+                          <button
+                            type="button"
+                            disabled
+                            className="w-full py-3 rounded-xl text-sm font-semibold bg-zinc-800/80 border border-white/[0.08] text-[#A1A1AA] cursor-not-allowed flex items-center justify-center gap-2"
+                          >
+                            <span>{`Buy ${cheaperTok.underlyingTicker || tickerKey}`}</span>
+                          </button>
+                          <p className="text-xs text-[#A1A1AA] text-center">
+                            Live trading isn't available from this connection right now.
+                          </p>
+                        </div>
+                      ) : !wallet.connected ? (
+                        <button
+                          type="button"
+                          onClick={connectWallet}
+                          className="w-full py-3 rounded-xl text-sm font-bold bg-[#F5C542] hover:bg-[#E0B02E] text-[#07070A] transition shadow-lg flex items-center justify-center gap-2"
+                        >
+                          <Wallet className="w-4 h-4" />
+                          <span>{`Connect Wallet to Buy ${cheaperTok.underlyingTicker || tickerKey}`}</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (!quote?.quoteId) {
+                              await handleGetQuote(cheaperTok);
+                            } else {
+                              handleApproveAndExecute(cheaperTok);
+                            }
+                          }}
+                          disabled={bc?.loading || quote?.loading}
+                          className="w-full py-3 rounded-xl text-sm font-bold bg-[#F5C542] hover:bg-[#E0B02E] text-[#07070A] transition shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
+                        >
+                          {bc?.loading ? (
+                            <>
+                              <ThinkingOrb state="working" size={20} theme="light" />
+                              <span>Confirming purchase in wallet...</span>
+                            </>
+                          ) : quote?.loading ? (
+                            <>
+                              <ThinkingOrb state="searching" size={20} theme="light" />
+                              <span>Checking best price...</span>
+                            </>
+                          ) : (
+                            <span>{`Buy ${cheaperTok.underlyingTicker || tickerKey}`}</span>
+                          )}
+                        </button>
+                      )}
+
+                      {/* Confirmation receipt */}
+                      {bc?.step === 'done' && bc.swapTxHash && (
+                        <div className="p-3 rounded-xl bg-[#3D9A6A]/10 border border-[#3D9A6A]/30 text-center space-y-1">
+                          <div className="text-sm font-bold text-[#3D9A6A]">
+                            🎉 {`Bought ${quote?.toAmount || '—'} shares of ${cheaperTok.underlyingTicker || tickerKey}`}
+                          </div>
                           <a
                             href={`https://bscscan.com/tx/${bc.swapTxHash}`}
                             target="_blank"
                             rel="noreferrer"
                             className="text-xs text-[#F5C542] hover:underline font-mono"
                           >
-                            View transaction on BSCScan ↗
+                            View on BSCScan ↗
                           </a>
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                    {bc?.step === 'error' && (
-                      <p className="text-xs text-[#C45C26] text-center font-medium">
-                        {bc.error}
-                      </p>
-                    )}
+                      {bc?.step === 'error' && (
+                        <p className="text-xs text-[#C45C26] text-center font-medium">{bc.error}</p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })()}
+                );
+              })}
+            </div>
           </div>
         ) : (
           <>
