@@ -807,7 +807,6 @@ export async function GET(request: NextRequest) {
   const authState = {
     hasApiKey: Boolean(apiKey),
     hasSecretKey: Boolean(secretKey),
-    apiKeyPrefix: apiKey ? `${apiKey.slice(0, 6)}...` : 'not_set',
   };
 
   try {
@@ -825,9 +824,10 @@ export async function GET(request: NextRequest) {
           timestamp: new Date().toISOString(),
         });
       } catch (err: any) {
+        console.error('[agent] processNaturalLanguage error:', err?.message || err);
         return NextResponse.json({
           success: false,
-          error: err?.message || 'Agent failed to process command',
+          error: 'Agent failed to process command',
           timestamp: new Date().toISOString(),
         }, { status: 500 });
       }
@@ -1274,11 +1274,10 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
+    console.error('[GET /api/rwa] Unhandled error:', err instanceof Error ? err.message : String(err));
     return NextResponse.json(
       {
-        auth: authState,
-        error: message,
+        error: 'An internal error occurred. Please try again.',
         timestamp: new Date().toISOString(),
       },
       { status: 500 }
@@ -1301,7 +1300,6 @@ export async function POST(request: NextRequest) {
   const authState = {
     hasApiKey: Boolean(apiKey),
     hasSecretKey: Boolean(secretKey),
-    apiKeyPrefix: apiKey ? `${apiKey.slice(0, 6)}...` : 'not_set',
   };
 
   try {
@@ -1374,11 +1372,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
+    console.error('[POST /api/rwa] Unhandled error:', err instanceof Error ? err.message : String(err));
     return NextResponse.json(
       {
-        auth: authState,
-        error: message,
+        error: 'An internal error occurred. Please try again.',
         timestamp: new Date().toISOString(),
       },
       { status: 500 }
