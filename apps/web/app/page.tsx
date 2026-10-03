@@ -1715,13 +1715,25 @@ export default function Home() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode, selectedSimpleTicker, simpleModeTokensMap]);
 
+  // Auto-quote in Pro Mode: pre-quote the best wrapper for active inspected ticker
+  useEffect(() => {
+    if (viewMode !== 'pro' || !bestRoute?.token) return;
+    const contract = bestRoute.token.tokenContractAddress || bestRoute.token.contractAddress || bestRoute.token.tokenAddress;
+    if (contract && !quotes[contract]) {
+      if (!amounts[contract]) setAmounts((prev) => ({ ...prev, [contract]: '10' }));
+      handleGetQuote(bestRoute.token);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode, ticker, bestRoute?.token]);
+
   // Periodic background refresh for live token prices from Binance Web3 API (every 25s)
   useEffect(() => {
     const timer = setInterval(() => {
-      fetchRwaData(selectedSimpleTicker);
+      const activeSymbol = viewMode === 'pro' ? ticker : selectedSimpleTicker;
+      fetchRwaData(activeSymbol);
     }, 25000);
     return () => clearInterval(timer);
-  }, [selectedSimpleTicker]);
+  }, [viewMode, ticker, selectedSimpleTicker]);
 
   const handleNaturalLanguageSubmit = async (e?: React.FormEvent, overridePrompt?: string) => {
     if (e) e.preventDefault();
@@ -2817,14 +2829,33 @@ export default function Home() {
           </form>
 
           {/* One-Line Mute Status */}
-          <div className="text-xs text-[#A1A1AA] font-mono pt-0.5 min-h-[1.25rem]">
-            {error ? (
-              <span className="text-[#C45C26]">{error}</span>
-            ) : !isAuthed ? (
-              <span>Binance Web3 RWA public gateway active — interactive RFQ quotes & dry-runs enabled.</span>
-            ) : (
-              <span>HMAC signed Trading API gateway active (Recv-Window: 30000ms).</span>
-            )}
+          <div className="text-xs text-[#A1A1AA] font-mono pt-0.5 min-h-[1.25rem] flex items-center justify-between gap-2">
+            <div>
+              {error ? (
+                <span className="text-[#C45C26]">{error}</span>
+              ) : data && !data.isFallback ? (
+                <span className="text-[#3D9A6A] font-semibold flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#3D9A6A] animate-pulse" />
+                  Live Market Gateway Connected (HTTP 200) — Real-Time BSC Pricing Active
+                </span>
+              ) : !isAuthed ? (
+                <span>Binance Web3 RWA public gateway active — interactive RFQ quotes & dry-runs enabled.</span>
+              ) : (
+                <span>HMAC signed Trading API gateway active (Recv-Window: 30000ms).</span>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => fetchRwaData(ticker)}
+              disabled={loading}
+              title="Refresh live prices from Binance Web3 API"
+              className="text-[11px] px-2 py-0.5 rounded bg-white/[0.04] hover:bg-white/[0.08] text-[#A1A1AA] hover:text-[#F5F5F4] transition flex items-center gap-1 border border-white/[0.06] shrink-0"
+            >
+              <svg className={`w-3 h-3 ${loading ? 'animate-spin text-[#F5C542]' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span>{loading ? 'Refreshing...' : 'Refresh'}</span>
+            </button>
           </div>
 
           {/* Preset Chips */}
@@ -3200,19 +3231,39 @@ export default function Home() {
                           </a>
                         </div>
 
-                        {/* Benchmark Pricing Disclosure Banner */}
-                        <div
-                          data-testid="bstocks-fallback-badge"
-                          className="p-2.5 rounded-lg bg-[#F5C542]/10 border border-[#F5C542]/30 text-[#F5C542] space-y-1"
-                        >
-                          <div className="flex items-center gap-1.5 font-bold text-xs uppercase tracking-wide">
-                            <span>⚠️</span>
-                            <span>Benchmark Reference Pricing</span>
+                        {/* Pricing Feed Status Banner */}
+                        {t.isFallback ? (
+                          <div
+                            data-testid="bstocks-fallback-badge"
+                            className="p-2.5 rounded-lg bg-[#F5C542]/10 border border-[#F5C542]/30 text-[#F5C542] space-y-1"
+                          >
+                            <div className="flex items-center gap-1.5 font-bold text-xs uppercase tracking-wide">
+                              <span>⚠️</span>
+                              <span>Benchmark Reference Pricing</span>
+                            </div>
+                            <p className="text-[11px] text-[#F5C542]/80 leading-tight font-mono">
+                              Binance Web3 Gateway restricts serverless datacenter IPs (40304). Prices shown are verified benchmark data; on-chain swaps execute live via BSC RPC.
+                            </p>
                           </div>
-                          <p className="text-[11px] text-[#F5C542]/80 leading-tight font-mono">
-                            Binance Web3 Gateway restricts serverless datacenter IPs (40304). Prices shown are verified benchmark data; on-chain swaps execute live via BSC RPC.
-                          </p>
-                        </div>
+                        ) : (
+                          <div
+                            data-testid="bstocks-live-badge"
+                            className="p-2 rounded-lg bg-[#3D9A6A]/10 border border-[#3D9A6A]/30 text-[#3D9A6A] space-y-1"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5 font-bold text-xs uppercase tracking-wide">
+                                <span className="w-2 h-2 rounded-full bg-[#3D9A6A] animate-pulse" />
+                                <span>Live Real-Time Market Feed</span>
+                              </div>
+                              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#3D9A6A]/20 text-[#3D9A6A] border border-[#3D9A6A]/30 font-semibold">
+                                Binance API 200 OK
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-[#3D9A6A]/80 leading-tight font-mono">
+                              Live on-chain price streamed directly from Binance Web3 DEX API.
+                            </p>
+                          </div>
+                        )}
 
                         {/* Price Metrics */}
                         <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/[0.04]">
