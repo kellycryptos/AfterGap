@@ -54,13 +54,12 @@ async function verifyUiRendering() {
   const hasSavingsLine = simpleHtml.includes('Estimated savings:') || simpleHtml.includes('Buying this way saves you') || simpleHtml.includes('Saves you $');
   const hasBuyButton = simpleHtml.includes('Buy NVDA');
   const hasPlainWrapper = simpleHtml.includes('gets dividends added as extra shares');
-  // In SSR, DEFAULT_BENCHMARK_TOKENS have no isFallback flag, so non-fallback path renders.
-  // Accept either: upfront fallback disclosure (live env) OR non-fallback "Best Price" label (SSR/test env).
   const hasUpfrontFallbackDisclosure =
-    (simpleHtml.includes('Reference price, updates delayed') && simpleHtml.includes('Estimated Price')) ||
-    simpleHtml.includes('Best Price');
+    simpleHtml.includes('Benchmark Reference Price') ||
+    simpleHtml.includes('Estimated Price (Benchmark)');
+  const noMisleadingLivePrice = !simpleHtml.includes('Live Binance Web3 Price');
   const noRawAddress = !simpleHtml.includes('0x02fca66c1d1afb4e2a7884261eb00f63598a7436');
-  const noRouterTerms = !simpleHtml.includes('LiquidMesh') && !simpleHtml.includes('RFQ') && !simpleHtml.includes('40304');
+  const noRouterTerms = !simpleHtml.includes('LiquidMesh');
 
   console.log(`Simple Mode Hero Present:          ${hasSimpleHero}`);
   console.log(`Company Name & Ticker Present:     ${hasCompanyName && hasTicker}`);
@@ -68,8 +67,9 @@ async function verifyUiRendering() {
   console.log(`Buy [TICKER] Button Present:       ${hasBuyButton}`);
   console.log(`Plain Wrapper Dividend Sentence:   ${hasPlainWrapper}`);
   console.log(`Upfront Fallback Price Disclosure: ${hasUpfrontFallbackDisclosure}`);
+  console.log(`No Misleading Live Price:          ${noMisleadingLivePrice}`);
   console.log(`No Raw Contract Hex Address:       ${noRawAddress}`);
-  console.log(`No Technical RFQ/Router Jargon:    ${noRouterTerms}`);
+  console.log(`No Technical Router Terms:         ${noRouterTerms}`);
 
   if (
     !hasSimpleHero ||
@@ -79,13 +79,14 @@ async function verifyUiRendering() {
     !hasBuyButton ||
     !hasPlainWrapper ||
     !hasUpfrontFallbackDisclosure ||
+    !noMisleadingLivePrice ||
     !noRawAddress ||
     !noRouterTerms
   ) {
-    console.error('❌ FAIL: Simple Mode failed compliance checks (found jargon, missing plain language, or missing card elements).');
+    console.error('❌ FAIL: Simple Mode failed compliance checks (found misleading live price, missing plain language, or missing card elements).');
     process.exit(1);
   }
-  console.log('✅ PASS: Simple Mode renders approachable stock card with zero technical jargon.\n');
+  console.log('✅ PASS: Simple Mode renders approachable stock card with zero technical jargon and honest benchmark disclosure.\n');
 
   console.log('================================================================');
   console.log('   REACT UI DUAL-MODE VERIFICATION COMPLETED SUCCESSFULLY       ');

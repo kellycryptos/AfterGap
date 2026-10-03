@@ -797,6 +797,16 @@ const DEFAULT_BENCHMARK_QUOTES: Record<string, any> = {
   },
 };
 
+// Explicitly ensure all benchmark fallback tokens and quotes have isFallback: true
+Object.values(DEFAULT_BENCHMARK_TOKENS).forEach((list) => {
+  list.forEach((t) => {
+    t.isFallback = true;
+  });
+});
+Object.values(DEFAULT_BENCHMARK_QUOTES).forEach((q) => {
+  q.isFallback = true;
+});
+
 function formatRevertReason(raw?: string, spender?: string): string {
   if (!raw) return '';
   const spenderDisplay = spender ? `${spender.slice(0, 6)}...${spender.slice(-4)}` : 'LiquidMesh';
@@ -1306,12 +1316,14 @@ export default function Home() {
     const filtered: any[] = [];
     const matchKeyword = ticker.toUpperCase();
 
-    const isOverallFallback = Boolean(
-      data?.isFallback ??
-        (data?.bscTokens?.isFallback ||
-          data?.bscTokens?.debug?.fallbackUsed ||
-          data?.search?.debug?.fallbackUsed)
-    );
+    const isOverallFallback = data
+      ? Boolean(
+          data.isFallback ||
+          data.bscTokens?.isFallback ||
+          data.bscTokens?.debug?.fallbackUsed ||
+          data.search?.debug?.fallbackUsed
+        )
+      : true;
 
     // Prioritize enriched BSC catalog tokens (has tokenPrice, referencePrice, statusInfo)
     for (const item of bscTokens) {
@@ -1365,14 +1377,17 @@ export default function Home() {
     const map: Record<string, { bstock: any; ondo: any; isLive: boolean }> = {};
     const TICKERS = ['NVDA', 'TSLA', 'MSFT', 'GOOGL', 'META', 'AMD', 'COIN'];
 
+    // Strict: Live only if data exists and is explicitly NOT fallback
+    const isDataLive = Boolean(data && data.isFallback === false);
+
     for (const sym of TICKERS) {
-      const fallbackList = DEFAULT_BENCHMARK_TOKENS[sym] || [];
+      const fallbackList = (DEFAULT_BENCHMARK_TOKENS[sym] || []).map((t) => ({ ...t, isFallback: true }));
       const fallbackBstock = fallbackList.find(
         (t: any) => String(t.platformId).toLowerCase() === 'bstock' || String(t.tokenSymbol).endsWith('B')
-      );
+      ) || { isFallback: true };
       const fallbackOndo = fallbackList.find(
         (t: any) => String(t.platformId).toLowerCase() === 'ondo' || String(t.tokenSymbol).endsWith('on')
-      );
+      ) || { isFallback: true };
 
       // Search inside live bscTokens array (from Binance API client.getTokens)
       const liveBstock = bscTokens.find((tok: any) => {
@@ -1393,11 +1408,13 @@ export default function Home() {
         );
       });
 
-      const isLive = Boolean(liveBstock && liveOndo && !data?.isFallback);
+      const bstockIsLive = Boolean(isDataLive && liveBstock && liveBstock.isFallback === false);
+      const ondoIsLive = Boolean(isDataLive && liveOndo && liveOndo.isFallback === false);
+      const isLive = Boolean(bstockIsLive && ondoIsLive);
 
       map[sym] = {
-        bstock: liveBstock ? { ...fallbackBstock, ...liveBstock, isFallback: Boolean(data?.isFallback) } : fallbackBstock,
-        ondo: liveOndo ? { ...fallbackOndo, ...liveOndo, isFallback: Boolean(data?.isFallback) } : fallbackOndo,
+        bstock: liveBstock ? { ...fallbackBstock, ...liveBstock, isFallback: !bstockIsLive } : { ...fallbackBstock, isFallback: true },
+        ondo: liveOndo ? { ...fallbackOndo, ...liveOndo, isFallback: !ondoIsLive } : { ...fallbackOndo, isFallback: true },
         isLive,
       };
     }
@@ -2111,9 +2128,9 @@ export default function Home() {
                   Select Asset:
                 </span>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-[#3D9A6A] font-medium flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-[#3D9A6A] animate-pulse" />
-                    7 Equities Live on BSC
+                  <span className="text-xs text-[#A1A1AA] font-medium flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#F5C542]" />
+                    7 Equities on BSC
                   </span>
                   <button
                     type="button"
@@ -2128,7 +2145,7 @@ export default function Home() {
                       }
                     }}
                     disabled={loading}
-                    title="Refresh live prices from Binance Web3 API"
+                    title="Refresh prices from Binance Web3 API"
                     className="text-[11px] px-2 py-0.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-[#A1A1AA] hover:text-[#F5F5F4] transition flex items-center gap-1 border border-white/[0.08]"
                   >
                     <svg className={`w-3 h-3 ${loading ? 'animate-spin text-[#F5C542]' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2139,7 +2156,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="flex sm:grid sm:grid-cols-4 lg:grid-cols-7 gap-2 overflow-x-auto sm:overflow-x-visible pb-2 sm:pb-0 -mx-3 px-3 sm:mx-0 sm:px-0 no-scrollbar snap-x">
+              <div className="flex sm:grid sm:grid-cols-4 lg:grid-cols-7 gap-2 overflow-x-auto sm:overflow-x-visible pt-3 pb-2 sm:pt-2.5 sm:pb-1 -mx-3 px-3 sm:mx-0 sm:px-0 no-scrollbar snap-x">
                 {['NVDA', 'TSLA', 'MSFT', 'GOOGL', 'META', 'AMD', 'COIN'].map((tickerKey) => {
                   const pair = simpleModeTokensMap[tickerKey];
                   const isSelected = selectedSimpleTicker === tickerKey;
@@ -2170,7 +2187,7 @@ export default function Home() {
                       }`}
                     >
                       {isSelected && (
-                        <span className="absolute -top-2 right-1.5 px-1.5 py-0.5 rounded-full bg-[#F5C542] text-[9px] font-bold text-[#07070A] tracking-wider uppercase shadow">
+                        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-[#F5C542] text-[9px] font-bold text-[#07070A] tracking-wider uppercase shadow-md pointer-events-none whitespace-nowrap z-10">
                           Active
                         </span>
                       )}
@@ -2217,7 +2234,13 @@ export default function Home() {
               const contract = cheaperTok.tokenContractAddress || cheaperTok.contractAddress || cheaperTok.tokenAddress || '';
               const quote = quotes[contract];
               const bc = broadcasts[contract];
-              const cardIsFallback = Boolean(quote?.isFallback || cheaperTok.isFallback || data?.isFallback);
+
+              // STRICT LIVE VERIFICATION: Default to fallback benchmark unless 100% verified live end-to-end
+              const isDirectLiveQuote = Boolean(quote && quote.isFallback === false);
+              const isTokenLive = Boolean(pair?.isLive && cheaperTok.isFallback === false && data && data.isFallback === false);
+              const isCardLive = Boolean(isDirectLiveQuote || (isTokenLive && !quote?.isFallback));
+              const cardIsFallback = !isCardLive;
+
               const cardPrice = quote?.unitPrice
                 ? Number(quote.unitPrice).toFixed(2)
                 : Number(cheaperTok.tokenPrice || cheaperTok.price || 0).toFixed(2);
@@ -2255,19 +2278,23 @@ export default function Home() {
                     </div>
                     <div className="text-right shrink-0">
                       <div className="flex items-center justify-end gap-1.5">
-                        {!cardIsFallback && (
+                        {isCardLive && (
                           <span className="w-1.5 h-1.5 rounded-full bg-[#3D9A6A] animate-pulse" />
                         )}
-                        <span className="text-[10px] text-[#A1A1AA] block uppercase tracking-wide">
-                          {cardIsFallback ? 'Estimated Price' : 'Best Price'}
+                        <span className={`text-[10px] block uppercase tracking-wide font-medium ${cardIsFallback ? 'text-[#F5C542]' : 'text-[#A1A1AA]'}`}>
+                          {cardIsFallback ? 'Estimated Price (Benchmark)' : 'Best Price'}
                         </span>
                       </div>
                       <span className="text-2xl sm:text-3xl font-extrabold text-[#F5F5F4]">
                         ${cardPrice}
                       </span>
                       {cardIsFallback ? (
-                        <span className="text-[9px] text-[#A1A1AA]/80 block leading-tight mt-0.5">
-                          Reference price, updates delayed
+                        <span
+                          data-testid="simple-mode-fallback-badge"
+                          className="text-[10px] text-[#F5C542] flex items-center justify-end gap-1 font-mono leading-tight mt-0.5"
+                        >
+                          <span>⚠️</span>
+                          <span>Benchmark Reference Price</span>
                         </span>
                       ) : (
                         <span className="text-[9px] text-[#3D9A6A] block leading-tight mt-0.5 font-medium">
@@ -2379,16 +2406,50 @@ export default function Home() {
                     </div>
                   </div>
 
+                  {/* Fund Protection Notice / Guard (Benchmark Mode) */}
+                  {cardIsFallback && (
+                    <div className="p-3 rounded-xl bg-[#F5C542]/10 border border-[#F5C542]/30 text-xs font-mono text-[#F5C542] space-y-1">
+                      <div className="font-semibold flex items-center gap-1.5">
+                        <span>🛡️</span>
+                        <span>Fund Protection Guard Active (Benchmark Mode)</span>
+                      </div>
+                      <p className="text-[11px] text-[#F5C542]/80 leading-tight">
+                        Swaps are locked in benchmark mode to protect user funds. Live Binance RFQ gateway is restricted on this cloud region (CloudFront 40304). Run AfterGap Agent CLI for live trading.
+                      </p>
+                    </div>
+                  )}
+
                   {/* Trade Action Button */}
                   <div className="space-y-3 pt-2">
-                    {!wallet.connected ? (
+                    {isSell ? (
+                      <div className="space-y-2">
+                        <button
+                          type="button"
+                          disabled
+                          className="w-full py-3.5 rounded-2xl text-sm font-bold bg-zinc-800/80 border border-white/[0.08] text-[#A1A1AA] cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                          <span>🔒 Sell Execution (Preview Only — Trading Locked)</span>
+                        </button>
+                        <p className="text-xs text-[#A1A1AA] font-mono text-center">
+                          Sell execution is in preview mode. Dual-wrapper execution currently supports verified 1-click BUY orders via LiquidMesh.
+                        </p>
+                      </div>
+                    ) : !wallet.connected ? (
                       <button
                         type="button"
                         onClick={connectWallet}
                         className="w-full py-3.5 rounded-2xl text-sm font-bold bg-[#F5C542] hover:bg-[#E0B02E] text-[#07070A] transition shadow-lg flex items-center justify-center gap-2"
                       >
                         <Wallet className="w-4 h-4" />
-                        <span>{`Connect Wallet to ${isSell ? 'Sell' : 'Buy'} ${cheaperTok.underlyingTicker || selectedSimpleTicker}`}</span>
+                        <span>{`Connect Wallet to Buy ${cheaperTok.underlyingTicker || selectedSimpleTicker}`}</span>
+                      </button>
+                    ) : cardIsFallback ? (
+                      <button
+                        type="button"
+                        disabled
+                        className="w-full py-3.5 rounded-2xl text-sm font-bold bg-zinc-800/80 border border-white/[0.08] text-[#A1A1AA] cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                        <span>🛡️ Benchmark Mode (Trading Locked)</span>
                       </button>
                     ) : (
                       <button
@@ -2401,24 +2462,20 @@ export default function Home() {
                           }
                         }}
                         disabled={bc?.loading || quote?.loading}
-                        className={`w-full py-3.5 rounded-2xl text-sm font-bold transition shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 ${
-                          isSell
-                            ? 'bg-[#C45C26] hover:bg-[#A84A1C] text-white'
-                            : 'bg-[#F5C542] hover:bg-[#E0B02E] text-[#07070A]'
-                        }`}
+                        className="w-full py-3.5 rounded-2xl text-sm font-bold transition shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 bg-[#F5C542] hover:bg-[#E0B02E] text-[#07070A]"
                       >
                         {bc?.loading ? (
                           <>
-                            <ThinkingOrb state="working" size={20} theme={isSell ? 'dark' : 'light'} />
+                            <ThinkingOrb state="working" size={20} theme="light" />
                             <span>Confirming in wallet...</span>
                           </>
                         ) : quote?.loading ? (
                           <>
-                            <ThinkingOrb state="searching" size={20} theme={isSell ? 'dark' : 'light'} />
+                            <ThinkingOrb state="searching" size={20} theme="light" />
                             <span>Checking best price...</span>
                           </>
                         ) : (
-                          <span>{`${isSell ? 'Sell' : 'Buy'} ${cheaperTok.underlyingTicker || selectedSimpleTicker}`}</span>
+                          <span>{`Buy ${cheaperTok.underlyingTicker || selectedSimpleTicker}`}</span>
                         )}
                       </button>
                     )}
