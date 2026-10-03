@@ -945,8 +945,8 @@ export default function Home() {
 
   const disconnectWallet = () => {
     setWallet({ connected: false, connecting: false, address: null, chainId: null, error: null });
-    setWalletAddress(null);
-    setWalletBalances({ usdt: '0.00', bnb: '0.000', nvdab: '—' });
+    setWalletAddress('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045');
+    setWalletBalances({ usdt: '—', bnb: '—', nvdab: '—', loading: false });
     setWalletDropdownOpen(false);
   };
 
@@ -1502,11 +1502,11 @@ export default function Home() {
         action: 'Buy',
         token: bstockToken,
         symbol: 'NVDAB',
-        price: '229.11',
-        savings: '0.61',
-        savingsPercent: '0.27',
+        price: '234.58',
+        savings: '0.80',
+        savingsPercent: '0.34',
         otherSymbol: 'NVDAon',
-        otherPrice: '229.72',
+        otherPrice: '235.38',
         spreadToCash: '0.08',
         venue: 'LiquidMesh RFQ',
         cheaperName: 'bStocks',
@@ -1519,20 +1519,23 @@ export default function Home() {
     return null;
   }, [bstocksTokens, ondoTokens, quotes, ticker]);
 
-  // Computed Thematic Basket data
+  // Computed Thematic Basket data (wired to real-time tokens map)
   const currentBasketData = useMemo(() => {
     if (!selectedBasket) return null;
     const basketConfig = THEMATIC_BASKETS[selectedBasket];
     if (!basketConfig) return null;
 
     const list = basketConfig.tickers.map((sym) => {
-      const tokens = DEFAULT_BENCHMARK_TOKENS[sym] || [];
-      const bstock = tokens.find((t) => t.platformId === 'bstock') || tokens[0];
-      const ondo = tokens.find((t) => t.platformId === 'ondo') || tokens[1];
-      const cheaper = bstock && ondo ? (Number(bstock.price) <= Number(ondo.price) ? bstock : ondo) : bstock;
+      const pair = simpleModeTokensMap[sym];
+      const fallbackTokens = DEFAULT_BENCHMARK_TOKENS[sym] || [];
+      const bstock = pair?.bstock || fallbackTokens.find((t: any) => t.platformId === 'bstock') || fallbackTokens[0];
+      const ondo = pair?.ondo || fallbackTokens.find((t: any) => t.platformId === 'ondo') || fallbackTokens[1];
+      const bPrice = Number(bstock?.tokenPrice || bstock?.price || 0);
+      const oPrice = Number(ondo?.tokenPrice || ondo?.price || 0);
+      const cheaper = bstock && ondo ? (bPrice <= oPrice ? bstock : ondo) : bstock;
       const other = cheaper === bstock ? ondo : bstock;
-      const cheaperPrice = Number(cheaper?.price || 0);
-      const otherPrice = Number(other?.price || cheaperPrice);
+      const cheaperPrice = Number(cheaper?.tokenPrice || cheaper?.price || 0);
+      const otherPrice = Number(other?.tokenPrice || other?.price || cheaperPrice);
       const savings = Math.max(0, otherPrice - cheaperPrice);
       const refPrice = Number(cheaper?.referencePrice || cheaperPrice);
       const spread = refPrice > 0 ? ((cheaperPrice - refPrice) / refPrice) * 100 : 0;
@@ -1563,7 +1566,7 @@ export default function Home() {
       avgSpread: avgSpread.toFixed(2),
       topPick: list[0],
     };
-  }, [selectedBasket]);
+  }, [selectedBasket, simpleModeTokensMap]);
 
   // Request a live quote from Trading API
   const handleGetQuote = async (token: any, forceDirection?: 'buy' | 'sell') => {
@@ -1887,54 +1890,54 @@ export default function Home() {
       />
 
       {/* Top Bar */}
-      <header className="w-full border-b border-white/[0.06] bg-[#07070A]/80 backdrop-blur-sm sticky top-0 z-20">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <div className="flex items-center gap-2.5">
-              <AfterGapLogo className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl shadow-md shadow-[#F5C542]/20 shrink-0" />
-              <span className="text-lg sm:text-2xl font-bold tracking-tight text-[#F5C542] shrink-0">
-                AfterGap
-              </span>
-            </div>
-            <span className="hidden sm:inline-flex px-2.5 py-0.5 rounded-full text-xs font-mono bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06]">
+      <header className="w-full border-b border-white/[0.06] bg-[#07070A]/90 backdrop-blur-md sticky top-0 z-30">
+        <div className="max-w-6xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
+          {/* Brand Logo & Name */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <AfterGapLogo className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl shadow-md shadow-[#F5C542]/20 shrink-0" />
+            <span className="text-base sm:text-2xl font-bold tracking-tight text-[#F5C542] shrink-0">
+              AfterGap
+            </span>
+            <span className="hidden md:inline-flex px-2 py-0.5 rounded-full text-[11px] font-mono bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06]">
               BSC 56
             </span>
-            <span className="hidden md:inline-flex px-2.5 py-0.5 rounded-full text-xs font-mono bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30">
+            <span className="hidden lg:inline-flex px-2 py-0.5 rounded-full text-[11px] font-mono bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30">
               Spot Aggregator
             </span>
-            {/* Mode Toggle: Simple vs Pro Terminal */}
-            <div className="flex items-center p-0.5 rounded-full bg-white/[0.04] border border-white/[0.08] shadow-inner ml-1 sm:ml-2">
-              <button
-                type="button"
-                onClick={() => setViewMode('simple')}
-                className={`px-3 py-1 rounded-full text-xs font-mono font-semibold transition ${
-                  viewMode === 'simple'
-                    ? 'bg-[#F5C542] text-[#07070A] shadow-sm'
-                    : 'text-[#A1A1AA] hover:text-[#F5F5F4]'
-                }`}
-              >
-                Simple
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('pro')}
-                className={`px-3 py-1 rounded-full text-xs font-mono font-semibold transition ${
-                  viewMode === 'pro'
-                    ? 'bg-[#F5C542] text-[#07070A] shadow-sm'
-                    : 'text-[#A1A1AA] hover:text-[#F5F5F4]'
-                }`}
-              >
-                Pro
-              </button>
-            </div>
           </div>
 
-          {/* Top Bar Actions */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {/* Mode Toggle: Simple vs Pro Terminal */}
+          <div className="flex items-center p-0.5 rounded-full bg-white/[0.04] border border-white/[0.08] shadow-inner shrink-0">
+            <button
+              type="button"
+              onClick={() => setViewMode('simple')}
+              className={`px-2.5 sm:px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-mono font-semibold transition ${
+                viewMode === 'simple'
+                  ? 'bg-[#F5C542] text-[#07070A] shadow-sm'
+                  : 'text-[#A1A1AA] hover:text-[#F5F5F4]'
+              }`}
+            >
+              Simple
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('pro')}
+              className={`px-2.5 sm:px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-mono font-semibold transition ${
+                viewMode === 'pro'
+                  ? 'bg-[#F5C542] text-[#07070A] shadow-sm'
+                  : 'text-[#A1A1AA] hover:text-[#F5F5F4]'
+              }`}
+            >
+              Pro
+            </button>
+          </div>
+
+          {/* Top Bar Actions: Wallet & Gateway Status */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             {wallet.connected && wallet.address ? (
-              <div className="flex items-center gap-2">
-                {/* Balances (responsive mobile & desktop) */}
-                <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-mono bg-white/[0.03] border border-white/[0.06]">
+              <div className="flex items-center gap-2 relative">
+                {/* Balances (md+ desktop view) */}
+                <div className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono bg-white/[0.03] border border-white/[0.06]">
                   <span className="text-[#A1A1AA]">USDT:</span>
                   <span className="text-[#F5F5F4] font-semibold">{walletBalances.usdt}</span>
                   <span className="text-white/20">|</span>
@@ -1948,60 +1951,127 @@ export default function Home() {
                     </>
                   )}
                 </div>
-                {/* Connected address chip */}
-                <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-xs font-mono bg-[#3D9A6A]/10 border border-[#3D9A6A]/30 whitespace-nowrap shrink-0">
+
+                {/* Connected address chip with tap to toggle options */}
+                <button
+                  type="button"
+                  onClick={() => setWalletDropdownOpen((prev) => !prev)}
+                  className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-xs font-mono bg-[#3D9A6A]/10 border border-[#3D9A6A]/30 text-[#3D9A6A] hover:bg-[#3D9A6A]/20 transition whitespace-nowrap shrink-0"
+                  title="Click for wallet options or disconnect"
+                >
                   <span className="w-1.5 h-1.5 rounded-full bg-[#3D9A6A] animate-pulse shrink-0" />
-                  <span className="text-[#3D9A6A] font-semibold hidden sm:inline">BSC 56</span>
-                  <span className="text-[#A1A1AA]">
-                    {wallet.address.slice(0, 6)}…{wallet.address.slice(-4)}
+                  <span className="font-semibold hidden sm:inline">BSC 56</span>
+                  <span className="text-[#F5F5F4]">
+                    {wallet.address.slice(0, 4)}…{wallet.address.slice(-4)}
                   </span>
-                </div>
+                  <span className="text-[9px] text-[#A1A1AA] ml-0.5">▼</span>
+                </button>
+
+                {/* Dropdown Menu for Connected Wallet */}
+                {walletDropdownOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-[#121214] border border-white/[0.1] rounded-xl shadow-2xl p-2.5 z-50 text-xs font-mono space-y-2">
+                    <div className="text-[10px] text-[#A1A1AA] pb-1 border-b border-white/[0.06]">
+                      <span className="block truncate">{wallet.address}</span>
+                    </div>
+                    <div className="space-y-1 text-[11px]">
+                      <div className="flex justify-between">
+                        <span className="text-[#A1A1AA]">USDT:</span>
+                        <span className="text-[#F5F5F4] font-semibold">{walletBalances.usdt}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-[#A1A1AA]">BNB:</span>
+                        <span className="text-[#F5F5F4] font-semibold">{walletBalances.bnb}</span>
+                      </div>
+                      {walletBalances.nvdab !== '—' && (
+                        <div className="flex justify-between">
+                          <span className="text-[#A1A1AA]">NVDAB:</span>
+                          <span className="text-[#3D9A6A] font-semibold">{walletBalances.nvdab}</span>
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={disconnectWallet}
+                      className="w-full mt-1 pt-1.5 border-t border-white/[0.06] text-center text-[#C45C26] hover:text-[#E07038] text-[11px] font-semibold transition"
+                    >
+                      Disconnect Wallet
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <button
                 type="button"
                 onClick={connectWallet}
                 disabled={wallet.connecting}
-                className="flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold font-mono transition-all border border-[#F5C542]/50 bg-[#F5C542]/10 text-[#F5C542] hover:bg-[#F5C542]/20 hover:border-[#F5C542] disabled:opacity-60 disabled:cursor-not-allowed shadow-sm shadow-[#F5C542]/10 shrink-0"
+                className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold font-mono transition-all border border-[#F5C542]/50 bg-[#F5C542]/10 text-[#F5C542] hover:bg-[#F5C542]/20 hover:border-[#F5C542] disabled:opacity-60 disabled:cursor-not-allowed shadow-sm shadow-[#F5C542]/10 shrink-0"
               >
                 {wallet.connecting ? (
                   <>
                     <ThinkingOrb state="connecting" size={20} theme="dark" />
-                    <span>Connecting…</span>
+                    <span className="hidden sm:inline">Connecting…</span>
+                    <span className="sm:hidden text-xs">Connecting</span>
                   </>
                 ) : (
                   <>
-                    <Wallet className="w-3.5 h-3.5" />
-                    <span>Connect Wallet</span>
+                    <Wallet className="w-3.5 h-3.5 shrink-0" />
+                    <span className="hidden sm:inline">Connect Wallet</span>
+                    <span className="sm:hidden text-xs">Connect</span>
                   </>
                 )}
               </button>
             )}
 
             {/* Compact Auth Chip (Public Gateway status) */}
-            <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 rounded-full text-xs font-mono bg-white/[0.03] border border-white/[0.06] whitespace-nowrap shrink-0">
+            <div
+              className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-full text-xs font-mono bg-white/[0.03] border border-white/[0.06] whitespace-nowrap shrink-0"
+              title={isAuthed ? `Signed (${data?.auth?.apiKeyPrefix})` : 'BSC 56 Gateway'}
+            >
               <ThinkingOrb state={loading ? 'searching' : 'breathing'} size={20} theme="dark" />
-              <span className="text-[#A1A1AA] hidden sm:inline">
+              <span className="text-[#A1A1AA] hidden sm:inline text-xs">
                 {isAuthed ? `Signed (${data?.auth?.apiKeyPrefix})` : 'BSC 56 Gateway'}
-              </span>
-              <span className="text-[#A1A1AA] sm:hidden text-[11px]">
-                {isAuthed ? 'Signed' : 'BSC 56'}
               </span>
             </div>
           </div>
         </div>
+
+        {/* Mobile Balance Ribbon when connected */}
+        {wallet.connected && wallet.address && (
+          <div className="md:hidden w-full bg-white/[0.02] border-t border-white/[0.04] px-3.5 py-1.5 flex items-center justify-between text-[11px] font-mono">
+            <div className="flex items-center gap-2 text-[#A1A1AA]">
+              <span>USDT: <strong className="text-[#F5F5F4]">{walletBalances.usdt}</strong></span>
+              <span className="text-white/20">•</span>
+              <span>BNB: <strong className="text-[#F5F5F4]">{walletBalances.bnb}</strong></span>
+              {walletBalances.nvdab !== '—' && Number(walletBalances.nvdab) > 0 && (
+                <>
+                  <span className="text-white/20">•</span>
+                  <span>NVDAB: <strong className="text-[#3D9A6A]">{walletBalances.nvdab}</strong></span>
+                </>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={disconnectWallet}
+              className="text-[10px] text-[#A1A1AA] hover:text-[#C45C26] transition font-sans underline"
+            >
+              Disconnect
+            </button>
+          </div>
+        )}
       </header>
 
       {/* Wallet Error Banner */}
       {wallet.error && (
-        <div className="w-full border-b border-[#C45C26]/30 bg-[#C45C26]/10 px-4 py-2 flex items-center justify-between gap-3">
-          <p className="text-xs font-mono text-[#C45C26] flex items-center gap-2">
-            <span>⚠️</span> {wallet.error}
+        <div className="w-full border-b border-[#C45C26]/30 bg-[#C45C26]/10 px-3 sm:px-4 py-2 flex items-center justify-between gap-2 sm:gap-3">
+          <p className="text-xs font-mono text-[#C45C26] flex items-center gap-2 min-w-0">
+            <span className="shrink-0">⚠️</span>
+            <span className="break-words">{wallet.error}</span>
           </p>
           <button
             type="button"
             onClick={() => setWallet((w) => ({ ...w, error: null }))}
-            className="text-[#C45C26] text-xs hover:opacity-70 shrink-0"
+            className="text-[#C45C26] hover:text-[#F5F5F4] p-1 rounded hover:bg-white/[0.05] text-xs font-mono shrink-0 transition"
+            aria-label="Dismiss error"
           >
             ✕
           </button>
@@ -2057,7 +2127,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+              <div className="flex sm:grid sm:grid-cols-4 lg:grid-cols-7 gap-2 overflow-x-auto sm:overflow-x-visible pb-2 sm:pb-0 -mx-3 px-3 sm:mx-0 sm:px-0 no-scrollbar snap-x">
                 {['NVDA', 'TSLA', 'MSFT', 'GOOGL', 'META', 'AMD', 'COIN'].map((tickerKey) => {
                   const pair = simpleModeTokensMap[tickerKey];
                   const isSelected = selectedSimpleTicker === tickerKey;
@@ -2081,7 +2151,7 @@ export default function Home() {
                           handleGetQuote(bestTok);
                         }
                       }}
-                      className={`p-3 rounded-2xl flex flex-col items-center justify-center transition border text-center relative ${
+                      className={`shrink-0 w-[100px] sm:w-auto p-2.5 sm:p-3 rounded-xl sm:rounded-2xl flex flex-col items-center justify-center transition border text-center relative snap-start ${
                         isSelected
                           ? 'bg-[#F5C542]/15 border-[#F5C542] shadow-[0_0_20px_rgba(245,197,66,0.2)] text-[#F5F5F4]'
                           : 'bg-[#121214] border-white/[0.08] hover:border-white/20 text-[#A1A1AA] hover:text-[#F5F5F4]'
@@ -2152,12 +2222,12 @@ export default function Home() {
                 : "gets dividends added to the token's value";
 
               return (
-                <div className="w-full max-w-lg bg-[#121214] border border-white/[0.1] rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5">
+                <div className="w-full max-w-lg bg-[#121214] border border-white/[0.1] rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-2xl space-y-4 sm:space-y-5">
                   {/* Stock Header */}
-                  <div className="flex items-start justify-between">
-                    <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <h2 className="text-xl sm:text-2xl font-bold text-[#F5F5F4] tracking-tight">
+                        <h2 className="text-xl sm:text-2xl font-bold text-[#F5F5F4] tracking-tight truncate">
                           {cheaperTok.underlyingName || selectedSimpleTicker}
                         </h2>
                       </div>
@@ -2171,7 +2241,7 @@ export default function Home() {
                         </span>
                       </div>
                     </div>
-                    <div className="text-right shrink-0 ml-2">
+                    <div className="text-right shrink-0">
                       <div className="flex items-center justify-end gap-1.5">
                         {!cardIsFallback && (
                           <span className="w-1.5 h-1.5 rounded-full bg-[#3D9A6A] animate-pulse" />
