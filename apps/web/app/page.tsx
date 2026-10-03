@@ -2551,13 +2551,13 @@ export default function Home() {
                   value={nlPrompt}
                   onChange={(e) => setNlPrompt(e.target.value)}
                   placeholder="Ask AfterGap: 'buy $25 of the cheapest NVDA wrapper'"
-                  className="w-full bg-[#07070A] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-[#F5F5F4] placeholder-[#A1A1AA]/50 font-mono focus:outline-none focus:border-[#F5C542]/80 transition shadow-inner"
+                  className="w-full bg-[#07070A] border border-white/[0.08] rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm text-[#F5F5F4] placeholder-[#A1A1AA]/50 font-mono focus:outline-none focus:border-[#F5C542]/80 transition shadow-inner"
                 />
               </div>
               <button
                 type="submit"
                 disabled={nlLoading || !nlPrompt.trim()}
-                className="bg-[#F5C542] hover:bg-[#E0B02E] disabled:opacity-50 text-[#07070A] font-semibold px-5 py-3 rounded-xl text-sm transition flex items-center justify-center gap-1.5 min-w-[100px] shrink-0 font-mono"
+                className="bg-[#F5C542] hover:bg-[#E0B02E] disabled:opacity-50 text-[#07070A] font-semibold px-3.5 sm:px-5 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-1.5 min-w-[85px] sm:min-w-[100px] shrink-0 font-mono"
               >
                 {nlLoading ? 'Parsing...' : 'Ask Agent'}
               </button>
@@ -2798,9 +2798,9 @@ export default function Home() {
         )}
 
         {/* Main Product Card */}
-        <div className="w-full max-w-xl bg-[#121214] border border-white/[0.06] rounded-2xl p-5 sm:p-6 shadow-2xl space-y-4">
+        <div className="w-full max-w-xl bg-[#121214] border border-white/[0.06] rounded-2xl p-4 sm:p-6 shadow-2xl space-y-4">
           {/* Ticker Search Form */}
-          <form onSubmit={handleSubmit} className="flex gap-2.5">
+          <form onSubmit={handleSubmit} className="flex gap-2 sm:gap-2.5">
             <div className="relative flex-1">
               <BorderBeam size="line" colorVariant="sunset" active={loading}>
                 <input
@@ -2808,14 +2808,14 @@ export default function Home() {
                   value={ticker}
                   onChange={(e) => setTicker(e.target.value.toUpperCase())}
                   placeholder="Ticker e.g. NVDA"
-                  className="w-full bg-[#07070A] border border-white/[0.06] rounded-lg px-4 py-2.5 text-[#F5F5F4] placeholder-[#A1A1AA]/50 font-mono text-sm uppercase focus:outline-none focus:border-[#F5C542]/60 transition"
+                  className="w-full bg-[#07070A] border border-white/[0.06] rounded-lg px-3 sm:px-4 py-2.5 text-[#F5F5F4] placeholder-[#A1A1AA]/50 font-mono text-xs sm:text-sm uppercase focus:outline-none focus:border-[#F5C542]/60 transition"
                 />
               </BorderBeam>
             </div>
             <button
               type="submit"
               disabled={loading}
-              className="bg-[#F5C542] hover:bg-[#E0B02E] disabled:opacity-50 text-[#07070A] font-semibold px-5 py-2.5 rounded-lg text-sm transition flex items-center justify-center gap-1.5 min-w-[105px]"
+              className="bg-[#F5C542] hover:bg-[#E0B02E] disabled:opacity-50 text-[#07070A] font-semibold px-4 sm:px-5 py-2.5 rounded-lg text-xs sm:text-sm transition flex items-center justify-center gap-1.5 min-w-[85px] sm:min-w-[105px]"
             >
               {loading ? (
                 <>
@@ -3790,18 +3790,38 @@ export default function Home() {
                         </div>
 
                         {/* Benchmark Pricing Disclosure Banner */}
-                        <div
-                          data-testid="ondo-fallback-badge"
-                          className="p-2.5 rounded-lg bg-[#F5C542]/10 border border-[#F5C542]/30 text-[#F5C542] space-y-1"
-                        >
-                          <div className="flex items-center gap-1.5 font-bold text-xs uppercase tracking-wide">
-                            <span>⚠️</span>
-                            <span>Benchmark Reference Pricing</span>
+                        {t.isFallback ? (
+                          <div
+                            data-testid="ondo-fallback-badge"
+                            className="p-2.5 rounded-lg bg-[#F5C542]/10 border border-[#F5C542]/30 text-[#F5C542] space-y-1"
+                          >
+                            <div className="flex items-center gap-1.5 font-bold text-xs uppercase tracking-wide">
+                              <span>⚠️</span>
+                              <span>Benchmark Reference Pricing</span>
+                            </div>
+                            <p className="text-[11px] text-[#F5C542]/80 leading-tight font-mono">
+                              Binance Web3 Gateway restricts serverless datacenter IPs (40304). Prices shown are verified benchmark data; on-chain swaps execute live via BSC RPC.
+                            </p>
                           </div>
-                          <p className="text-[11px] text-[#F5C542]/80 leading-tight font-mono">
-                            Binance Web3 Gateway restricts serverless datacenter IPs (40304). Prices shown are verified benchmark data; on-chain swaps execute live via BSC RPC.
-                          </p>
-                        </div>
+                        ) : (
+                          <div
+                            data-testid="ondo-live-badge"
+                            className="p-2 rounded-lg bg-[#3D9A6A]/10 border border-[#3D9A6A]/30 text-[#3D9A6A] space-y-1"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5 font-bold text-xs uppercase tracking-wide">
+                                <span className="w-2 h-2 rounded-full bg-[#3D9A6A] animate-pulse" />
+                                <span>Live Real-Time Market Feed</span>
+                              </div>
+                              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#3D9A6A]/20 text-[#3D9A6A] border border-[#3D9A6A]/30 font-semibold">
+                                Binance API 200 OK
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-[#3D9A6A]/80 leading-tight font-mono">
+                              Live on-chain price streamed directly from Binance Web3 DEX API.
+                            </p>
+                          </div>
+                        )}
 
                         {/* Price Metrics */}
                         <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/[0.04]">
