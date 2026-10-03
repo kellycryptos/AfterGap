@@ -186,9 +186,9 @@ const DEFAULT_BENCHMARK_TOKENS: Record<string, any[]> = {
       tokenContractAddress: '0x02fca66c1d1afb4e2a7884261eb00f63598a7436',
       binanceChainId: '56',
       platformId: 'bstock',
-      tokenPrice: '235.18',
-      price: '235.18',
-      referencePrice: '235.03',
+      tokenPrice: '234.58',
+      price: '234.58',
+      referencePrice: '234.50',
       marketStatus: 'TRADING',
       reasonCode: 'TRADING',
       statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
@@ -201,9 +201,9 @@ const DEFAULT_BENCHMARK_TOKENS: Record<string, any[]> = {
       tokenContractAddress: '0xa9ee28c80f960b889dfbd1902055218cba016f75',
       binanceChainId: '56',
       platformId: 'ondo',
-      tokenPrice: '235.78',
-      price: '235.78',
-      referencePrice: '235.37',
+      tokenPrice: '235.38',
+      price: '235.38',
+      referencePrice: '234.50',
       marketStatus: 'regular',
       reasonCode: 'TRADING',
       statusInfo: { openState: true, marketStatus: 'regular', reasonCode: 'TRADING' },
@@ -218,9 +218,9 @@ const DEFAULT_BENCHMARK_TOKENS: Record<string, any[]> = {
       tokenContractAddress: '0x5b1910eaad6450e50f816082aa078c41f10c292f',
       binanceChainId: '56',
       platformId: 'bstock',
-      tokenPrice: '372.13',
-      price: '372.13',
-      referencePrice: '372.00',
+      tokenPrice: '370.99',
+      price: '370.99',
+      referencePrice: '371.00',
       marketStatus: 'TRADING',
       reasonCode: 'TRADING',
       statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
@@ -233,9 +233,9 @@ const DEFAULT_BENCHMARK_TOKENS: Record<string, any[]> = {
       tokenContractAddress: '0x2494b603319d4d9f9715c9f4496d9e0364b59d93',
       binanceChainId: '56',
       platformId: 'ondo',
-      tokenPrice: '372.12',
-      price: '372.12',
-      referencePrice: '372.00',
+      tokenPrice: '371.18',
+      price: '371.18',
+      referencePrice: '371.00',
       marketStatus: 'TRADING',
       reasonCode: 'TRADING',
       statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
@@ -250,9 +250,9 @@ const DEFAULT_BENCHMARK_TOKENS: Record<string, any[]> = {
       tokenContractAddress: '0x80106cb3ead06659a5ad19df39d9b4733863b9b0',
       binanceChainId: '56',
       platformId: 'bstock',
-      tokenPrice: '515.38',
-      price: '515.38',
-      referencePrice: '515.00',
+      tokenPrice: '518.52',
+      price: '518.52',
+      referencePrice: '518.00',
       marketStatus: 'TRADING',
       reasonCode: 'TRADING',
       statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
@@ -265,9 +265,9 @@ const DEFAULT_BENCHMARK_TOKENS: Record<string, any[]> = {
       tokenContractAddress: '0x6bfe75d1ad432050ea973c3a3dcd88f02e2444c3',
       binanceChainId: '56',
       platformId: 'ondo',
-      tokenPrice: '520.70',
-      price: '520.70',
-      referencePrice: '515.00',
+      tokenPrice: '523.57',
+      price: '523.57',
+      referencePrice: '518.00',
       marketStatus: 'TRADING',
       reasonCode: 'TRADING',
       statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
@@ -282,8 +282,8 @@ const DEFAULT_BENCHMARK_TOKENS: Record<string, any[]> = {
       tokenContractAddress: '0x3f53de71c126bdabae20f9cd64848d317f6c3238',
       binanceChainId: '56',
       platformId: 'bstock',
-      tokenPrice: '344.50',
-      price: '344.50',
+      tokenPrice: '343.83',
+      price: '343.83',
       referencePrice: '344.00',
       marketStatus: 'TRADING',
       reasonCode: 'TRADING',
@@ -297,8 +297,8 @@ const DEFAULT_BENCHMARK_TOKENS: Record<string, any[]> = {
       tokenContractAddress: '0x091fc7778e6932d4009b087b191d1ee3bac5729a',
       binanceChainId: '56',
       platformId: 'ondo',
-      tokenPrice: '346.16',
-      price: '346.16',
+      tokenPrice: '345.59',
+      price: '345.59',
       referencePrice: '344.00',
       marketStatus: 'TRADING',
       reasonCode: 'TRADING',
@@ -314,9 +314,9 @@ const DEFAULT_BENCHMARK_TOKENS: Record<string, any[]> = {
       tokenContractAddress: '0x7425889fe94f9d693e8daefe88bcced6acfef4c0',
       binanceChainId: '56',
       platformId: 'bstock',
-      tokenPrice: '730.76',
-      price: '730.76',
-      referencePrice: '730.00',
+      tokenPrice: '727.96',
+      price: '727.96',
+      referencePrice: '728.00',
       marketStatus: 'TRADING',
       reasonCode: 'TRADING',
       statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
@@ -329,9 +329,9 @@ const DEFAULT_BENCHMARK_TOKENS: Record<string, any[]> = {
       tokenContractAddress: '0xd7df5863a3e742f0c767768cdfcb63f09e0422f6',
       binanceChainId: '56',
       platformId: 'ondo',
-      tokenPrice: '734.47',
-      price: '734.47',
-      referencePrice: '730.00',
+      tokenPrice: '731.69',
+      price: '731.69',
+      referencePrice: '728.00',
       marketStatus: 'TRADING',
       reasonCode: 'TRADING',
       statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
@@ -346,9 +346,9 @@ const DEFAULT_BENCHMARK_TOKENS: Record<string, any[]> = {
       tokenContractAddress: '0x75fd4cf6f8392e41e70391d60c90c0d5211603a1',
       binanceChainId: '56',
       platformId: 'bstock',
-      tokenPrice: '630.58',
-      price: '630.58',
-      referencePrice: '630.00',
+      tokenPrice: '633.28',
+      price: '633.28',
+      referencePrice: '633.00',
       marketStatus: 'TRADING',
       reasonCode: 'TRADING',
       statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
@@ -361,9 +361,9 @@ const DEFAULT_BENCHMARK_TOKENS: Record<string, any[]> = {
       tokenContractAddress: '0x9f16e46c73b43bdb70861247d537bee4ea18f639',
       binanceChainId: '56',
       platformId: 'ondo',
-      tokenPrice: '630.66',
-      price: '630.66',
-      referencePrice: '630.00',
+      tokenPrice: '633.15',
+      price: '633.15',
+      referencePrice: '633.00',
       marketStatus: 'TRADING',
       reasonCode: 'TRADING',
       statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
@@ -378,9 +378,9 @@ const DEFAULT_BENCHMARK_TOKENS: Record<string, any[]> = {
       tokenContractAddress: '0x585bde7c54abb5ccd7791f923d6c2187635f3952',
       binanceChainId: '56',
       platformId: 'bstock',
-      tokenPrice: '182.58',
-      price: '182.58',
-      referencePrice: '182.50',
+      tokenPrice: '183.48',
+      price: '183.48',
+      referencePrice: '183.40',
       marketStatus: 'TRADING',
       reasonCode: 'TRADING',
       statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
@@ -393,9 +393,9 @@ const DEFAULT_BENCHMARK_TOKENS: Record<string, any[]> = {
       tokenContractAddress: '0xf8589b526fdd65f7f301c605a6e04f0f1b4b3620',
       binanceChainId: '56',
       platformId: 'ondo',
-      tokenPrice: '182.61',
-      price: '182.61',
-      referencePrice: '182.50',
+      tokenPrice: '183.43',
+      price: '183.43',
+      referencePrice: '183.40',
       marketStatus: 'TRADING',
       reasonCode: 'TRADING',
       statusInfo: { openState: true, marketStatus: 'TRADING', reasonCode: 'TRADING' },
@@ -857,12 +857,14 @@ export default function Home() {
     chainId: null,
     error: null,
   });
+  const [walletDropdownOpen, setWalletDropdownOpen] = useState(false);
   // Per-token broadcast state (approve + swap)
   const [broadcasts, setBroadcasts] = useState<Record<string, TxBroadcastState>>({});
   const [copiedHash, setCopiedHash] = useState<string | null>(null);
   const [approvalMode, setApprovalMode] = useState<'exact' | 'unlimited'>('exact');
   const [tradeDirections, setTradeDirections] = useState<Record<string, 'buy' | 'sell'>>({});
   const [legalModal, setLegalModal] = useState<'terms' | 'privacy' | 'risks' | null>(null);
+  const [lastPriceRefresh, setLastPriceRefresh] = useState<number>(Date.now());
 
   // Natural-Language Command Bar State
   const [nlPrompt, setNlPrompt] = useState('');
@@ -939,6 +941,13 @@ export default function Home() {
     } catch (err: any) {
       setWallet({ connected: false, connecting: false, address: null, chainId: null, error: err.message || 'Connection rejected' });
     }
+  };
+
+  const disconnectWallet = () => {
+    setWallet({ connected: false, connecting: false, address: null, chainId: null, error: null });
+    setWalletAddress(null);
+    setWalletBalances({ usdt: '0.00', bnb: '0.000', nvdab: '—' });
+    setWalletDropdownOpen(false);
   };
 
   // --- USDT Approve + Swap Execute ---
@@ -1094,6 +1103,7 @@ export default function Home() {
       const res = await fetch(`/api/rwa?action=resolve&keyword=${encodeURIComponent(symbolToFetch)}`);
       const json: ApiResponseData = await res.json();
       setData(json);
+      setLastPriceRefresh(Date.now());
     } catch (err: any) {
       setError(err.message || 'Failed to fetch data');
     } finally {
@@ -1341,6 +1351,59 @@ export default function Home() {
 
     return filtered;
   }, [data, ticker]);
+
+  // Real-time map of dual-wrapper tokens for all 7 Simple Mode tickers
+  // Merges live BSC tokens from Binance Web3 API (data.bscTokens.data) with fallback defaults
+  const simpleModeTokensMap = useMemo(() => {
+    const bscData = data?.bscTokens?.data;
+    const bscTokens: any[] = Array.isArray(bscData)
+      ? bscData
+      : Array.isArray(bscData?.tokens)
+      ? bscData.tokens
+      : [];
+
+    const map: Record<string, { bstock: any; ondo: any; isLive: boolean }> = {};
+    const TICKERS = ['NVDA', 'TSLA', 'MSFT', 'GOOGL', 'META', 'AMD', 'COIN'];
+
+    for (const sym of TICKERS) {
+      const fallbackList = DEFAULT_BENCHMARK_TOKENS[sym] || [];
+      const fallbackBstock = fallbackList.find(
+        (t: any) => String(t.platformId).toLowerCase() === 'bstock' || String(t.tokenSymbol).endsWith('B')
+      );
+      const fallbackOndo = fallbackList.find(
+        (t: any) => String(t.platformId).toLowerCase() === 'ondo' || String(t.tokenSymbol).endsWith('on')
+      );
+
+      // Search inside live bscTokens array (from Binance API client.getTokens)
+      const liveBstock = bscTokens.find((tok: any) => {
+        const s = String(tok.tokenSymbol || '');
+        const u = String(tok.underlyingTicker || '').toUpperCase();
+        return (
+          (u === sym && (String(tok.platformId).toLowerCase() === 'bstock' || s.endsWith('B'))) ||
+          s === `${sym}B`
+        );
+      });
+
+      const liveOndo = bscTokens.find((tok: any) => {
+        const s = String(tok.tokenSymbol || '');
+        const u = String(tok.underlyingTicker || '').toUpperCase();
+        return (
+          (u === sym && (String(tok.platformId).toLowerCase() === 'ondo' || s.endsWith('on'))) ||
+          s === `${sym}on`
+        );
+      });
+
+      const isLive = Boolean(liveBstock && liveOndo && !data?.isFallback);
+
+      map[sym] = {
+        bstock: liveBstock ? { ...fallbackBstock, ...liveBstock, isFallback: Boolean(data?.isFallback) } : fallbackBstock,
+        ondo: liveOndo ? { ...fallbackOndo, ...liveOndo, isFallback: Boolean(data?.isFallback) } : fallbackOndo,
+        isLive,
+      };
+    }
+
+    return map;
+  }, [data]);
 
   const bstocksTokens = allResolvedTokens.filter(
     (t) => String(t.platformId).toLowerCase() === 'bstock' || String(t.tokenSymbol).endsWith('B')
@@ -1628,25 +1691,34 @@ export default function Home() {
     }));
   };
 
-  // Auto-quote in Simple Mode: pre-quote the best wrapper for every catalog ticker
+  // Auto-quote in Simple Mode: pre-quote the best wrapper using live simpleModeTokensMap
   useEffect(() => {
     if (viewMode !== 'simple') return;
-    Object.values(DEFAULT_BENCHMARK_TOKENS).forEach((tokens: any[]) => {
-      const bstockTok = tokens.find((t: any) => String(t.platformId).toLowerCase() === 'bstock' || String(t.tokenSymbol).endsWith('B'));
-      const ondoTok = tokens.find((t: any) => String(t.platformId).toLowerCase() === 'ondo' || String(t.tokenSymbol).endsWith('on'));
-      const bstockPrice = Number(bstockTok?.tokenPrice || bstockTok?.price || 0);
-      const ondoPrice = Number(ondoTok?.tokenPrice || ondoTok?.price || 0);
-      const cheaperTok = bstockPrice > 0 && ondoPrice > 0
-        ? (bstockPrice <= ondoPrice ? bstockTok : ondoTok)
-        : (bstockTok || tokens[0]);
-      if (!cheaperTok) return;
-      const c = cheaperTok.tokenContractAddress || cheaperTok.contractAddress || cheaperTok.tokenAddress || '';
-      if (!c || quotes[c]) return;
-      if (!amounts[c]) setAmounts((prev) => ({ ...prev, [c]: '25' }));
-      handleGetQuote(cheaperTok);
-    });
+    const currentPair = simpleModeTokensMap[selectedSimpleTicker];
+    if (currentPair) {
+      const bPrice = Number(currentPair.bstock?.tokenPrice || currentPair.bstock?.price || 0);
+      const oPrice = Number(currentPair.ondo?.tokenPrice || currentPair.ondo?.price || 0);
+      const bestTok = bPrice > 0 && oPrice > 0
+        ? (bPrice <= oPrice ? currentPair.bstock : currentPair.ondo)
+        : (currentPair.bstock || currentPair.ondo);
+      if (bestTok) {
+        const c = bestTok.tokenContractAddress || bestTok.contractAddress || bestTok.tokenAddress || '';
+        if (c && !quotes[c]) {
+          if (!amounts[c]) setAmounts((prev) => ({ ...prev, [c]: '25' }));
+          handleGetQuote(bestTok);
+        }
+      }
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewMode]);
+  }, [viewMode, selectedSimpleTicker, simpleModeTokensMap]);
+
+  // Periodic background refresh for live token prices from Binance Web3 API (every 25s)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      fetchRwaData(selectedSimpleTicker);
+    }, 25000);
+    return () => clearInterval(timer);
+  }, [selectedSimpleTicker]);
 
   const handleNaturalLanguageSubmit = async (e?: React.FormEvent, overridePrompt?: string) => {
     if (e) e.preventDefault();
@@ -1956,22 +2028,46 @@ export default function Home() {
                 <span className="text-xs font-semibold uppercase tracking-wider text-[#A1A1AA]">
                   Select Asset:
                 </span>
-                <span className="text-xs text-[#3D9A6A] font-medium flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-[#3D9A6A] animate-pulse" />
-                  7 Equities Live on BSC
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-[#3D9A6A] font-medium flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#3D9A6A] animate-pulse" />
+                    7 Equities Live on BSC
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      fetchRwaData(selectedSimpleTicker);
+                      const pair = simpleModeTokensMap[selectedSimpleTicker];
+                      if (pair) {
+                        const bP = Number(pair.bstock?.tokenPrice || pair.bstock?.price || 0);
+                        const oP = Number(pair.ondo?.tokenPrice || pair.ondo?.price || 0);
+                        const bTok = bP > 0 && oP > 0 ? (bP <= oP ? pair.bstock : pair.ondo) : (pair.bstock || pair.ondo);
+                        if (bTok) handleGetQuote(bTok);
+                      }
+                    }}
+                    disabled={loading}
+                    title="Refresh live prices from Binance Web3 API"
+                    className="text-[11px] px-2 py-0.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-[#A1A1AA] hover:text-[#F5F5F4] transition flex items-center gap-1 border border-white/[0.08]"
+                  >
+                    <svg className={`w-3 h-3 ${loading ? 'animate-spin text-[#F5C542]' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span>{loading ? 'Refreshing...' : 'Refresh'}</span>
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
                 {['NVDA', 'TSLA', 'MSFT', 'GOOGL', 'META', 'AMD', 'COIN'].map((tickerKey) => {
-                  const tokens = DEFAULT_BENCHMARK_TOKENS[tickerKey] || [];
+                  const pair = simpleModeTokensMap[tickerKey];
                   const isSelected = selectedSimpleTicker === tickerKey;
-                  const bstockTok = tokens.find((t: any) => String(t.platformId).toLowerCase() === 'bstock' || String(t.tokenSymbol).endsWith('B'));
-                  const ondoTok = tokens.find((t: any) => String(t.platformId).toLowerCase() === 'ondo' || String(t.tokenSymbol).endsWith('on'));
+                  const bstockTok = pair?.bstock;
+                  const ondoTok = pair?.ondo;
                   const bPrice = Number(bstockTok?.tokenPrice || bstockTok?.price || 0);
                   const oPrice = Number(ondoTok?.tokenPrice || ondoTok?.price || 0);
                   const bestP = bPrice > 0 && oPrice > 0 ? Math.min(bPrice, oPrice) : (bPrice || oPrice || 0);
-                  const bestTok = bPrice > 0 && oPrice > 0 ? (bPrice <= oPrice ? bstockTok : ondoTok) : (bstockTok || tokens[0]);
+                  const bestTok = bPrice > 0 && oPrice > 0 ? (bPrice <= oPrice ? bstockTok : ondoTok) : (bstockTok || ondoTok);
+                  const isLive = Boolean(pair?.isLive);
 
                   return (
                     <button
@@ -2002,9 +2098,14 @@ export default function Home() {
                       <span className="text-[10px] font-semibold text-[#A1A1AA] truncate max-w-[80px]">
                         {bestTok?.underlyingName?.split(' ')[0] || tickerKey}
                       </span>
-                      <span className="text-xs font-mono font-bold text-[#3D9A6A] mt-1">
-                        ${bestP.toFixed(2)}
-                      </span>
+                      <div className="flex items-center gap-1 mt-1">
+                        <span className="text-xs font-mono font-bold text-[#3D9A6A]">
+                          ${bestP.toFixed(2)}
+                        </span>
+                        {isLive && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#3D9A6A] animate-pulse" title="Live price from Binance Web3 API" />
+                        )}
+                      </div>
                     </button>
                   );
                 })}
@@ -2013,14 +2114,14 @@ export default function Home() {
 
             {/* Focused Active Stock Trade Card */}
             {(() => {
-              const tokens = DEFAULT_BENCHMARK_TOKENS[selectedSimpleTicker] || DEFAULT_BENCHMARK_TOKENS.NVDA;
-              const bstockTok = tokens.find((t: any) => String(t.platformId).toLowerCase() === 'bstock' || String(t.tokenSymbol).endsWith('B'));
-              const ondoTok = tokens.find((t: any) => String(t.platformId).toLowerCase() === 'ondo' || String(t.tokenSymbol).endsWith('on'));
+              const pair = simpleModeTokensMap[selectedSimpleTicker] || simpleModeTokensMap.NVDA;
+              const bstockTok = pair?.bstock;
+              const ondoTok = pair?.ondo;
               const bstockPrice = Number(bstockTok?.tokenPrice || bstockTok?.price || 0);
               const ondoPrice = Number(ondoTok?.tokenPrice || ondoTok?.price || 0);
               const cheaperTok = bstockPrice > 0 && ondoPrice > 0
                 ? (bstockPrice <= ondoPrice ? bstockTok : ondoTok)
-                : (bstockTok || tokens[0]);
+                : (bstockTok || ondoTok);
               const otherTok = cheaperTok === bstockTok ? ondoTok : bstockTok;
               const otherPrice = bstockPrice > 0 && ondoPrice > 0
                 ? (cheaperTok === bstockTok ? ondoPrice : bstockPrice)
@@ -2071,15 +2172,24 @@ export default function Home() {
                       </div>
                     </div>
                     <div className="text-right shrink-0 ml-2">
-                      <span className="text-[10px] text-[#A1A1AA] block uppercase tracking-wide">
-                        {cardIsFallback ? 'Estimated Price' : 'Best Price'}
-                      </span>
+                      <div className="flex items-center justify-end gap-1.5">
+                        {!cardIsFallback && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#3D9A6A] animate-pulse" />
+                        )}
+                        <span className="text-[10px] text-[#A1A1AA] block uppercase tracking-wide">
+                          {cardIsFallback ? 'Estimated Price' : 'Best Price'}
+                        </span>
+                      </div>
                       <span className="text-2xl sm:text-3xl font-extrabold text-[#F5F5F4]">
                         ${cardPrice}
                       </span>
-                      {cardIsFallback && (
+                      {cardIsFallback ? (
                         <span className="text-[9px] text-[#A1A1AA]/80 block leading-tight mt-0.5">
                           Reference price, updates delayed
+                        </span>
+                      ) : (
+                        <span className="text-[9px] text-[#3D9A6A] block leading-tight mt-0.5 font-medium">
+                          {quote?.unitPrice ? '● Live DEX Aggregator Quote' : '● Live Binance Web3 Price'}
                         </span>
                       )}
                     </div>
