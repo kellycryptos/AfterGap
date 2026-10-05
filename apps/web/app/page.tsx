@@ -933,30 +933,45 @@ function HomeContent({
       const chainId = parseInt(chainIdHex, 16).toString();
 
       // Auto switch to BSC mainnet (chainId 56) if needed
+      let activeChainId = chainId;
       if (chainId !== '56') {
         try {
           await eth.request({
             method: 'wallet_switchEthereumChain',
             params: [{ chainId: '0x38' }],
           });
+          activeChainId = '56';
         } catch (switchErr: any) {
           // Chain not added — add it
           if (switchErr.code === 4902) {
-            await eth.request({
-              method: 'wallet_addEthereumChain',
-              params: [{
-                chainId: '0x38',
-                chainName: 'BNB Smart Chain',
-                nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
-                rpcUrls: ['https://bsc-dataseed.binance.org/'],
-                blockExplorerUrls: ['https://bscscan.com'],
-              }],
-            });
+            try {
+              await eth.request({
+                method: 'wallet_addEthereumChain',
+                params: [{
+                  chainId: '0x38',
+                  chainName: 'BNB Smart Chain',
+                  nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
+                  rpcUrls: ['https://bsc-dataseed.binance.org/'],
+                  blockExplorerUrls: ['https://bscscan.com'],
+                }],
+              });
+              activeChainId = '56';
+            } catch {
+              // User rejected adding chain
+            }
           }
         }
       }
 
-      setWallet({ connected: true, connecting: false, address, chainId: '56', error: null });
+      // Re-verify actual active chainId from provider
+      try {
+        const finalChainHex = await eth.request({ method: 'eth_chainId' });
+        if (finalChainHex) {
+          activeChainId = parseInt(finalChainHex, 16).toString();
+        }
+      } catch {}
+
+      setWallet({ connected: true, connecting: false, address, chainId: activeChainId, error: null });
       setWalletAddress(address);
       fetchBalances(address);
 

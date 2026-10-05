@@ -810,8 +810,10 @@ export async function GET(request: NextRequest) {
   };
 
   try {
-    const simulate40304 = searchParams.get('simulate40304') === 'true';
-    const simulateLive = searchParams.get('simulateLive') === 'true';
+    // Security & Integrity Guard: Test simulation parameters are strictly disabled in production
+    const isDevOrTest = process.env.NODE_ENV !== 'production';
+    const simulate40304 = isDevOrTest && searchParams.get('simulate40304') === 'true';
+    const simulateLive = isDevOrTest && searchParams.get('simulateLive') === 'true';
 
     if (action === 'agent') {
       const prompt = searchParams.get('prompt') || '';
