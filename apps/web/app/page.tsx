@@ -7,6 +7,14 @@ import { BotAvatar } from 'bot-avatars';
 import { MetalFx } from 'metal-fx';
 import { Wallet } from 'lucide-react';
 import { AfterGapLogo } from './Logo';
+import { NextIntlClientProvider, useTranslations } from 'next-intl';
+import messagesEn from '../messages/en.json';
+import messagesZh from '../messages/zh.json';
+
+const allMessages = {
+  en: messagesEn,
+  zh: messagesZh,
+};
 
 interface ApiResponseData {
   auth?: {
@@ -837,8 +845,23 @@ function formatRevertReason(raw?: string, spender?: string): string {
   return raw;
 }
 
-export default function Home() {
-  const [viewMode, setViewMode] = useState<'simple' | 'pro'>((globalThis as any).__AFTERGAP_TEST_MODE__ || 'simple');
+function HomeContent({
+  locale,
+  setLocale,
+  viewMode,
+  setViewMode,
+}: {
+  locale: 'en' | 'zh';
+  setLocale: (loc: 'en' | 'zh') => void;
+  viewMode: 'simple' | 'pro';
+  setViewMode: React.Dispatch<React.SetStateAction<'simple' | 'pro'>>;
+}) {
+  const tChrome = useTranslations('Chrome');
+  const tHero = useTranslations('Hero');
+  const tCard = useTranslations('Card');
+  const tAssistant = useTranslations('Assistant');
+  const tFooter = useTranslations('Footer');
+  const tLegal = useTranslations('LegalModal');
   const [selectedSimpleTicker, setSelectedSimpleTicker] = useState<string>('NVDA');
   const [ticker, setTicker] = useState('NVDA');
   const [loading, setLoading] = useState(false);
@@ -1931,34 +1954,66 @@ export default function Home() {
               BSC 56
             </span>
             <span className="hidden lg:inline-flex px-2 py-0.5 rounded-full text-[11px] font-mono bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30">
-              Spot Aggregator
+              {tChrome('spotAggregator')}
             </span>
           </div>
 
-          {/* Mode Toggle: Simple vs Pro Terminal */}
-          <div className="flex items-center p-0.5 rounded-full bg-white/[0.04] border border-white/[0.08] shadow-inner shrink-0">
-            <button
-              type="button"
-              onClick={() => setViewMode('simple')}
-              className={`px-2.5 sm:px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-mono font-semibold transition ${
-                viewMode === 'simple'
-                  ? 'bg-[#F5C542] text-[#07070A] shadow-sm'
-                  : 'text-[#A1A1AA] hover:text-[#F5F5F4]'
-              }`}
+          {/* Controls: Mode Toggle & Language Toggle */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Mode Toggle: Simple vs Pro Terminal */}
+            <div className="flex items-center p-0.5 rounded-full bg-white/[0.04] border border-white/[0.08] shadow-inner shrink-0">
+              <button
+                type="button"
+                onClick={() => setViewMode('simple')}
+                className={`px-2.5 sm:px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-mono font-semibold transition ${
+                  viewMode === 'simple'
+                    ? 'bg-[#F5C542] text-[#07070A] shadow-sm'
+                    : 'text-[#A1A1AA] hover:text-[#F5F5F4]'
+                }`}
+              >
+                {tChrome('simpleMode')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('pro')}
+                className={`px-2.5 sm:px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-mono font-semibold transition ${
+                  viewMode === 'pro'
+                    ? 'bg-[#F5C542] text-[#07070A] shadow-sm'
+                    : 'text-[#A1A1AA] hover:text-[#F5F5F4]'
+                }`}
+              >
+                {tChrome('proMode')}
+              </button>
+            </div>
+
+            {/* Language Toggle: EN vs 中文 */}
+            <div
+              className="flex items-center p-0.5 rounded-full bg-white/[0.04] border border-white/[0.08] shadow-inner shrink-0"
+              data-testid="language-toggle"
             >
-              Simple
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('pro')}
-              className={`px-2.5 sm:px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-mono font-semibold transition ${
-                viewMode === 'pro'
-                  ? 'bg-[#F5C542] text-[#07070A] shadow-sm'
-                  : 'text-[#A1A1AA] hover:text-[#F5F5F4]'
-              }`}
-            >
-              Pro
-            </button>
+              <button
+                type="button"
+                onClick={() => setLocale('en')}
+                className={`px-2 sm:px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-mono font-semibold transition ${
+                  locale === 'en'
+                    ? 'bg-[#F5C542] text-[#07070A] shadow-sm'
+                    : 'text-[#A1A1AA] hover:text-[#F5F5F4]'
+                }`}
+              >
+                EN
+              </button>
+              <button
+                type="button"
+                onClick={() => setLocale('zh')}
+                className={`px-2 sm:px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-mono font-semibold transition ${
+                  locale === 'zh'
+                    ? 'bg-[#F5C542] text-[#07070A] shadow-sm'
+                    : 'text-[#A1A1AA] hover:text-[#F5F5F4]'
+                }`}
+              >
+                中文
+              </button>
+            </div>
           </div>
 
           {/* Top Bar Actions: Wallet & Gateway Status */}
@@ -2114,10 +2169,10 @@ export default function Home() {
             {/* Friendly Simple Mode Hero */}
             <div className="text-center mb-6 sm:mb-8 space-y-2">
               <h1 className="text-2xl sm:text-4xl font-semibold tracking-tight text-[#F5F5F4]">
-                Buy US Stocks on BNB Chain
+                {tHero('title')}
               </h1>
               <p className="text-xs sm:text-sm text-[#A1A1AA] max-w-lg mx-auto">
-                AfterGap compares all tokenized versions in real time and automatically buys through the one with the best price.
+                {tHero('subtitle')}
               </p>
             </div>
 
@@ -2125,12 +2180,12 @@ export default function Home() {
             <div className="w-full max-w-3xl mb-8">
               <div className="flex items-center justify-between mb-3 px-1">
                 <span className="text-xs font-semibold uppercase tracking-wider text-[#A1A1AA]">
-                  Select Asset:
+                  {tHero('selectAsset')}
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-[#A1A1AA] font-medium flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#F5C542]" />
-                    7 Equities on BSC
+                    {tHero('equitiesCount')}
                   </span>
                   <button
                     type="button"
@@ -2151,7 +2206,7 @@ export default function Home() {
                     <svg className={`w-3 h-3 ${loading ? 'animate-spin text-[#F5C542]' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
-                    <span>{loading ? 'Refreshing...' : 'Refresh'}</span>
+                    <span>{loading ? tHero('refreshing') : tHero('refresh')}</span>
                   </button>
                 </div>
               </div>
@@ -2188,7 +2243,7 @@ export default function Home() {
                     >
                       {isSelected && (
                         <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-[#F5C542] text-[9px] font-bold text-[#07070A] tracking-wider uppercase shadow-md pointer-events-none whitespace-nowrap z-10">
-                          Active
+                          {tHero('active')}
                         </span>
                       )}
                       <span className="text-base font-bold tracking-tight text-[#F5F5F4]">
@@ -2253,8 +2308,8 @@ export default function Home() {
                 String(cheaperTok.platformId).toLowerCase() === 'bstock' ||
                 String(cheaperTok.tokenSymbol).endsWith('B');
               const wrapperExplanation = isBstockCard
-                ? 'gets dividends added as extra shares'
-                : "gets dividends added to the token's value";
+                ? tCard('dividendShares')
+                : tCard('dividendNav');
 
               return (
                 <div className="w-full max-w-lg bg-[#121214] border border-white/[0.1] rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-2xl space-y-4 sm:space-y-5">
@@ -2282,7 +2337,7 @@ export default function Home() {
                           <span className="w-1.5 h-1.5 rounded-full bg-[#3D9A6A] animate-pulse" />
                         )}
                         <span className={`text-[10px] block uppercase tracking-wide font-medium ${cardIsFallback ? 'text-[#F5C542]' : 'text-[#A1A1AA]'}`}>
-                          {cardIsFallback ? 'Estimated Price (Benchmark)' : 'Best Price'}
+                          {cardIsFallback ? tCard('estimatedBenchmark') : tCard('bestPrice')}
                         </span>
                       </div>
                       <span className="text-2xl sm:text-3xl font-extrabold text-[#F5F5F4]">
@@ -2294,11 +2349,11 @@ export default function Home() {
                           className="text-[10px] text-[#F5C542] flex items-center justify-end gap-1 font-mono leading-tight mt-0.5"
                         >
                           <span>⚠️</span>
-                          <span>Benchmark Reference Price</span>
+                          <span>{tCard('benchmarkBadge')}</span>
                         </span>
                       ) : (
                         <span className="text-[9px] text-[#3D9A6A] block leading-tight mt-0.5 font-medium">
-                          {quote?.unitPrice ? '● Live DEX Aggregator Quote' : '● Live Binance Web3 Price'}
+                          {quote?.unitPrice ? tCard('liveDexBadge') : tCard('liveBinanceBadge')}
                         </span>
                       )}
                     </div>
@@ -2318,7 +2373,7 @@ export default function Home() {
                           : 'text-[#A1A1AA] hover:text-[#F5F5F4]'
                       }`}
                     >
-                      <span>Buy {selectedSimpleTicker}</span>
+                      <span>{tCard('buyTicker', { ticker: selectedSimpleTicker })}</span>
                     </button>
                     <button
                       type="button"
@@ -2332,7 +2387,7 @@ export default function Home() {
                           : 'text-[#A1A1AA] hover:text-[#F5F5F4]'
                       }`}
                     >
-                      <span>Sell {selectedSimpleTicker}</span>
+                      <span>{tCard('sellTicker', { ticker: selectedSimpleTicker })}</span>
                     </button>
                   </div>
 
@@ -2347,8 +2402,8 @@ export default function Home() {
                       <span className="shrink-0 text-base">✨</span>
                       <span>
                         {cardIsFallback
-                          ? `Estimated savings: ~$${cardSavings} vs. the other option.`
-                          : `Saves you $${cardSavings} vs. the other option.`}
+                          ? tCard('savingsEstimated', { savings: cardSavings })
+                          : tCard('savingsLive', { savings: cardSavings })}
                       </span>
                     </div>
                   </div>
@@ -2356,16 +2411,16 @@ export default function Home() {
                   {/* Amount Input */}
                   <div className="space-y-2">
                     <div className="flex justify-between items-center text-xs text-[#A1A1AA]">
-                      <span>{isSell ? `Amount of ${cheaperTok.tokenSymbol} to sell` : 'Amount to invest'}</span>
+                      <span>{isSell ? tCard('amountToSell', { symbol: cheaperTok.tokenSymbol }) : tCard('amountToInvest')}</span>
                       {quote?.toAmount && (
                         <span className="text-[#3D9A6A] font-semibold">
-                          ≈ {quote.toAmount} {isSell ? 'USDT' : 'shares'}
+                          ≈ {quote.toAmount} {isSell ? 'USDT' : tCard('shares')}
                         </span>
                       )}
                     </div>
                     <div className="relative">
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-base font-bold text-[#A1A1AA]">
-                        {isSell ? '股' : '$'}
+                        {isSell ? tCard('shareUnit') : '$'}
                       </span>
                       <input
                         type="number"
@@ -2400,7 +2455,7 @@ export default function Home() {
                               : 'bg-white/[0.03] text-[#A1A1AA] hover:text-[#F5F5F4] border-white/[0.06]'
                           }`}
                         >
-                          {!isSell ? `$${amt}` : `${amt} sh`}
+                          {!isSell ? `$${amt}` : `${amt} ${tCard('shareUnit')}`}
                         </button>
                       ))}
                     </div>
@@ -2411,10 +2466,10 @@ export default function Home() {
                     <div className="p-3 rounded-xl bg-[#F5C542]/10 border border-[#F5C542]/30 text-xs font-mono text-[#F5C542] space-y-1">
                       <div className="font-semibold flex items-center gap-1.5">
                         <span>🛡️</span>
-                        <span>Fund Protection Guard Active (Benchmark Mode)</span>
+                        <span>{tCard('fundGuardTitle')}</span>
                       </div>
                       <p className="text-[11px] text-[#F5C542]/80 leading-tight">
-                        Swaps are locked in benchmark mode to protect user funds. Live Binance RFQ gateway is restricted on this cloud region (CloudFront 40304). Run AfterGap Agent CLI for live trading.
+                        {tCard('fundGuardDescription')}
                       </p>
                     </div>
                   )}
@@ -2428,10 +2483,10 @@ export default function Home() {
                           disabled
                           className="w-full py-3.5 rounded-2xl text-sm font-bold bg-zinc-800/80 border border-white/[0.08] text-[#A1A1AA] cursor-not-allowed flex items-center justify-center gap-2"
                         >
-                          <span>🔒 Sell Execution (Preview Only — Trading Locked)</span>
+                          <span>{tCard('sellLockedButton')}</span>
                         </button>
                         <p className="text-xs text-[#A1A1AA] font-mono text-center">
-                          Sell execution is in preview mode. Dual-wrapper execution currently supports verified 1-click BUY orders via LiquidMesh.
+                          {tCard('sellLockedNote')}
                         </p>
                       </div>
                     ) : !wallet.connected ? (
@@ -2441,7 +2496,7 @@ export default function Home() {
                         className="w-full py-3.5 rounded-2xl text-sm font-bold bg-[#F5C542] hover:bg-[#E0B02E] text-[#07070A] transition shadow-lg flex items-center justify-center gap-2"
                       >
                         <Wallet className="w-4 h-4" />
-                        <span>{`Connect Wallet to Buy ${cheaperTok.underlyingTicker || selectedSimpleTicker}`}</span>
+                        <span>{tCard('connectWalletToBuy', { ticker: cheaperTok.underlyingTicker || selectedSimpleTicker })}</span>
                       </button>
                     ) : cardIsFallback ? (
                       <button
@@ -2449,7 +2504,7 @@ export default function Home() {
                         disabled
                         className="w-full py-3.5 rounded-2xl text-sm font-bold bg-zinc-800/80 border border-white/[0.08] text-[#A1A1AA] cursor-not-allowed flex items-center justify-center gap-2"
                       >
-                        <span>🛡️ Benchmark Mode (Trading Locked)</span>
+                        <span>{tCard('benchmarkLockedButton')}</span>
                       </button>
                     ) : (
                       <button
@@ -2467,15 +2522,15 @@ export default function Home() {
                         {bc?.loading ? (
                           <>
                             <ThinkingOrb state="working" size={20} theme="light" />
-                            <span>Confirming in wallet...</span>
+                            <span>{tCard('confirmingWallet')}</span>
                           </>
                         ) : quote?.loading ? (
                           <>
                             <ThinkingOrb state="searching" size={20} theme="light" />
-                            <span>Checking best price...</span>
+                            <span>{tCard('checkingPrice')}</span>
                           </>
                         ) : (
-                          <span>{`Buy ${cheaperTok.underlyingTicker || selectedSimpleTicker}`}</span>
+                          <span>{tCard('buyTicker', { ticker: cheaperTok.underlyingTicker || selectedSimpleTicker })}</span>
                         )}
                       </button>
                     )}
@@ -2485,8 +2540,8 @@ export default function Home() {
                       <div className="p-3.5 rounded-2xl bg-[#3D9A6A]/10 border border-[#3D9A6A]/30 text-center space-y-1">
                         <div className="text-sm font-bold text-[#3D9A6A]">
                           🎉 {isSell
-                            ? `Sold ${cheaperTok.underlyingTicker || selectedSimpleTicker} for ${quote?.toAmount || '—'} USDT`
-                            : `Bought ${quote?.toAmount || '—'} shares of ${cheaperTok.underlyingTicker || selectedSimpleTicker}`}
+                            ? tCard('soldReceipt', { ticker: cheaperTok.underlyingTicker || selectedSimpleTicker, amount: quote?.toAmount || '—' })
+                            : tCard('boughtReceipt', { ticker: cheaperTok.underlyingTicker || selectedSimpleTicker, amount: quote?.toAmount || '—' })}
                         </div>
                         <a
                           href={`https://bscscan.com/tx/${bc.swapTxHash}`}
@@ -2494,7 +2549,7 @@ export default function Home() {
                           rel="noreferrer"
                           className="text-xs text-[#F5C542] hover:underline font-mono inline-block mt-0.5"
                         >
-                          View on BSCScan ↗
+                          {tCard('viewBscScan')}
                         </a>
                       </div>
                     )}
@@ -2509,16 +2564,21 @@ export default function Home() {
 
             {/* Simple Mode Natural-Language Assistant */}
             <div className="w-full max-w-lg mt-6 bg-[#07070A] border border-white/[0.08] rounded-2xl p-4 space-y-3">
-              <div className="flex items-center gap-2 text-xs font-semibold text-[#F5C542]">
-                <ThinkingOrb state="working" size={20} theme="dark" />
-                <span>AfterGap AI Assistant</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-semibold text-[#F5C542]">
+                  <ThinkingOrb state="working" size={20} theme="dark" />
+                  <span>{tAssistant('title')}</span>
+                </div>
+                <span className="text-[10px] text-[#A1A1AA]/60 font-mono">
+                  {tAssistant('englishOnlyNote')}
+                </span>
               </div>
               <div className="relative">
                 <input
                   type="text"
                   value={nlPrompt}
                   onChange={(e) => setNlPrompt(e.target.value)}
-                  placeholder={`Try: "Buy $25 ${selectedSimpleTicker}" or "Find biggest gap"`}
+                  placeholder={tAssistant('inputPlaceholder', { ticker: selectedSimpleTicker })}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && nlPrompt.trim()) {
                       handleNaturalLanguageSubmit();
@@ -2532,11 +2592,11 @@ export default function Home() {
                   disabled={nlLoading || !nlPrompt.trim()}
                   className="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg bg-[#F5C542] hover:bg-[#E0B02E] text-[#07070A] text-xs font-bold transition disabled:opacity-40"
                 >
-                  {nlLoading ? '...' : 'Ask'}
+                  {nlLoading ? '...' : tAssistant('askButton')}
                 </button>
               </div>
               <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-                <span className="text-[#A1A1AA]">Quick prompts:</span>
+                <span className="text-[#A1A1AA]">{tAssistant('quickPrompts')}</span>
                 <button
                   type="button"
                   onClick={() => {
@@ -2544,7 +2604,7 @@ export default function Home() {
                   }}
                   className="px-2 py-0.5 rounded bg-white/[0.04] text-[#A1A1AA] hover:text-[#F5F5F4] hover:bg-white/[0.08] border border-white/[0.06] transition font-mono"
                 >
-                  Buy $25 {selectedSimpleTicker}
+                  {tAssistant('promptBuy', { ticker: selectedSimpleTicker })}
                 </button>
                 <button
                   type="button"
@@ -2553,12 +2613,12 @@ export default function Home() {
                   }}
                   className="px-2 py-0.5 rounded bg-white/[0.04] text-[#A1A1AA] hover:text-[#F5F5F4] hover:bg-white/[0.08] border border-white/[0.06] transition font-mono"
                 >
-                  Find biggest gap
+                  {tAssistant('promptGap')}
                 </button>
               </div>
               {nlResult?.plainLanguageReason && (
                 <div className="p-2.5 rounded-xl bg-white/[0.03] border border-[#F5C542]/30 text-xs text-[#F5F5F4] space-y-1">
-                  <p className="text-[11px] text-[#A1A1AA]">AI Analysis:</p>
+                  <p className="text-[11px] text-[#A1A1AA]">{tAssistant('aiAnalysis')}</p>
                   <p className="font-sans leading-relaxed">{nlResult.plainLanguageReason}</p>
                 </div>
               )}
@@ -4395,7 +4455,7 @@ export default function Home() {
                         : 'text-[#A1A1AA] hover:text-[#F5F5F4] hover:bg-white/[0.03]'
                     }`}
                   >
-                    Terms of Use
+                    {tLegal('termsTab')}
                   </button>
                   <button
                     type="button"
@@ -4406,7 +4466,7 @@ export default function Home() {
                         : 'text-[#A1A1AA] hover:text-[#F5F5F4] hover:bg-white/[0.03]'
                     }`}
                   >
-                    Privacy Policy
+                    {tLegal('privacyTab')}
                   </button>
                   <button
                     type="button"
@@ -4417,7 +4477,7 @@ export default function Home() {
                         : 'text-[#A1A1AA] hover:text-[#F5F5F4] hover:bg-white/[0.03]'
                     }`}
                   >
-                    Risk Disclosure
+                    {tLegal('risksTab')}
                   </button>
                 </div>
                 <button
@@ -4435,34 +4495,24 @@ export default function Home() {
                 {legalModal === 'terms' && (
                   <div className="space-y-4">
                     <div>
-                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">1. Nature of the Protocol & Interface</h4>
-                      <p>
-                        AfterGap is an open-source decentralized smart order routing interface and dual-wrapper arbitrage visualizer deployed on BNB Smart Chain (Chain ID: 56). The software was developed for the BNB Hack: Tokenized Stocks Edition to analyze price disparities between tokenized equity wrappers.
-                      </p>
+                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">{tLegal('terms.sec1Title')}</h4>
+                      <p>{tLegal('terms.sec1Body')}</p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">2. Non-Custodial Architecture</h4>
-                      <p>
-                        AfterGap is strictly non-custodial. At no time does AfterGap, its creators, or server infrastructure hold, manage, or take custody of user funds, private keys, or digital tokens. All transactions, approvals, and swaps are formulated locally and signed exclusively by your connected Web3 wallet.
-                      </p>
+                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">{tLegal('terms.sec2Title')}</h4>
+                      <p>{tLegal('terms.sec2Body')}</p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">3. No Financial, Tax, or Investment Advice</h4>
-                      <p>
-                        All market data, gap calculations, estimated savings, and natural-language AI insights provided by AfterGap are strictly for informational and benchmarking purposes. Nothing contained within this interface constitutes investment advice, financial guidance, or a recommendation to purchase or sell any tokenized security.
-                      </p>
+                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">{tLegal('terms.sec3Title')}</h4>
+                      <p>{tLegal('terms.sec3Body')}</p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">4. Jurisdictional & Compliance Obligations</h4>
-                      <p>
-                        Tokenized assets and synthetic equities may be subject to securities regulations in various jurisdictions. Users are solely responsible for ensuring their usage of this interface and participation in on-chain tokenized asset protocols complies with all local laws and regulations applicable to their location.
-                      </p>
+                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">{tLegal('terms.sec4Title')}</h4>
+                      <p>{tLegal('terms.sec4Body')}</p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">5. &quot;As-Is&quot; Software & Limitation of Liability</h4>
-                      <p>
-                        AfterGap is provided on an &quot;AS IS&quot; and &quot;AS AVAILABLE&quot; basis without warranty of any kind, express or implied. Users assume all responsibility and risk arising from on-chain smart contract interactions, gas fees, liquidity slippage, and market volatility.
-                      </p>
+                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">{tLegal('terms.sec5Title')}</h4>
+                      <p>{tLegal('terms.sec5Body')}</p>
                     </div>
                   </div>
                 )}
@@ -4470,28 +4520,20 @@ export default function Home() {
                 {legalModal === 'privacy' && (
                   <div className="space-y-4">
                     <div>
-                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">1. Zero Personal Data Collection</h4>
-                      <p>
-                        AfterGap does not collect, track, or store any personally identifiable information (PII) such as your legal name, physical address, email, phone number, or government-issued identification. No account sign-up is required.
-                      </p>
+                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">{tLegal('privacy.sec1Title')}</h4>
+                      <p>{tLegal('privacy.sec1Body')}</p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">2. Web3 Wallet Address Usage</h4>
-                      <p>
-                        When you connect a Web3 wallet (e.g. MetaMask or Binance Web3 Wallet), the interface accesses only your public wallet address to query on-chain BEP-20 balances and prepare transaction calldata. Your private keys never leave your device.
-                      </p>
+                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">{tLegal('privacy.sec2Title')}</h4>
+                      <p>{tLegal('privacy.sec2Body')}</p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">3. Serverless API Proxying</h4>
-                      <p>
-                        External market data requests (such as price queries and token discovery) are processed through serverless Next.js API endpoints solely to sign canonical developer requests with HMAC-SHA256 credentials securely. No user search history or IP profiling is logged or commercialized.
-                      </p>
+                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">{tLegal('privacy.sec3Title')}</h4>
+                      <p>{tLegal('privacy.sec3Body')}</p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">4. Client-Side Session State</h4>
-                      <p>
-                        User interface selections (such as toggling between Simple Mode and Pro Mode, or draft command bar text) are kept in temporary React state and discarded upon browser refresh.
-                      </p>
+                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">{tLegal('privacy.sec4Title')}</h4>
+                      <p>{tLegal('privacy.sec4Body')}</p>
                     </div>
                   </div>
                 )}
@@ -4499,34 +4541,24 @@ export default function Home() {
                 {legalModal === 'risks' && (
                   <div className="space-y-4">
                     <div>
-                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">1. Tokenized RWA Mechanics & Wrapper Diversity</h4>
-                      <p>
-                        Tokenized equity wrappers on BNB Smart Chain utilize differing financial structures. For example, bStocks rebase share balances to distribute corporate dividends, whereas Ondo tokens track performance by accruing net asset value (NAV). Understanding how each wrapper tracks its underlying asset is critical before trading.
-                      </p>
+                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">{tLegal('risks.sec1Title')}</h4>
+                      <p>{tLegal('risks.sec1Body')}</p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">2. Off-Market Hours & Basis Drift</h4>
-                      <p>
-                        Traditional US stock exchanges trade only during regular hours (9:30 AM – 4:00 PM EST, Monday through Friday). Because decentralized markets trade 24/7, tokenized assets often drift substantially from their last official cash closing benchmark over weekends and overnight sessions.
-                      </p>
+                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">{tLegal('risks.sec2Title')}</h4>
+                      <p>{tLegal('risks.sec2Body')}</p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">3. Smart Contract & Liquidity Risks</h4>
-                      <p>
-                        All trades execute through decentralized liquidity pools and autonomous smart contract routers on BNB Smart Chain. Smart contracts are subject to inherent technological risks, including bugs, slippage, liquidity imbalances, and gas fee spikes.
-                      </p>
+                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">{tLegal('risks.sec3Title')}</h4>
+                      <p>{tLegal('risks.sec3Body')}</p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">4. Fallback Mode & Pricing Disclosures</h4>
-                      <p>
-                        If live gateway connections encounter network limitations or regional restrictions, AfterGap automatically transitions to fallback benchmark mode. Live trading is intentionally locked during fallback mode to safeguard against executing orders on non-live reference quotes.
-                      </p>
+                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">{tLegal('risks.sec4Title')}</h4>
+                      <p>{tLegal('risks.sec4Body')}</p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">5. Sell Execution Safeguard</h4>
-                      <p>
-                        Sell execution is currently locked in preview mode across all interface entry points pending live end-to-end mainnet verification. This defense-in-depth safeguard prevents live user funds from being subjected to unverified reverse execution paths.
-                      </p>
+                      <h4 className="text-sm font-bold text-[#F5F5F4] mb-1">{tLegal('risks.sec5Title')}</h4>
+                      <p>{tLegal('risks.sec5Body')}</p>
                     </div>
                   </div>
                 )}
@@ -4542,7 +4574,7 @@ export default function Home() {
                   onClick={() => setLegalModal(null)}
                   className="px-4 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-xs font-semibold text-[#F5F5F4] transition"
                 >
-                  Close
+                  {tLegal('close')}
                 </button>
               </div>
             </div>
@@ -4562,16 +4594,16 @@ export default function Home() {
               <span className="text-[10px] font-mono text-[#A1A1AA]/60 border border-white/[0.08] rounded px-1.5 py-0.5">BNB Chain · 56</span>
             </div>
             <p className="leading-relaxed text-[#A1A1AA]/80 max-w-xs">
-              Real-time dual-wrapper arbitrage and smart order routing for tokenized US stocks on BNB Smart Chain.
+              {tFooter('brandDesc')}
             </p>
             <p className="text-[10px] font-mono text-[#A1A1AA]/50">
-              bStocks &amp; Ondo tokenized stock protocols
+              {tFooter('protocols')}
             </p>
           </div>
 
           {/* Links column */}
           <div className="space-y-3">
-            <p className="text-[10px] uppercase tracking-widest text-[#A1A1AA]/50 font-semibold">Resources</p>
+            <p className="text-[10px] uppercase tracking-widest text-[#A1A1AA]/50 font-semibold">{tFooter('resources')}</p>
             <div className="flex flex-col gap-2">
               <a href="https://github.com/kellycryptos/AfterGap" target="_blank" rel="noopener noreferrer" className="hover:text-[#F5F5F4] transition flex items-center gap-1.5">
                 <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
@@ -4582,39 +4614,39 @@ export default function Home() {
                 @aftergap
               </a>
               <a href="https://github.com/kellycryptos/AfterGap/blob/main/docs/DEVEX.md" target="_blank" rel="noopener noreferrer" className="hover:text-[#F5F5F4] transition">
-                Engineering Docs (DEVEX)
+                {tFooter('engineeringDocs')}
               </a>
             </div>
           </div>
 
           {/* Legal column */}
           <div className="space-y-3">
-            <p className="text-[10px] uppercase tracking-widest text-[#A1A1AA]/50 font-semibold">Legal</p>
+            <p className="text-[10px] uppercase tracking-widest text-[#A1A1AA]/50 font-semibold">{tFooter('legal')}</p>
             <div className="flex flex-col gap-2">
               <button
                 type="button"
                 onClick={() => setLegalModal('terms')}
                 className="text-left hover:text-[#F5F5F4] transition focus:outline-none"
               >
-                Terms of Use
+                {tFooter('termsOfUse')}
               </button>
               <button
                 type="button"
                 onClick={() => setLegalModal('privacy')}
                 className="text-left hover:text-[#F5F5F4] transition focus:outline-none"
               >
-                Privacy Policy
+                {tFooter('privacyPolicy')}
               </button>
               <button
                 type="button"
                 onClick={() => setLegalModal('risks')}
                 className="text-left hover:text-[#F5F5F4] transition focus:outline-none"
               >
-                Risk Disclosure
+                {tFooter('riskDisclosure')}
               </button>
             </div>
             <div className="mt-3 p-2.5 rounded-lg bg-white/[0.03] border border-white/[0.05] text-[10px] leading-relaxed text-[#A1A1AA]/60">
-              Not financial advice. Tokenized RWA trading involves smart contract, liquidity, and off-market pricing risk. Sell execution locked pending live verification.
+              {tFooter('disclaimer')}
             </div>
           </div>
         </div>
@@ -4622,14 +4654,53 @@ export default function Home() {
         {/* Bottom bar */}
         <div className="border-t border-white/[0.04] py-3 px-4 sm:px-6">
           <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-[10px] font-mono text-[#A1A1AA]/50">
-            <span>© {new Date().getFullYear()} AfterGap. MIT License. Built for BNB Hack: Tokenized Stocks Edition.</span>
+            <span>{tFooter('copyright', { year: new Date().getFullYear().toString() })}</span>
             <span className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-[#3D9A6A] animate-pulse inline-block" />
-              BNB Smart Chain · Chain ID 56
+              {tFooter('chainInfo')}
             </span>
           </div>
         </div>
       </footer>
     </div>
+  );
+}
+
+export default function Home() {
+  const [locale, setLocale] = useState<'en' | 'zh'>(
+    (globalThis as any).__AFTERGAP_TEST_LOCALE__ || 'en'
+  );
+  const [viewMode, setViewMode] = useState<'simple' | 'pro'>(
+    (globalThis as any).__AFTERGAP_TEST_MODE__ || 'simple'
+  );
+
+  // Strict Pro-Mode Isolation: Keep Pro Mode 100% English with zero language leakage
+  const activeLocale = viewMode === 'pro' ? 'en' : locale;
+
+  return (
+    <NextIntlClientProvider
+      locale={activeLocale}
+      messages={allMessages[activeLocale]}
+      onError={(err) => {
+        if (err.code === 'MISSING_MESSAGE') {
+          console.warn(`[next-intl] Missing translation: ${err.message}`);
+        } else if (err.code !== 'ENVIRONMENT_FALLBACK') {
+          console.warn(`[next-intl] ${err.code}: ${err.message}`);
+        }
+      }}
+      getMessageFallback={({ error, key, namespace }) => {
+        if (error.code === 'MISSING_MESSAGE') {
+          return `[MISSING: ${namespace ? `${namespace}.` : ''}${key}]`;
+        }
+        return key;
+      }}
+    >
+      <HomeContent
+        locale={locale}
+        setLocale={setLocale}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+      />
+    </NextIntlClientProvider>
   );
 }

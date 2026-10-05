@@ -1,0 +1,112 @@
+{
+  "Chrome": {
+    "spotAggregator": "Spot Aggregator",
+    "simpleMode": "Simple",
+    "proMode": "Pro",
+    "connectWallet": "Connect Wallet",
+    "disconnect": "Disconnect",
+    "connecting": "Connecting...",
+    "gatewayStatus": "BSC 56 Gateway",
+    "signedGateway": "Signed ({prefix})"
+  },
+  "Hero": {
+    "title": "Buy US Stocks on BNB Chain",
+    "subtitle": "AfterGap compares all tokenized versions in real time and automatically buys through the one with the best price.",
+    "selectAsset": "Select Asset:",
+    "equitiesCount": "7 Equities on BSC",
+    "refresh": "Refresh",
+    "refreshing": "Refreshing...",
+    "active": "Active"
+  },
+  "Card": {
+    "bestPrice": "Best Price",
+    "estimatedBenchmark": "Estimated Price (Benchmark)",
+    "benchmarkBadge": "Benchmark Reference Price",
+    "liveDexBadge": "● Live DEX Aggregator Quote",
+    "liveBinanceBadge": "● Live Binance Web3 Price",
+    "buyTicker": "Buy {ticker}",
+    "sellTicker": "Sell {ticker}",
+    "dividendShares": "gets dividends added as extra shares",
+    "dividendNav": "gets dividends added to the token's value",
+    "savingsLive": "Saves you ${savings} vs. the other option.",
+    "savingsEstimated": "Estimated savings: ~${savings} vs. the other option.",
+    "amountToInvest": "Amount to invest",
+    "amountToSell": "Amount of {symbol} to sell",
+    "shares": "shares",
+    "shareUnit": "sh",
+    "fundGuardTitle": "Fund Protection Guard Active (Benchmark Mode)",
+    "fundGuardDescription": "Swaps are locked in benchmark mode to protect user funds. Live Binance RFQ gateway is restricted on this cloud region (CloudFront 40304). Run AfterGap Agent CLI for live trading.",
+    "sellLockedButton": "🔒 Sell Execution (Preview Only — Trading Locked)",
+    "sellLockedNote": "Sell execution is in preview mode. Dual-wrapper execution currently supports verified 1-click BUY orders via LiquidMesh.",
+    "connectWalletToBuy": "Connect Wallet to Buy {ticker}",
+    "benchmarkLockedButton": "🛡️ Benchmark Mode (Trading Locked)",
+    "confirmingWallet": "Confirming in wallet...",
+    "checkingPrice": "Checking best price...",
+    "boughtReceipt": "Bought {amount} shares of {ticker}",
+    "soldReceipt": "Sold {ticker} for {amount} USDT",
+    "viewBscScan": "View on BSCScan ↗"
+  },
+  "Assistant": {
+    "title": "AfterGap AI Assistant",
+    "englishOnlyNote": "(Responses are currently English-only)",
+    "inputPlaceholder": "Try: \"Buy $25 {ticker}\" or \"Find biggest gap\"",
+    "askButton": "Ask",
+    "quickPrompts": "Quick prompts:",
+    "promptBuy": "Buy $25 {ticker}",
+    "promptGap": "Find biggest gap",
+    "aiAnalysis": "AI Analysis:"
+  },
+  "Footer": {
+    "brandDesc": "Real-time dual-wrapper arbitrage and smart order routing for tokenized US stocks on BNB Smart Chain.",
+    "protocols": "bStocks & Ondo tokenized stock protocols",
+    "resources": "Resources",
+    "engineeringDocs": "Engineering Docs (DEVEX)",
+    "legal": "Legal",
+    "termsOfUse": "Terms of Use",
+    "privacyPolicy": "Privacy Policy",
+    "riskDisclosure": "Risk Disclosure",
+    "disclaimer": "Not financial advice. Tokenized RWA trading involves smart contract, liquidity, and off-market pricing risk. Sell execution locked pending live verification.",
+    "copyright": "© {year} AfterGap. MIT License. Built for BNB Hack: Tokenized Stocks Edition.",
+    "chainInfo": "BNB Smart Chain · Chain ID 56"
+  },
+  "LegalModal": {
+    "termsTab": "Terms of Use",
+    "privacyTab": "Privacy Policy",
+    "risksTab": "Risk Disclosure",
+    "close": "Close",
+    "terms": {
+      "sec1Title": "1. Nature of the Protocol & Interface",
+      "sec1Body": "AfterGap is an open-source decentralized smart order routing interface and dual-wrapper arbitrage visualizer deployed on BNB Smart Chain (Chain ID: 56). The software was developed for the BNB Hack: Tokenized Stocks Edition to analyze price disparities between tokenized equity wrappers.",
+      "sec2Title": "2. Non-Custodial Architecture",
+      "sec2Body": "AfterGap is strictly non-custodial. At no time does AfterGap, its creators, or server infrastructure hold, manage, or take custody of user funds, private keys, or digital tokens. All transactions, approvals, and swaps are formulated locally and signed exclusively by your connected Web3 wallet.",
+      "sec3Title": "3. No Financial, Tax, or Investment Advice",
+      "sec3Body": "All market data, gap calculations, estimated savings, and natural-language AI insights provided by AfterGap are strictly for informational and benchmarking purposes. Nothing contained within this interface constitutes investment advice, financial guidance, or a recommendation to purchase or sell any tokenized security.",
+      "sec4Title": "4. Jurisdictional & Compliance Obligations",
+      "sec4Body": "Tokenized assets and synthetic equities may be subject to securities regulations in various jurisdictions. Users are solely responsible for ensuring their usage of this interface and participation in on-chain tokenized asset protocols complies with all local laws and regulations applicable to their location.",
+      "sec5Title": "5. \"As-Is\" Software & Limitation of Liability",
+      "sec5Body": "AfterGap is provided on an \"AS IS\" and \"AS AVAILABLE\" basis without warranty of any kind, express or implied. Users assume all responsibility and risk arising from on-chain smart contract interactions, gas fees, liquidity slippage, and market volatility."
+    },
+    "privacy": {
+      "sec1Title": "1. Zero Personal Data Collection",
+      "sec1Body": "AfterGap does not collect, track, or store any personally identifiable information (PII) such as your legal name, physical address, email, phone number, or government-issued identification. No account sign-up is required.",
+      "sec2Title": "2. Web3 Wallet Address Usage",
+      "sec2Body": "When you connect a Web3 wallet (e.g. MetaMask or Binance Web3 Wallet), the interface accesses only your public wallet address to query on-chain BEP-20 balances and prepare transaction calldata. Your private keys never leave your device.",
+      "sec3Title": "3. Serverless API Proxying",
+      "sec3Body": "External market data requests (such as price queries and token discovery) are processed through serverless Next.js API endpoints solely to sign canonical developer requests with HMAC-SHA256 credentials securely. No user search history or IP profiling is logged or commercialized.",
+      "sec4Title": "4. Client-Side Session State",
+      "sec4Body": "User interface selections (such as toggling between Simple Mode and Pro Mode, or draft command bar text) are kept in temporary React state and discarded upon browser refresh."
+    },
+    "risks": {
+      "sec1Title": "1. Tokenized RWA Mechanics & Wrapper Diversity",
+      "sec1Body": "Tokenized equity wrappers on BNB Smart Chain utilize differing financial structures. For example, bStocks rebase share balances to distribute corporate dividends, whereas Ondo tokens track performance by accruing net asset value (NAV). Understanding how each wrapper tracks its underlying asset is critical before trading.",
+      "sec2Title": "2. Off-Market Hours & Basis Drift",
+      "sec2Body": "Traditional US stock exchanges trade only during regular hours (9:30 AM – 4:00 PM EST, Monday through Friday). Because decentralized markets trade 24/7, tokenized assets often drift substantially from their last official cash closing benchmark over weekends and overnight sessions.",
+      "sec3Title": "3. Smart Contract & Liquidity Risks",
+      "sec3Body": "All trades execute through decentralized liquidity pools and autonomous smart contract routers on BNB Smart Chain. Smart contracts are subject to inherent technological risks, including bugs, slippage, liquidity imbalances, and gas fee spikes.",
+      "sec4Title": "4. Fallback Mode & Pricing Disclosures",
+      "sec4Body": "If live gateway connections encounter network limitations or regional restrictions, AfterGap automatically transitions to fallback benchmark mode. Live trading is intentionally locked during fallback mode to safeguard against executing orders on non-live reference quotes.",
+      "sec5Title": "5. Sell Execution Safeguard",
+      "sec5Body": "Sell execution is currently locked in preview mode across all interface entry points pending live end-to-end mainnet verification. This defense-in-depth safeguard prevents live user funds from being subjected to unverified reverse execution paths."
+    }
+  }
+}

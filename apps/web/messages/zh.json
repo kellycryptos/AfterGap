@@ -1,0 +1,112 @@
+{
+  "Chrome": {
+    "spotAggregator": "现货聚合器",
+    "simpleMode": "简洁",
+    "proMode": "专业",
+    "connectWallet": "连接钱包",
+    "disconnect": "断开连接",
+    "connecting": "连接中...",
+    "gatewayStatus": "BSC 56 网关",
+    "signedGateway": "已签名 ({prefix})"
+  },
+  "Hero": {
+    "title": "在 BNB Chain 上交易美股",
+    "subtitle": "AfterGap 实时比对所有代币化股票版本，自动通过最优价格进行成交。",
+    "selectAsset": "选择资产：",
+    "equitiesCount": "BSC 上的 7 种美股资产",
+    "refresh": "刷新",
+    "refreshing": "刷新中...",
+    "active": "当前选择"
+  },
+  "Card": {
+    "bestPrice": "最优价格",
+    "estimatedBenchmark": "预估价格（基准参考）",
+    "benchmarkBadge": "基准参考价格",
+    "liveDexBadge": "● 链上 DEX 聚合实时报价",
+    "liveBinanceBadge": "● 币安 Web3 实时行情",
+    "buyTicker": "买入 {ticker}",
+    "sellTicker": "卖出 {ticker}",
+    "dividendShares": "的股息将以增发代币形式自动发放",
+    "dividendNav": "的股息将直接累积计入代币净值",
+    "savingsLive": "比另一版本节省约 ${savings}。",
+    "savingsEstimated": "预计比另一版本节省约 ${savings}。",
+    "amountToInvest": "投资金额",
+    "amountToSell": "卖出 {symbol} 数量",
+    "shares": "股",
+    "shareUnit": "股",
+    "fundGuardTitle": "资金保护机制已生效（基准模式）",
+    "fundGuardDescription": "为保障用户资金安全，基准模式下交易已锁定。当前云服务节点受币安 RFQ 地区合规限制（CloudFront 40304）。如需实盘交易，请运行 AfterGap Agent 命令行客户端。",
+    "sellLockedButton": "🔒 卖出执行（仅供预览 — 交易已锁定）",
+    "sellLockedNote": "卖出功能处于预览模式。双包装执行目前仅支持通过 LiquidMesh 进行已验证的一键买入订单。",
+    "connectWalletToBuy": "连接钱包以买入 {ticker}",
+    "benchmarkLockedButton": "🛡️ 基准模式（交易已锁定）",
+    "confirmingWallet": "请在钱包中确认交易...",
+    "checkingPrice": "正在获取最优报价...",
+    "boughtReceipt": "🎉 成功买入 {amount} 股 {ticker}",
+    "soldReceipt": "🎉 成功卖出 {ticker}，换得 {amount} USDT",
+    "viewBscScan": "在 BSCScan 上查看 ↗"
+  },
+  "Assistant": {
+    "title": "AfterGap AI 助手",
+    "englishOnlyNote": "（AI 回复目前仅支持英文）",
+    "inputPlaceholder": "示例：\"买入 $25 {ticker}\" 或 \"查询最大价差\"",
+    "askButton": "提问",
+    "quickPrompts": "快捷指令：",
+    "promptBuy": "买入 $25 {ticker}",
+    "promptGap": "查询最大价差",
+    "aiAnalysis": "AI 分析："
+  },
+  "Footer": {
+    "brandDesc": "BNB Smart Chain 上美股代币化资产的实时双包装价差套利与智能订单路由。",
+    "protocols": "bStocks 与 Ondo 代币化美股协议",
+    "resources": "相关资源",
+    "engineeringDocs": "工程开发文档 (DEVEX)",
+    "legal": "法律与合规",
+    "termsOfUse": "使用条款",
+    "privacyPolicy": "隐私政策",
+    "riskDisclosure": "风险披露",
+    "disclaimer": "仅供参考，不构成任何投资建议。RWA 代币化资产交易涉及智能合约、流动性及闭市定价风险。卖出功能目前锁定，待实盘验证。",
+    "copyright": "© {year} AfterGap. 基于 MIT 开源协议。专为 BNB Hack: Tokenized Stocks Edition 构建。",
+    "chainInfo": "BNB Smart Chain · 链 ID 56"
+  },
+  "LegalModal": {
+    "termsTab": "使用条款",
+    "privacyTab": "隐私政策",
+    "risksTab": "风险披露",
+    "close": "关闭",
+    "terms": {
+      "sec1Title": "1. 协议与交互界面性质",
+      "sec1Body": "AfterGap 是一个部署在 BNB Smart Chain（链 ID：56）上的开源去中心化智能订单路由界面与双包装套利可视化工具。本软件为 BNB Hack: Tokenized Stocks Edition 开发，用于分析代币化股票包装版本之间的实时价格差异。",
+      "sec2Title": "2. 非托管架构",
+      "sec2Body": "AfterGap 严格遵循非托管原则。在任何时候，AfterGap 及其开发者或服务器基础设施均不会持有、管理或托管用户的资金、私钥或数字代币。所有交易、授权和兑换均由本地生成，并由您连接的 Web3 钱包唯一签名确认。",
+      "sec3Title": "3. 不构成财务、税务或投资建议",
+      "sec3Body": "AfterGap 提供的所有市场数据、价差计算、预估节省金额及自然语言 AI 分析仅供信息参考与基准比对。本界面中的任何内容均不构成投资建议、财务指导或买卖任何代币化证券的推荐。",
+      "sec4Title": "4. 司法管辖区与合规义务",
+      "sec4Body": "代币化资产和合成股票可能受各司法管辖区证券法规的监管。用户全权负责确保其使用本界面及参与链上代币化资产协议的行为符合其所在地的所有适用法律法规。",
+      "sec5Title": "5. \"按现状\"提供与责任限制",
+      "sec5Body": "AfterGap 按\"原样\"（AS IS）且\"现有\"（AS AVAILABLE）的基础提供，不提供任何明示或暗示的担保。用户自行承担因链上智能合约交互、Gas 费用、流动性滑点和市场波动引起的所有责任与风险。"
+    },
+    "privacy": {
+      "sec1Title": "1. 零个人身份数据收集",
+      "sec1Body": "AfterGap 不收集、跟踪或存储任何个人身份信息（PII），例如法定姓名、实际地址、电子邮件、电话号码或政府签发的身份证明。无需注册账户即可使用。",
+      "sec2Title": "2. Web3 钱包地址使用规范",
+      "sec2Body": "当您连接 Web3 钱包（例如 MetaMask 或币安 Web3 钱包）时，界面仅访问您的公开钱包地址以查询链上 BEP-20 余额并准备交易 calldata。您的私钥永远不会离开您的本地设备。",
+      "sec3Title": "3. 无服务器 API 代理请求",
+      "sec3Body": "外部行情数据请求（如价格查询和代币发现）仅通过无服务器 Next.js API 端点进行安全 HMAC-SHA256 开发者鉴权签名。绝不记录或商业化任何用户的搜索历史或 IP 画像。",
+      "sec4Title": "4. 客户端本地临时会话状态",
+      "sec4Body": "用户界面偏好（例如简洁模式与专业模式的切换、或者输入的草稿指令）均仅保存在临时的 React 状态中，浏览器刷新后即行重置。"
+    },
+    "risks": {
+      "sec1Title": "1. 代币化 RWA 机制与包装多样性",
+      "sec1Body": "BNB Smart Chain 上的代币化美股包装采用了不同的金融结构。例如，bStocks 通过通胀重构（Rebase）分配公司股息，而 Ondo 代币则通过净值增长（NAV 累积）体现收益。在交易前，充分了解每种包装如何跟踪其底层资产至关重要。",
+      "sec2Title": "2. 闭市时段与基准偏离",
+      "sec2Body": "传统美股交易所仅在常规交易时段开放（美国东部时间周一至周五上午 9:30 至下午 4:00）。由于链上去中心化市场为 24/7 全天候交易，代币化资产在周末及隔夜时段通常会与其最后官方收盘基准产生显著偏离。",
+      "sec3Title": "3. 智能合约与流动性风险",
+      "sec3Body": "所有交易均通过 BNB Smart Chain 上的去中心化流动性池和自动化智能合约路由执行。智能合约存在固有的技术风险，包括代码漏洞、滑点、流动性失衡以及 Gas 费剧烈波动。",
+      "sec4Title": "4. 备用模式与定价披露",
+      "sec4Body": "如果实盘网关连接遇到网络中断或地区合规限制，AfterGap 会自动转入备用基准模式。在备用模式下，实盘交易将被主动锁定，以防止订单按非实时参考报价执行。",
+      "sec5Title": "5. 卖出执行安全保护机制",
+      "sec5Body": "为保障主网资金安全，在完成全链路端到端实盘验证之前，所有界面入口的卖出功能均处于预览锁定状态。这项深度防御机制可确保用户资产不会受到未经实盘验证的反向路由影响。"
+    }
+  }
+}
