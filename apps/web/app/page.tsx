@@ -1943,11 +1943,11 @@ function HomeContent({
 
       {/* Top Bar */}
       <header className="w-full border-b border-white/[0.06] bg-[#07070A]/90 backdrop-blur-md sticky top-0 z-30">
-        <div className="max-w-6xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
+        <div className="max-w-6xl mx-auto px-2.5 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-1.5 sm:gap-4">
           {/* Brand Logo & Name */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <AfterGapLogo className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl shadow-md shadow-[#F5C542]/20 shrink-0" />
-            <span className="text-base sm:text-2xl font-bold tracking-tight text-[#F5C542] shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+            <AfterGapLogo className="w-6 h-6 sm:w-8 sm:h-8 rounded-xl shadow-md shadow-[#F5C542]/20 shrink-0" />
+            <span className="text-sm sm:text-2xl font-bold tracking-tight text-[#F5C542] shrink-0">
               AfterGap
             </span>
             <span className="hidden md:inline-flex px-2 py-0.5 rounded-full text-[11px] font-mono bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06]">
@@ -1959,13 +1959,13 @@ function HomeContent({
           </div>
 
           {/* Controls: Mode Toggle & Language Toggle */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             {/* Mode Toggle: Simple vs Pro Terminal */}
             <div className="flex items-center p-0.5 rounded-full bg-white/[0.04] border border-white/[0.08] shadow-inner shrink-0">
               <button
                 type="button"
                 onClick={() => setViewMode('simple')}
-                className={`px-2.5 sm:px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-mono font-semibold transition ${
+                className={`px-2 sm:px-3.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-mono font-semibold transition ${
                   viewMode === 'simple'
                     ? 'bg-[#F5C542] text-[#07070A] shadow-sm'
                     : 'text-[#A1A1AA] hover:text-[#F5F5F4]'
@@ -1976,7 +1976,7 @@ function HomeContent({
               <button
                 type="button"
                 onClick={() => setViewMode('pro')}
-                className={`px-2.5 sm:px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-mono font-semibold transition ${
+                className={`px-2 sm:px-3.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-mono font-semibold transition ${
                   viewMode === 'pro'
                     ? 'bg-[#F5C542] text-[#07070A] shadow-sm'
                     : 'text-[#A1A1AA] hover:text-[#F5F5F4]'
@@ -1994,7 +1994,7 @@ function HomeContent({
               <button
                 type="button"
                 onClick={() => setLocale('en')}
-                className={`px-2 sm:px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-mono font-semibold transition ${
+                className={`px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-mono font-semibold transition ${
                   locale === 'en'
                     ? 'bg-[#F5C542] text-[#07070A] shadow-sm'
                     : 'text-[#A1A1AA] hover:text-[#F5F5F4]'
@@ -2005,7 +2005,7 @@ function HomeContent({
               <button
                 type="button"
                 onClick={() => setLocale('zh')}
-                className={`px-2 sm:px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-mono font-semibold transition ${
+                className={`px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-mono font-semibold transition ${
                   locale === 'zh'
                     ? 'bg-[#F5C542] text-[#07070A] shadow-sm'
                     : 'text-[#A1A1AA] hover:text-[#F5F5F4]'
@@ -2019,7 +2019,7 @@ function HomeContent({
           {/* Top Bar Actions: Wallet & Gateway Status */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             {wallet.connected && wallet.address ? (
-              <div className="flex items-center gap-2 relative">
+              <div className="flex items-center gap-1.5 sm:gap-2 relative">
                 {/* Balances (md+ desktop view) */}
                 <div className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono bg-white/[0.03] border border-white/[0.06]">
                   <span className="text-[#A1A1AA]">USDT:</span>
@@ -2040,7 +2040,7 @@ function HomeContent({
                 <button
                   type="button"
                   onClick={() => setWalletDropdownOpen((prev) => !prev)}
-                  className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-xs font-mono bg-[#3D9A6A]/10 border border-[#3D9A6A]/30 text-[#3D9A6A] hover:bg-[#3D9A6A]/20 transition whitespace-nowrap shrink-0"
+                  className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-mono bg-[#3D9A6A]/10 border border-[#3D9A6A]/30 text-[#3D9A6A] hover:bg-[#3D9A6A]/20 transition whitespace-nowrap shrink-0"
                   title="Click for wallet options or disconnect"
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-[#3D9A6A] animate-pulse shrink-0" />
@@ -2088,7 +2088,7 @@ function HomeContent({
                 type="button"
                 onClick={connectWallet}
                 disabled={wallet.connecting}
-                className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 rounded-full text-xs sm:text-sm font-semibold font-mono transition-all border border-[#F5C542]/50 bg-[#F5C542]/10 text-[#F5C542] hover:bg-[#F5C542]/20 hover:border-[#F5C542] disabled:opacity-60 disabled:cursor-not-allowed shadow-sm shadow-[#F5C542]/10 shrink-0"
+                className="flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-semibold font-mono transition-all border border-[#F5C542]/50 bg-[#F5C542]/10 text-[#F5C542] hover:bg-[#F5C542]/20 hover:border-[#F5C542] disabled:opacity-60 disabled:cursor-not-allowed shadow-sm shadow-[#F5C542]/10 shrink-0"
               >
                 {wallet.connecting ? (
                   <>
@@ -2106,9 +2106,9 @@ function HomeContent({
               </button>
             )}
 
-            {/* Compact Auth Chip (Public Gateway status) */}
+            {/* Compact Auth Chip (Public Gateway status - hidden on mobile to avoid header overflow) */}
             <div
-              className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-full text-xs font-mono bg-white/[0.03] border border-white/[0.06] whitespace-nowrap shrink-0"
+              className="hidden sm:flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-full text-xs font-mono bg-white/[0.03] border border-white/[0.06] whitespace-nowrap shrink-0"
               title={isAuthed ? `Signed (${data?.auth?.apiKeyPrefix})` : 'BSC 56 Gateway'}
             >
               <ThinkingOrb state={loading ? 'searching' : 'breathing'} size={20} theme="dark" />
