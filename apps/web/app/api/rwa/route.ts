@@ -793,7 +793,8 @@ const BENCHMARK_QUOTES: Record<string, any> = {
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const action = searchParams.get('action') || 'resolve';
-  const keyword = (searchParams.get('keyword') || 'NVDA').toUpperCase();
+  const rawKeyword = searchParams.get('keyword') || 'NVDA';
+  const keyword = (rawKeyword.match(/^[A-Za-z0-9._-]{1,16}/)?.[0] || 'NVDA').toUpperCase();
   const platformId = searchParams.get('platformId') || undefined;
 
   const apiKey = process.env.BINANCE_WEB3_API_KEY || '';
