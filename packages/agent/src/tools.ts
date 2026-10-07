@@ -424,7 +424,7 @@ export class AfterGapAgentTools {
       targetWrapper: gap.cheapestWrapper.symbol,
       contractAddress: targetContract,
       quoteId: `quote-${gap.cheapestWrapper.symbol.toLowerCase()}-agent-${Date.now().toString(36)}`,
-      vendorName: 'LiquidMesh RFQ',
+      vendorName: 'LiquidMesh',
       executionMode: 'SWAP',
       fromAmountUsdt: amountUsdt,
       estimatedReceiveUnits: estimatedUnits,

@@ -245,6 +245,8 @@ Header: `x-oc-blocked-by: TimestampFilter/40103`.
 }
 ```
 
+> **Execution Wire Note:** The live Binance Web3 Trading API quote `d341057f5a4e440e9741b184a853e2a1` for NVDAB returned `vendorName: LiquidMesh` with `executionMode: SWAP`. The UI previously mislabeled it as RFQ; the live aggregator `executionMode` on the quote wire overrides issuer prior labels, and SWAP trades broadcast `/aggregator/swap` calldata directly without EIP-712 typed signing or RFQ order submission.
+
 ### 2. Live 200: Trading API Swap (`GET /build/api/v1/dex/aggregator/swap`)
 
 - **URL:** `GET https://web3.binance.com/build/api/v1/dex/aggregator/swap?quoteId=d341057f5a4e440e9741b184a853e2a1&binanceChainId=56&fromTokenAddress=0x55d398326f99059fF775485246999027B3197955&toTokenAddress=0x02fca66c1d1afb4e2a7884261eb00f63598a7436&amount=10000000000000000000&userWalletAddress=0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045&slippagePercent=1`

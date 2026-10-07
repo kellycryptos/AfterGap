@@ -158,6 +158,21 @@ export interface TradingSwapResponse {
   [key: string]: unknown;
 }
 
+export interface RfqSubmitOrderRequest {
+  orderId: string;
+  signature: string;
+  userWalletAddress: string;
+  binanceChainId?: string | number;
+  [key: string]: unknown;
+}
+
+export interface RfqSubmitOrderResponse {
+  orderId: string;
+  status?: string;
+  txHash?: string;
+  [key: string]: unknown;
+}
+
 // --- Wallet API Types ---
 
 export interface TokenBalanceItem {

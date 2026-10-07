@@ -1022,24 +1022,14 @@ function HomeContent({
     const inputAmountStr = currentQuote.fromAmount || (isSell ? '0.0218' : '10');
     const amountInSmallestUnit = (BigInt(Math.floor(Number(inputAmountStr) * 1e6)) * BigInt(1e12)).toString();
     const amountNeeded = BigInt(amountInSmallestUnit);
+    const mode = currentQuote.executionMode || 'SWAP';
 
     setBroadcasts((prev) => ({ ...prev, [contract]: { loading: true, step: 'preparing' } }));
 
-    if (currentQuote.isFallback) {
-      setBroadcasts((prev) => ({
-        ...prev,
-        [contract]: {
-          loading: false,
-          step: 'error',
-          error: 'Swaps are locked in benchmark mode to protect user funds. Live Binance RFQ gateway is restricted on this cloud region (CloudFront 40304). Run AfterGap Agent CLI for live trading.',
-        },
-      }));
-      return;
-    }
-
     try {
-      // Step 1: Fetch live swap transaction from secure server proxy
+      // Step 1: Request execution data from aggregator API proxy
       let swapTx: { to: string; data: string; value?: string; gas?: string } | null = null;
+      let rfqData: any = null;
       let targetSpender = currentQuote.spender || currentQuote.rawQuote?.approveTarget || '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5';
 
       try {
@@ -1047,19 +1037,30 @@ function HomeContent({
           `/api/rwa?action=swap&quoteId=${currentQuote.quoteId}&fromTokenAddress=${fromToken}&toTokenAddress=${toToken}&amount=${amountInSmallestUnit}&userWalletAddress=${wallet.address}&slippagePercent=1`
         );
         const swapJson = await swapRes.json();
-        if (swapRes.ok && swapJson?.swap?.data?.tx?.data) {
-          swapTx = swapJson.swap.data.tx;
-          if (swapTx?.to) {
-            targetSpender = swapTx.to;
+        if (swapRes.ok && swapJson?.swap?.data) {
+          if (swapJson.swap.data.tx?.data) {
+            swapTx = swapJson.swap.data.tx;
+            if (swapTx?.to) {
+              targetSpender = swapTx.to;
+            }
+          }
+          if (swapJson.swap.data.rfq || swapJson.swap.data.typedDataToSign) {
+            rfqData = swapJson.swap.data.rfq || swapJson.swap.data;
           }
         }
       } catch (e) {
         console.warn('Proxy swap fetch error:', e);
       }
 
-      if (!swapTx || !swapTx.data) {
+      if (mode === 'SWAP' && (!swapTx || !swapTx.data)) {
         throw new Error(
-          'Live LiquidMesh execution route could not be locked. Please refresh quote and ensure trade amount is at least 5 USD.'
+          'Live swap execution route could not be prepared from aggregator. Please refresh quote and ensure minimum trade is at least 5 USD.'
+        );
+      }
+
+      if (mode === 'RFQ' && (!rfqData || !rfqData.typedDataToSign)) {
+        throw new Error(
+          'Live RFQ order route could not be prepared from aggregator. Please refresh quote and ensure minimum trade is at least 5 USD.'
         );
       }
 
@@ -1107,32 +1108,84 @@ function HomeContent({
         }
       }
 
-      // Step 3: Trigger Swap Transaction
-      setBroadcasts((prev) => ({ ...prev, [contract]: { loading: true, step: 'swapping', approveTxHash } }));
+      // Step 3: Branch strictly on executionMode
+      if (mode === 'SWAP') {
+        // --- SWAP PATH ---
+        // SWAP means take tx from /aggregator/swap, sign, broadcast.
+        // No EIP-712 and no /order/submit.
+        setBroadcasts((prev) => ({ ...prev, [contract]: { loading: true, step: 'swapping', approveTxHash } }));
 
-      const swapGasHex = swapTx.gas
-        ? (swapTx.gas.startsWith('0x') ? swapTx.gas : '0x' + parseInt(swapTx.gas).toString(16))
-        : '0x6DDD0'; // 450,000 gas
+        const swapGasHex = swapTx!.gas
+          ? (swapTx!.gas.startsWith('0x') ? swapTx!.gas : '0x' + parseInt(swapTx!.gas).toString(16))
+          : '0x6DDD0'; // 450,000 gas
 
-      const swapValueHex = swapTx.value
-        ? (swapTx.value.startsWith('0x') ? swapTx.value : '0x' + parseInt(swapTx.value).toString(16))
-        : '0x0';
+        const swapValueHex = swapTx!.value
+          ? (swapTx!.value.startsWith('0x') ? swapTx!.value : '0x' + parseInt(swapTx!.value).toString(16))
+          : '0x0';
 
-      const swapTxHash: string = await eth.request({
-        method: 'eth_sendTransaction',
-        params: [{
-          from: wallet.address,
-          to: swapTx.to,
-          data: swapTx.data,
-          value: swapValueHex,
-          gas: swapGasHex,
-        }],
-      });
+        const swapTxHash: string = await eth.request({
+          method: 'eth_sendTransaction',
+          params: [{
+            from: wallet.address,
+            to: swapTx!.to,
+            data: swapTx!.data,
+            value: swapValueHex,
+            gas: swapGasHex,
+          }],
+        });
 
-      setBroadcasts((prev) => ({
-        ...prev,
-        [contract]: { loading: false, step: 'done', approveTxHash, swapTxHash },
-      }));
+        setBroadcasts((prev) => ({
+          ...prev,
+          [contract]: { loading: false, step: 'done', approveTxHash, swapTxHash },
+        }));
+      } else {
+        // --- RFQ PATH ---
+        // RFQ means quote, swap, sign typedDataToSign, submit, poll.
+        // RFQ path must not broadcast raw swap calldata.
+        const typedDataToSign = rfqData.typedDataToSign;
+        const orderId = rfqData.orderId || currentQuote.quoteId;
+
+        setBroadcasts((prev) => ({
+          ...prev,
+          [contract]: { loading: true, step: 'swapping', approveTxHash, message: 'Signing RFQ order via EIP-712...' },
+        }));
+
+        const signature: string = await eth.request({
+          method: 'eth_signTypedData_v4',
+          params: [
+            wallet.address,
+            typeof typedDataToSign === 'string' ? typedDataToSign : JSON.stringify(typedDataToSign),
+          ],
+        });
+
+        setBroadcasts((prev) => ({
+          ...prev,
+          [contract]: { loading: true, step: 'swapping', approveTxHash, message: 'Submitting signed RFQ order...' },
+        }));
+
+        const submitRes = await fetch('/api/rwa?action=submit_order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId,
+            signature,
+            userWalletAddress: wallet.address,
+            binanceChainId: 56,
+          }),
+        });
+        const submitJson = await submitRes.json();
+
+        if (!submitRes.ok || submitJson?.submit?.error) {
+          throw new Error(submitJson?.submit?.error?.message || 'RFQ order submission failed on Binance Web3 gateway.');
+        }
+
+        const rfqTxHash = submitJson?.submit?.data?.txHash || orderId;
+
+        setBroadcasts((prev) => ({
+          ...prev,
+          [contract]: { loading: false, step: 'done', approveTxHash, swapTxHash: rfqTxHash },
+        }));
+      }
 
       // Refresh balances
       fetchBalances(wallet.address);
@@ -1495,6 +1548,21 @@ function HomeContent({
     };
   }, [bstocksTokens, ondoTokens]);
 
+  // Session determination: "overnight" strictly if API returns overnight; otherwise "off-hours" outside cash session
+  const isApiOvernightSession = useMemo(() => {
+    const list = [
+      ...(data?.bscTokens?.data || []),
+      ...bstocksTokens,
+      ...ondoTokens,
+    ];
+    return list.some(
+      (t: any) =>
+        t?.marketStatus?.toLowerCase() === 'overnight' ||
+        t?.statusInfo?.marketStatus?.toLowerCase() === 'overnight'
+    );
+  }, [data, bstocksTokens, ondoTokens]);
+  const heroSessionLabel = isApiOvernightSession ? 'overnight' : 'off-hours';
+
   // Best Route calculation & plain English recommendation
   const bestRoute = useMemo(() => {
     const bstock = bstocksTokens[0];
@@ -1523,11 +1591,11 @@ function HomeContent({
         // Execution venue
         const contract = cheaper.tokenContractAddress || cheaper.contractAddress || '';
         const activeQuote = quotes[contract];
-        const venue = activeQuote?.vendorName
-          ? `${activeQuote.vendorName} ${activeQuote.executionMode || 'RFQ'}`
-          : isBstockCheaper
-          ? 'LiquidMesh RFQ'
-          : 'Ondo RFQ';
+        const venue = activeQuote?.vendorName && activeQuote?.executionMode
+          ? `${activeQuote.vendorName} ${activeQuote.executionMode}`
+          : activeQuote?.vendorName
+          ? `${activeQuote.vendorName} ${activeQuote.executionMode || 'SWAP'}`
+          : 'route pending';
 
         const isRouteFallback = Boolean(cheaper.isFallback || other.isFallback);
 
@@ -1553,6 +1621,14 @@ function HomeContent({
     // Default / showcase recommendation for NVDA
     if (ticker.toUpperCase() === 'NVDA') {
       const bstockToken = bstocksTokens[0];
+      const bstockContract = bstockToken ? (bstockToken.tokenContractAddress || bstockToken.contractAddress || '') : '';
+      const activeQuote = bstockContract ? quotes[bstockContract] : undefined;
+      const venue = activeQuote?.vendorName && activeQuote?.executionMode
+        ? `${activeQuote.vendorName} ${activeQuote.executionMode}`
+        : activeQuote?.vendorName
+        ? `${activeQuote.vendorName} ${activeQuote.executionMode || 'SWAP'}`
+        : 'route pending';
+
       return {
         action: 'Buy',
         token: bstockToken,
@@ -1563,7 +1639,7 @@ function HomeContent({
         otherSymbol: 'NVDAon',
         otherPrice: '235.38',
         spreadToCash: '0.08',
-        venue: 'LiquidMesh RFQ',
+        venue,
         cheaperName: 'bStocks',
         otherName: 'Ondo',
         isLive: false,
@@ -2319,6 +2395,17 @@ function HomeContent({
               const isSell = currentDir === 'sell';
               const inputAmount = amounts[contract] || (isSell ? '0.02' : '25');
 
+              const isOpen = Boolean(
+                cheaperTok.statusInfo?.openState !== undefined
+                  ? cheaperTok.statusInfo.openState
+                  : cheaperTok.openState
+              );
+              const reasonCode =
+                cheaperTok.statusInfo?.reasonCode ||
+                cheaperTok.reasonCode ||
+                '';
+              const isExecutable = isOpen === true && reasonCode === 'TRADING';
+
               const isBstockCard =
                 String(cheaperTok.platformId).toLowerCase() === 'bstock' ||
                 String(cheaperTok.tokenSymbol).endsWith('B');
@@ -2343,6 +2430,22 @@ function HomeContent({
                         <span className="text-xs text-white/30">•</span>
                         <span className="text-xs px-2 py-0.5 rounded-full bg-white/[0.06] text-[#A1A1AA] font-mono font-semibold">
                           {cheaperTok.tokenSymbol}
+                        </span>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-white/[0.04] text-[#A1A1AA] font-mono capitalize">
+                          {cheaperTok.statusInfo?.marketStatus || cheaperTok.marketStatus || 'regular'}
+                        </span>
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full font-mono font-semibold ${
+                            (cheaperTok.statusInfo?.openState ?? cheaperTok.openState) === true &&
+                            (cheaperTok.statusInfo?.reasonCode || cheaperTok.reasonCode) === 'TRADING'
+                              ? 'bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30'
+                              : 'bg-[#C45C26]/10 text-[#C45C26] border border-[#C45C26]/30'
+                          }`}
+                        >
+                          {(cheaperTok.statusInfo?.openState ?? cheaperTok.openState) === true &&
+                          (cheaperTok.statusInfo?.reasonCode || cheaperTok.reasonCode) === 'TRADING'
+                            ? 'Executable'
+                            : 'Halted'}
                         </span>
                       </div>
                     </div>
@@ -2491,20 +2594,7 @@ function HomeContent({
 
                   {/* Trade Action Button */}
                   <div className="space-y-3 pt-2">
-                    {isSell ? (
-                      <div className="space-y-2">
-                        <button
-                          type="button"
-                          disabled
-                          className="w-full py-3.5 rounded-2xl text-sm font-bold bg-zinc-800/80 border border-white/[0.08] text-[#A1A1AA] cursor-not-allowed flex items-center justify-center gap-2"
-                        >
-                          <span>{tCard('sellLockedButton')}</span>
-                        </button>
-                        <p className="text-xs text-[#A1A1AA] font-mono text-center">
-                          {tCard('sellLockedNote')}
-                        </p>
-                      </div>
-                    ) : !wallet.connected ? (
+                    {!wallet.connected ? (
                       <button
                         type="button"
                         onClick={connectWallet}
@@ -2521,6 +2611,14 @@ function HomeContent({
                       >
                         <span>{tCard('benchmarkLockedButton')}</span>
                       </button>
+                    ) : !isExecutable ? (
+                      <button
+                        type="button"
+                        disabled
+                        className="w-full py-3.5 rounded-2xl text-sm font-bold bg-zinc-800/80 border border-white/[0.08] text-[#A1A1AA] cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                        <span>🔒 Trading Halted</span>
+                      </button>
                     ) : (
                       <button
                         type="button"
@@ -2532,18 +2630,24 @@ function HomeContent({
                           }
                         }}
                         disabled={bc?.loading || quote?.loading}
-                        className="w-full py-3.5 rounded-2xl text-sm font-bold transition shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 bg-[#F5C542] hover:bg-[#E0B02E] text-[#07070A]"
+                        className={`w-full py-3.5 rounded-2xl text-sm font-bold transition shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 ${
+                          isSell
+                            ? 'bg-[#C45C26] hover:bg-[#A84A1C] text-white'
+                            : 'bg-[#F5C542] hover:bg-[#E0B02E] text-[#07070A]'
+                        }`}
                       >
                         {bc?.loading ? (
                           <>
-                            <ThinkingOrb state="working" size={20} theme="light" />
+                            <ThinkingOrb state="working" size={20} theme={isSell ? 'dark' : 'light'} />
                             <span>{tCard('confirmingWallet')}</span>
                           </>
                         ) : quote?.loading ? (
                           <>
-                            <ThinkingOrb state="searching" size={20} theme="light" />
+                            <ThinkingOrb state="searching" size={20} theme={isSell ? 'dark' : 'light'} />
                             <span>{tCard('checkingPrice')}</span>
                           </>
+                        ) : isSell ? (
+                          <span>{tCard('sellTicker', { ticker: cheaperTok.underlyingTicker || selectedSimpleTicker })}</span>
                         ) : (
                           <span>{tCard('buyTicker', { ticker: cheaperTok.underlyingTicker || selectedSimpleTicker })}</span>
                         )}
@@ -2647,7 +2751,7 @@ function HomeContent({
             Same stock. Dual wrappers. Live gap.
           </h1>
           <p className="text-xs sm:text-sm text-[#A1A1AA] max-w-lg mx-auto">
-            Inspect on-chain pricing vs. cash reference, quote live spot execution, and simulate BEP-20 swaps.
+            Inspect on-chain pricing vs. cash reference during {heroSessionLabel} trading, quote live spot execution, and simulate BEP-20 swaps.
           </p>
         </div>
 
@@ -2817,7 +2921,7 @@ function HomeContent({
                       <div className="p-2.5 rounded-lg bg-black/40 border border-white/[0.06]">
                         <span className="text-[#A1A1AA] text-[10px] block">Execution Router</span>
                         <span className="text-[#F5C542] font-semibold">
-                          {targetQuote?.vendorName || 'LiquidMesh'}
+                          {targetQuote?.vendorName ? `${targetQuote.vendorName} (${targetQuote.executionMode || 'SWAP'})` : 'route pending'}
                         </span>
                         <span className="text-[10px] text-[#A1A1AA] block">
                           TTL: {targetQuote?.ttlRemaining !== undefined ? `${targetQuote.ttlRemaining}s` : '30s'}
@@ -2840,20 +2944,7 @@ function HomeContent({
 
                     {/* Single Approve & Execute Button (Exact same execution path) */}
                     <div className="pt-1">
-                      {nlResult.intent.action === 'SELL' ? (
-                        <div className="space-y-2">
-                          <button
-                            type="button"
-                            disabled
-                            className="w-full py-3.5 px-4 rounded-xl font-semibold font-mono text-sm bg-zinc-800/80 border border-white/[0.08] text-[#A1A1AA] cursor-not-allowed flex items-center justify-center gap-2"
-                          >
-                            <span>🔒 Sell Execution (Preview Only — Trading Locked)</span>
-                          </button>
-                          <p className="text-xs text-[#A1A1AA] font-mono text-center">
-                            Sell execution is in preview mode. Autonomous natural-language execution currently supports verified 1-click BUY orders via LiquidMesh.
-                          </p>
-                        </div>
-                      ) : !wallet.connected ? (
+                      {!wallet.connected ? (
                         <button
                           type="button"
                           onClick={connectWallet}
@@ -2891,7 +2982,11 @@ function HomeContent({
                               </span>
                             </>
                           ) : (
-                            <span>Approve & Execute via LiquidMesh</span>
+                            <span>
+                              {nlResult.intent.action === 'SELL' ? 'Approve & Execute Sell' : 'Approve & Execute Buy'}
+                              {targetQuote?.vendorName ? ` via ${targetQuote.vendorName}` : ''}
+                              {targetQuote?.executionMode ? ` (${targetQuote.executionMode})` : ''}
+                            </span>
                           )}
                         </button>
                       )}
@@ -2964,7 +3059,15 @@ function HomeContent({
           <div className="text-xs text-[#A1A1AA] font-mono pt-0.5 min-h-[1.25rem] flex items-center justify-between gap-2">
             <div>
               {error ? (
-                <span className="text-[#C45C26]">{error}</span>
+                <span className="text-[#C45C26] font-semibold flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#C45C26]" />
+                  blocked, not live ({error})
+                </span>
+              ) : (data?.isFallback || !data) ? (
+                <span className="text-[#C45C26] font-semibold flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#C45C26]" />
+                  blocked, not live (CloudFront 40304) — benchmark reference pricing
+                </span>
               ) : data && !data.isFallback ? (
                 <span className="text-[#3D9A6A] font-semibold flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-[#3D9A6A] animate-pulse" />
@@ -3203,7 +3306,6 @@ function HomeContent({
                     <span className="px-1.5 sm:px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] text-[10px]">
                       BSC 56
                     </span>
-                    <span className="hidden sm:inline">Best Execution Guaranteed</span>
                   </div>
                 </div>
 
@@ -3329,10 +3431,19 @@ function HomeContent({
                     const contract = t.tokenContractAddress || t.contractAddress || t.tokenAddress || '';
                     const onChainPrice = t.tokenPrice || t.price;
                     const refPrice = t.referencePrice;
-                    const statusStr =
+                    const marketLabel =
                       t.statusInfo?.marketStatus ||
                       t.marketStatus ||
-                      (t.statusInfo?.openState ? 'Trading' : 'Closed');
+                      'regular';
+                    const isOpen = Boolean(
+                      t.statusInfo?.openState !== undefined ? t.statusInfo.openState : t.openState
+                    );
+                    const reasonCode =
+                      t.statusInfo?.reasonCode ||
+                      t.reasonCode ||
+                      '';
+                    const isExecutable = isOpen === true && reasonCode === 'TRADING';
+                    const statusStr = marketLabel;
 
                     const quote = quotes[contract];
                     const sim = simulations[contract];
@@ -3416,15 +3527,21 @@ function HomeContent({
                         {/* Market Status */}
                         <div className="flex justify-between items-center text-[11px]">
                           <span className="text-[#A1A1AA]">Status</span>
-                          <span
-                            className={`font-mono px-2 py-0.5 rounded-full ${
-                              statusStr?.toLowerCase() === 'regular' || statusStr?.toLowerCase() === 'trading'
-                                ? 'bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30'
-                                : 'bg-white/[0.04] text-[#F5C542] border border-white/[0.06]'
-                            }`}
-                          >
-                            {statusStr || 'Trading'}
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono px-2 py-0.5 rounded-full bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06] capitalize">
+                              {marketLabel}
+                            </span>
+                            <span
+                              data-testid={`${t.tokenSymbol.toLowerCase()}-executable-chip`}
+                              className={`font-mono px-2 py-0.5 rounded-full ${
+                                isExecutable
+                                  ? 'bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30 font-semibold'
+                                  : 'bg-[#C45C26]/10 text-[#C45C26] border border-[#C45C26]/30 font-semibold'
+                              }`}
+                            >
+                              {isExecutable ? 'Executable' : 'Halted'}
+                            </span>
+                          </div>
                         </div>
 
                         {/* Trading API Quote Box */}
@@ -3737,19 +3854,6 @@ function HomeContent({
                                           </div>
                                         ) : bc?.step === 'error' ? (
                                           <p className="text-[10px] text-[#C45C26]">{bc.error}</p>
-                                        ) : isSell ? (
-                                          <div className="space-y-1">
-                                            <button
-                                              type="button"
-                                              disabled
-                                              className="w-full py-1.5 px-3 rounded text-[11px] font-mono font-semibold bg-zinc-800/80 border border-white/[0.08] text-[#A1A1AA] cursor-not-allowed flex items-center justify-center gap-1.5"
-                                            >
-                                              <span>🔒 Sell Execution (Preview Only — Trading Locked)</span>
-                                            </button>
-                                            <p className="text-[10px] text-[#A1A1AA] font-mono text-center">
-                                              Sell execution is in preview mode pending live verification. To liquidate shares, use manual sell or DEX routing.
-                                            </p>
-                                          </div>
                                         ) : (
                                           <>
                                             <MetalFx variant="button" preset="gold" strength={0.85}>
@@ -3759,7 +3863,14 @@ function HomeContent({
                                                   if (quote.isFallback) return;
                                                   wallet.connected ? handleApproveAndExecute(t) : connectWallet();
                                                 }}
-                                                disabled={bc?.loading || (quote.ttlRemaining || 0) <= 0 || Boolean(quote.isFallback)}
+                                                disabled={
+                                                  bc?.loading ||
+                                                  (quote.ttlRemaining || 0) <= 0 ||
+                                                  Boolean(quote.isFallback) ||
+                                                  !isExecutable ||
+                                                  (isSell && walletBalances.nvdab !== '—' && Number(inputAmount) > Number(walletBalances.nvdab)) ||
+                                                  (!isSell && walletBalances.usdt !== '—' && Number(inputAmount) > Number(walletBalances.usdt))
+                                                }
                                                 className={`w-full py-1.5 px-3 rounded text-[11px] font-mono font-semibold transition disabled:opacity-50 flex items-center justify-center gap-1.5 ${
                                                   quote.isFallback
                                                     ? 'bg-white/[0.04] text-[#A1A1AA] border border-white/[0.08] cursor-not-allowed'
@@ -3789,8 +3900,14 @@ function HomeContent({
                                                   <span className="flex items-center justify-center gap-1.5 text-[#A1A1AA]">
                                                     <span>🛡️ Benchmark Mode (Trading Locked)</span>
                                                   </span>
+                                                ) : !isExecutable ? (
+                                                  <span className="flex items-center justify-center gap-1.5 text-[#A1A1AA]">
+                                                    <span>🔒 Trading Halted</span>
+                                                  </span>
                                                 ) : wallet.connected ? (
-                                                  isSell ? '🚀 Execute Live Sell on BSC' : '🚀 Execute Live Buy on BSC'
+                                                  isSell
+                                                    ? `🚀 Execute Live Sell via ${quote.vendorName || 'Route'} (${quote.executionMode || 'SWAP'})`
+                                                    : `🚀 Execute Live Buy via ${quote.vendorName || 'Route'} (${quote.executionMode || 'SWAP'})`
                                                 ) : (
                                                   <span className="flex items-center justify-center gap-1.5">
                                                     <Wallet className="w-3.5 h-3.5" />
@@ -3887,10 +4004,19 @@ function HomeContent({
                     const contract = t.tokenContractAddress || t.contractAddress || t.tokenAddress || '';
                     const onChainPrice = t.tokenPrice || t.price;
                     const refPrice = t.referencePrice;
-                    const statusStr =
+                    const marketLabel =
                       t.statusInfo?.marketStatus ||
                       t.marketStatus ||
-                      (t.statusInfo?.openState ? 'Trading' : 'Closed');
+                      'regular';
+                    const isOpen = Boolean(
+                      t.statusInfo?.openState !== undefined ? t.statusInfo.openState : t.openState
+                    );
+                    const reasonCode =
+                      t.statusInfo?.reasonCode ||
+                      t.reasonCode ||
+                      '';
+                    const isExecutable = isOpen === true && reasonCode === 'TRADING';
+                    const statusStr = marketLabel;
 
                     const quote = quotes[contract];
                     const sim = simulations[contract];
@@ -3974,15 +4100,21 @@ function HomeContent({
                         {/* Market Status */}
                         <div className="flex justify-between items-center text-[11px]">
                           <span className="text-[#A1A1AA]">Status</span>
-                          <span
-                            className={`font-mono px-2 py-0.5 rounded-full ${
-                              statusStr?.toLowerCase() === 'regular' || statusStr?.toLowerCase() === 'trading'
-                                ? 'bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30'
-                                : 'bg-white/[0.04] text-[#F5C542] border border-white/[0.06]'
-                            }`}
-                          >
-                            {statusStr || 'Trading'}
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono px-2 py-0.5 rounded-full bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06] capitalize">
+                              {marketLabel}
+                            </span>
+                            <span
+                              data-testid={`${t.tokenSymbol.toLowerCase()}-executable-chip`}
+                              className={`font-mono px-2 py-0.5 rounded-full ${
+                                isExecutable
+                                  ? 'bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30 font-semibold'
+                                  : 'bg-[#C45C26]/10 text-[#C45C26] border border-[#C45C26]/30 font-semibold'
+                              }`}
+                            >
+                              {isExecutable ? 'Executable' : 'Halted'}
+                            </span>
+                          </div>
                         </div>
 
                         {/* Trading API Quote Box */}
@@ -4272,19 +4404,6 @@ function HomeContent({
                                           </div>
                                         ) : bc?.step === 'error' ? (
                                           <p className="text-[10px] text-[#C45C26]">{bc.error}</p>
-                                        ) : isSell ? (
-                                          <div className="space-y-1">
-                                            <button
-                                              type="button"
-                                              disabled
-                                              className="w-full py-1.5 px-3 rounded text-[11px] font-mono font-semibold bg-zinc-800/80 border border-white/[0.08] text-[#A1A1AA] cursor-not-allowed flex items-center justify-center gap-1.5"
-                                            >
-                                              <span>🔒 Sell Execution (Preview Only — Trading Locked)</span>
-                                            </button>
-                                            <p className="text-[10px] text-[#A1A1AA] font-mono text-center">
-                                              Sell execution is in preview mode pending live verification. To liquidate shares, use manual sell or DEX routing.
-                                            </p>
-                                          </div>
                                         ) : (
                                           <>
                                             <MetalFx variant="button" preset="gold" strength={0.85}>
@@ -4294,9 +4413,16 @@ function HomeContent({
                                                   if (quote.isFallback) return;
                                                   wallet.connected ? handleApproveAndExecute(t) : connectWallet();
                                                 }}
-                                                disabled={bc?.loading || (quote.ttlRemaining || 0) <= 0 || Boolean(quote.isFallback)}
+                                                disabled={
+                                                  bc?.loading ||
+                                                  (quote.ttlRemaining || 0) <= 0 ||
+                                                  Boolean(quote.isFallback) ||
+                                                  !isExecutable ||
+                                                  (isSell && walletBalances.nvdab !== '—' && Number(inputAmount) > Number(walletBalances.nvdab)) ||
+                                                  (!isSell && walletBalances.usdt !== '—' && Number(inputAmount) > Number(walletBalances.usdt))
+                                                }
                                                 className={`w-full py-1.5 px-3 rounded text-[11px] font-mono font-semibold transition disabled:opacity-50 flex items-center justify-center gap-1.5 ${
-                                                  quote.isFallback
+                                                  quote.isFallback || !isExecutable
                                                     ? 'bg-white/[0.04] text-[#A1A1AA] border border-white/[0.08] cursor-not-allowed'
                                                     : wallet.connected
                                                     ? 'bg-[#3D9A6A]/15 hover:bg-[#3D9A6A]/25 border border-[#3D9A6A]/40 text-[#3D9A6A]'
@@ -4324,8 +4450,14 @@ function HomeContent({
                                                   <span className="flex items-center justify-center gap-1.5 text-[#A1A1AA]">
                                                     <span>🛡️ Benchmark Mode (Trading Locked)</span>
                                                   </span>
+                                                ) : !isExecutable ? (
+                                                  <span className="flex items-center justify-center gap-1.5 text-[#A1A1AA]">
+                                                    <span>🔒 Trading Halted</span>
+                                                  </span>
                                                 ) : wallet.connected ? (
-                                                  isSell ? '🚀 Execute Live Sell on BSC' : '🚀 Execute Live Buy on BSC'
+                                                  isSell
+                                                    ? `🚀 Execute Live Sell via ${quote.vendorName || 'Route'} (${quote.executionMode || 'RFQ'})`
+                                                    : `🚀 Execute Live Buy via ${quote.vendorName || 'Route'} (${quote.executionMode || 'RFQ'})`
                                                 ) : (
                                                   <span className="flex items-center justify-center gap-1.5">
                                                     <Wallet className="w-3.5 h-3.5" />

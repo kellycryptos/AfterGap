@@ -1092,6 +1092,16 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    if (action === 'order_status') {
+      const orderId = searchParams.get('orderId') || '';
+      const statusRes = await client.getRfqOrderStatus(orderId, 56);
+      return NextResponse.json({
+        auth: authState,
+        status: statusRes,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
     if (action === 'balances') {
       const address = searchParams.get('address') || '';
       if (!address) {
@@ -1369,6 +1379,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         auth: authState,
         swap: swapRes,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    if (action === 'submit_order' || action === 'rfq_submit') {
+      const { orderId, signature, userWalletAddress, binanceChainId } = body;
+      const submitRes = await client.submitRfqOrder({
+        orderId,
+        signature,
+        userWalletAddress: userWalletAddress || '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
+        binanceChainId: binanceChainId || 56,
+      });
+
+      return NextResponse.json({
+        auth: authState,
+        submit: submitRes,
         timestamp: new Date().toISOString(),
       });
     }

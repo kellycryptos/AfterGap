@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://www.aftergap.xyz'),
   title: 'AfterGap | Same stock, dual wrappers, live gap.',
   description:
-    'Compare the same US name across bStocks and Ondo on BSC, show the cash-hours vs overnight gap, and let a user buy the best live spot route in plain English.',
+    'Compare the same US name across bStocks and Ondo on BSC, show the cash-hours vs off-hours gap, and let a user buy the best live spot route in plain English.',
   icons: {
     icon: [
       { url: '/icon.svg', type: 'image/svg+xml' },

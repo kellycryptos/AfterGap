@@ -11,6 +11,8 @@ import {
   TradingQuoteResponse,
   TradingSwapRequest,
   TradingSwapResponse,
+  RfqSubmitOrderRequest,
+  RfqSubmitOrderResponse,
   WalletBalancesResponse,
   SimulationResult,
 } from './types';
@@ -389,6 +391,20 @@ export class BinanceRwaClient {
     }
 
     return this.get<TradingSwapResponse>(`/api/v1/dex/aggregator/swap?${params.toString()}`);
+  }
+
+  public async submitRfqOrder(req: RfqSubmitOrderRequest): Promise<ApiResponseWrapper<RfqSubmitOrderResponse>> {
+    return this.post<RfqSubmitOrderResponse>(
+      '/api/v1/dex/rfq/order/submit',
+      JSON.stringify(req)
+    );
+  }
+
+  public async getRfqOrderStatus(orderId: string, binanceChainId: string | number = 56): Promise<ApiResponseWrapper<RfqSubmitOrderResponse>> {
+    const params = new URLSearchParams();
+    params.set('orderId', orderId);
+    params.set('binanceChainId', String(binanceChainId));
+    return this.get<RfqSubmitOrderResponse>(`/api/v1/dex/rfq/order/status?${params.toString()}`);
   }
 
   // --- Wallet API Methods ---

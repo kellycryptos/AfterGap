@@ -106,8 +106,7 @@ Type a plain-English command; AfterGap parses it into a structured intent and ro
 - **Intent Parser** (`packages/agent/src/parser.ts`): Extracts action (BUY/SELL/COMPARE/BASKET_SCAN), ticker, explicit wrapper token (NVDAB → bstock, NVDAon → ondo), and USD or share amount.
 - **Explicit Wrapper Preservation:** If a user names `NVDAB` specifically, the parser preserves that preference instead of overriding it with "cheapest."
 - **Ambiguity Guards:** Rejects underspecified commands with actionable suggestions rather than guessing with real funds.
-- **Sell Direction Rationale:** SELL commands produce bid-price reasoning ("current on-chain bid of $229.11/share"), not buy-comparison output.
-- **Fail-Closed Sell Lock:** Sell execution is locked pending live end-to-end verification — the guard lives inside `handleApproveAndExecute` (not just the UI layer), so it fires regardless of entry point.
+- **Execution Mode Branching:** Buy and Sell execution branches on aggregator quote wire `executionMode`. `SWAP` broadcasts calldata directly via `eth_sendTransaction`; `RFQ` signs typed data via EIP-712 and submits the signed order via `/order/submit`.
 
 ### 3. Pro Mode — Institutional Terminal (unchanged)
 
@@ -153,6 +152,8 @@ The full dual-wrapper analytics terminal, toggled on via the Simple / Pro pill i
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **bStocks** | `B` (e.g. `NVDAB`) | `3` | Mixed `SWAP` (LiquidMesh) + `RFQ` (PcsXRfq) | 1:1 backed, rebase for dividends | Supported (`platformId=bstock`) |
 | **Ondo** | `on` (e.g. `NVDAon`) | `1` | `RFQ` (Always quote → swap → typedData → submit) | Total-return tracker, can drift from cash | Supported (`platformId=ondo`) |
+
+> Note: The table above serves as an architectural prior; aggregator `executionMode` overrides it (e.g. LiquidMesh returning `SWAP` for `NVDAon` is valid).
 
 > **Protocol Landscape Note:** While tokenized equity literature mentions bStocks, Ondo, and xStocks, ecosystem catalog verification confirms that **xStocks** is absent from the Binance Web3 Market RWA Data catalog (`/rwa/platforms`) and lacks active spot liquidity on BSC mainnet. AfterGap focuses exclusively on the two verified, fully operational protocols: **bStocks** and **Ondo**.
 

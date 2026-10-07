@@ -10,7 +10,7 @@ Empowers AI agents and agentic wallets to programmatically discover price discre
 
 This package exposes AfterGap's cross-wrapper arbitrage engine directly to autonomous AI agents:
 1. **`inspect_gap`**: Scans live prices across **bStocks** and **Ondo** against Friday 4:00 PM US cash reference prices, computing basis spreads and direct dollar savings.
-2. **`quote_best_route`**: Fetches signed executable spot quotes via Binance Web3 Trading API (LiquidMesh RFQ).
+2. **`quote_best_route`**: Fetches signed executable spot quotes via Binance Web3 Trading API (following live quote executionMode: SWAP vs RFQ).
 3. **`simulate_swap`**: Executes gasless `eth_call` dry-runs on BNB Smart Chain mainnet to verify calldata before broadcast.
 4. **`scan_thematic_basket`**: Scans entire baskets (`mag7`, `ai_semis`, `buffett`) and ranks constituents by largest arbitrage spread.
 
