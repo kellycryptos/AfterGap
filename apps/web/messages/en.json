@@ -44,7 +44,18 @@
     "checkingPrice": "Checking best price...",
     "boughtReceipt": "Bought {amount} shares of {ticker}",
     "soldReceipt": "Sold {ticker} for {amount} USDT",
-    "viewBscScan": "View on BSCScan ↗"
+    "viewBscScan": "View on BSCScan ↗",
+    "statusTrading": "Trading",
+    "statusRegular": "Regular",
+    "statusPremarket": "Pre-market",
+    "statusPostmarket": "Post-market",
+    "statusOvernight": "Overnight",
+    "statusClosed": "Closed",
+    "statusPaused": "Paused",
+    "statusHalted": "Halted",
+    "statusUnavailable": "Status Unavailable",
+    "chipExecutable": "Executable",
+    "chipHalted": "Halted"
   },
   "Assistant": {
     "title": "AfterGap AI Assistant",

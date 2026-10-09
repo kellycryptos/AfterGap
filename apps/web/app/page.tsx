@@ -845,6 +845,20 @@ function formatRevertReason(raw?: string, spender?: string): string {
   return raw;
 }
 
+function formatMarketStatus(status: string | undefined, tCard: any): string {
+  const s = String(status || '').toLowerCase().trim();
+  if (s === 'trading') return tCard('statusTrading');
+  if (s === 'regular') return tCard('statusRegular');
+  if (s === 'premarket' || s === 'pre_market') return tCard('statusPremarket');
+  if (s === 'postmarket' || s === 'post_market') return tCard('statusPostmarket');
+  if (s === 'overnight') return tCard('statusOvernight');
+  if (s === 'closed' || s === 'market_closed') return tCard('statusClosed');
+  if (s === 'paused' || s === 'market_paused') return tCard('statusPaused');
+  if (s === 'halted') return tCard('statusHalted');
+  if (s === 'unavailable' || s === 'status unavailable') return tCard('statusUnavailable');
+  return status || tCard('statusRegular');
+}
+
 function HomeContent({
   locale,
   setLocale,
@@ -2136,7 +2150,7 @@ function HomeContent({
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-[#3D9A6A] animate-pulse shrink-0" />
                   <span className="font-semibold hidden sm:inline">BSC 56</span>
-                  <span className="text-[#F5F5F4]">
+                  <span translate="no" className="text-[#F5F5F4] notranslate">
                     {wallet.address.slice(0, 4)}…{wallet.address.slice(-4)}
                   </span>
                   <span className="text-[9px] text-[#A1A1AA] ml-0.5">▼</span>
@@ -2146,7 +2160,7 @@ function HomeContent({
                 {walletDropdownOpen && (
                   <div className="absolute right-0 top-full mt-2 w-48 bg-[#121214] border border-white/[0.1] rounded-xl shadow-2xl p-2.5 z-50 text-xs font-mono space-y-2">
                     <div className="text-[10px] text-[#A1A1AA] pb-1 border-b border-white/[0.06]">
-                      <span className="block truncate">{wallet.address}</span>
+                      <span translate="no" className="block truncate notranslate">{wallet.address}</span>
                     </div>
                     <div className="space-y-1 text-[11px]">
                       <div className="flex justify-between">
@@ -2269,7 +2283,7 @@ function HomeContent({
 
             {/* Interactive Stock Selector Strip */}
             <div className="w-full max-w-3xl mb-8">
-              <div className="flex items-center justify-between mb-3 px-1">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-3 px-1">
                 <span className="text-xs font-semibold uppercase tracking-wider text-[#A1A1AA]">
                   {tHero('selectAsset')}
                 </span>
@@ -2337,10 +2351,10 @@ function HomeContent({
                           {tHero('active')}
                         </span>
                       )}
-                      <span className="text-base font-bold tracking-tight text-[#F5F5F4]">
+                      <span translate="no" className="text-base font-bold tracking-tight text-[#F5F5F4] notranslate">
                         {tickerKey}
                       </span>
-                      <span className="text-[10px] font-semibold text-[#A1A1AA] truncate max-w-[80px]">
+                      <span translate="no" className="text-[10px] font-semibold text-[#A1A1AA] truncate max-w-[80px] notranslate">
                         {bestTok?.underlyingName?.split(' ')[0] || tickerKey}
                       </span>
                       <div className="flex items-center gap-1 mt-1">
@@ -2404,7 +2418,7 @@ function HomeContent({
                 cheaperTok.statusInfo?.reasonCode ||
                 cheaperTok.reasonCode ||
                 '';
-              const isExecutable = isOpen === true && reasonCode === 'TRADING';
+              const isExecutable = !cardIsFallback && isOpen === true && reasonCode === 'TRADING';
 
               const isBstockCard =
                 String(cheaperTok.platformId).toLowerCase() === 'bstock' ||
@@ -2416,64 +2430,82 @@ function HomeContent({
               return (
                 <div className="w-full max-w-lg bg-[#121214] border border-white/[0.1] rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-2xl space-y-4 sm:space-y-5">
                   {/* Stock Header */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-xl sm:text-2xl font-bold text-[#F5F5F4] tracking-tight truncate">
-                          {cheaperTok.underlyingName || selectedSimpleTicker}
-                        </h2>
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-xl sm:text-2xl font-bold text-[#F5F5F4] tracking-tight truncate">
+                            {cheaperTok.underlyingName || selectedSimpleTicker}
+                          </h2>
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span translate="no" className="text-sm font-bold text-[#F5C542] notranslate">
+                            {cheaperTok.underlyingTicker || selectedSimpleTicker}
+                          </span>
+                          <span className="text-xs text-white/30">•</span>
+                          <span translate="no" className="text-xs px-2 py-0.5 rounded-full bg-white/[0.06] text-[#A1A1AA] font-mono font-semibold notranslate">
+                            {cheaperTok.tokenSymbol}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-sm font-bold text-[#F5C542]">
-                          {cheaperTok.underlyingTicker || selectedSimpleTicker}
-                        </span>
-                        <span className="text-xs text-white/30">•</span>
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-white/[0.06] text-[#A1A1AA] font-mono font-semibold">
-                          {cheaperTok.tokenSymbol}
-                        </span>
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-white/[0.04] text-[#A1A1AA] font-mono capitalize">
-                          {cheaperTok.statusInfo?.marketStatus || cheaperTok.marketStatus || 'regular'}
-                        </span>
-                        <span
-                          className={`text-xs px-2 py-0.5 rounded-full font-mono font-semibold ${
-                            (cheaperTok.statusInfo?.openState ?? cheaperTok.openState) === true &&
-                            (cheaperTok.statusInfo?.reasonCode || cheaperTok.reasonCode) === 'TRADING'
-                              ? 'bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30'
-                              : 'bg-[#C45C26]/10 text-[#C45C26] border border-[#C45C26]/30'
-                          }`}
-                        >
-                          {(cheaperTok.statusInfo?.openState ?? cheaperTok.openState) === true &&
-                          (cheaperTok.statusInfo?.reasonCode || cheaperTok.reasonCode) === 'TRADING'
-                            ? 'Executable'
-                            : 'Halted'}
+
+                      <div className="text-right shrink-0">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {isCardLive && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#3D9A6A] animate-pulse" />
+                          )}
+                          <span className={`text-[10px] block uppercase tracking-wide font-medium ${cardIsFallback ? 'text-[#F5C542]' : 'text-[#A1A1AA]'}`}>
+                            {cardIsFallback ? tCard('estimatedBenchmark') : tCard('bestPrice')}
+                          </span>
+                        </div>
+                        <span className="text-2xl sm:text-3xl font-extrabold text-[#F5F5F4] block leading-tight">
+                          ${cardPrice}
                         </span>
                       </div>
                     </div>
-                    <div className="text-right shrink-0">
-                      <div className="flex items-center justify-end gap-1.5">
-                        {isCardLive && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#3D9A6A] animate-pulse" />
+
+                    {/* Stock Metadata & Market Status Ribbon */}
+                    <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 pt-3 border-t border-white/[0.06]">
+                      <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
+                        {cardIsFallback ? (
+                          <span
+                            className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full bg-white/[0.04] text-[#A1A1AA] border border-white/[0.08] font-mono whitespace-nowrap"
+                          >
+                            {tCard('statusUnavailable')}
+                          </span>
+                        ) : (
+                          <>
+                            <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06] font-mono whitespace-nowrap">
+                              {formatMarketStatus(cheaperTok.statusInfo?.marketStatus || cheaperTok.marketStatus, tCard)}
+                            </span>
+                            <span
+                              className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full font-mono font-semibold whitespace-nowrap ${
+                                isExecutable
+                                  ? 'bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30'
+                                  : 'bg-[#C45C26]/10 text-[#C45C26] border border-[#C45C26]/30'
+                              }`}
+                            >
+                              {isExecutable ? tCard('chipExecutable') : tCard('chipHalted')}
+                            </span>
+                          </>
                         )}
-                        <span className={`text-[10px] block uppercase tracking-wide font-medium ${cardIsFallback ? 'text-[#F5C542]' : 'text-[#A1A1AA]'}`}>
-                          {cardIsFallback ? tCard('estimatedBenchmark') : tCard('bestPrice')}
-                        </span>
                       </div>
-                      <span className="text-2xl sm:text-3xl font-extrabold text-[#F5F5F4]">
-                        ${cardPrice}
-                      </span>
-                      {cardIsFallback ? (
-                        <span
-                          data-testid="simple-mode-fallback-badge"
-                          className="text-[10px] text-[#F5C542] flex items-center justify-end gap-1 font-mono leading-tight mt-0.5"
-                        >
-                          <span>⚠️</span>
-                          <span>{tCard('benchmarkBadge')}</span>
-                        </span>
-                      ) : (
-                        <span className="text-[9px] text-[#3D9A6A] block leading-tight mt-0.5 font-medium">
-                          {quote?.unitPrice ? tCard('liveDexBadge') : tCard('liveBinanceBadge')}
-                        </span>
-                      )}
+
+                      <div className="shrink-0">
+                        {cardIsFallback ? (
+                          <span
+                            data-testid="simple-mode-fallback-badge"
+                            className="text-[9px] sm:text-[10px] text-[#F5C542] flex items-center justify-end gap-1 font-mono leading-tight whitespace-nowrap"
+                          >
+                            <span>⚠️</span>
+                            <span>{tCard('benchmarkBadge')}</span>
+                          </span>
+                        ) : (
+                          <span className="text-[9px] sm:text-[10px] text-[#3D9A6A] flex items-center justify-end gap-1 leading-tight font-medium whitespace-nowrap">
+                            {quote?.unitPrice ? tCard('liveDexBadge') : tCard('liveBinanceBadge')}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -2512,8 +2544,8 @@ function HomeContent({
                   {/* Wrapper Explanation & Savings */}
                   <div className="space-y-2">
                     <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/[0.06] text-xs text-[#A1A1AA] leading-relaxed">
-                      <span className="font-semibold text-[#F5F5F4]">{cheaperTok.tokenSymbol}</span>{' '}
-                      {wrapperExplanation}.
+                      <span translate="no" className="font-semibold text-[#F5F5F4] notranslate">{cheaperTok.tokenSymbol}</span>{' '}
+                      {`${wrapperExplanation}${locale === 'zh' ? '。' : '.'}`}
                     </div>
 
                     <div className="flex items-center gap-2 p-3 rounded-2xl bg-[#3D9A6A]/10 border border-[#3D9A6A]/25 text-[#3D9A6A] text-xs font-medium">
@@ -2666,7 +2698,8 @@ function HomeContent({
                           href={`https://bscscan.com/tx/${bc.swapTxHash}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-xs text-[#F5C542] hover:underline font-mono inline-block mt-0.5"
+                          translate="no"
+                          className="text-xs text-[#F5C542] hover:underline font-mono inline-block mt-0.5 notranslate"
                         >
                           {tCard('viewBscScan')}
                         </a>
@@ -3000,12 +3033,13 @@ function HomeContent({
                               href={`https://bscscan.com/tx/${targetBroadcast.swapTxHash}`}
                               target="_blank"
                               rel="noreferrer"
-                              className="underline hover:text-[#F5C542]"
+                              translate="no"
+                              className="underline hover:text-[#F5C542] notranslate"
                             >
                               View on BscScan ↗
                             </a>
                           </div>
-                          <p className="text-[11px] text-[#A1A1AA] break-all">
+                          <p translate="no" className="text-[11px] text-[#A1A1AA] break-all notranslate">
                             Tx: {targetBroadcast.swapTxHash}
                           </p>
                         </div>
@@ -3110,7 +3144,7 @@ function HomeContent({
                     : 'bg-white/[0.04] text-[#A1A1AA] border-white/[0.06] hover:bg-white/[0.08] hover:text-[#F5F5F4]'
                 }`}
               >
-                {sym}
+                <span translate="no" className="notranslate">{sym}</span>
               </button>
             ))}
           </div>
@@ -3442,7 +3476,7 @@ function HomeContent({
                       t.statusInfo?.reasonCode ||
                       t.reasonCode ||
                       '';
-                    const isExecutable = isOpen === true && reasonCode === 'TRADING';
+                    const isExecutable = !t.isFallback && isOpen === true && reasonCode === 'TRADING';
                     const statusStr = marketLabel;
 
                     const quote = quotes[contract];
@@ -3458,7 +3492,7 @@ function HomeContent({
                         className="p-3.5 bg-[#07070A] rounded-xl border border-white/[0.04] space-y-3 text-xs"
                       >
                         <div className="flex justify-between items-center">
-                          <span className="font-bold text-[#F5F5F4] font-mono text-sm">{t.tokenSymbol}</span>
+                          <span translate="no" className="font-bold text-[#F5F5F4] font-mono text-sm notranslate">{t.tokenSymbol}</span>
                           <span className="text-[#A1A1AA]">{t.tokenName || t.underlyingName || 'Tokenized Stock'}</span>
                         </div>
 
@@ -3468,7 +3502,8 @@ function HomeContent({
                             href={`https://bscscan.com/token/${contract}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-[#F5C542] hover:underline"
+                            translate="no"
+                            className="text-[#F5C542] hover:underline notranslate"
                           >
                             {contract ? `${contract.slice(0, 6)}...${contract.slice(-4)}` : 'N/A'}
                           </a>
@@ -3528,19 +3563,30 @@ function HomeContent({
                         <div className="flex justify-between items-center text-[11px]">
                           <span className="text-[#A1A1AA]">Status</span>
                           <div className="flex items-center gap-1.5">
-                            <span className="font-mono px-2 py-0.5 rounded-full bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06] capitalize">
-                              {marketLabel}
-                            </span>
-                            <span
-                              data-testid={`${t.tokenSymbol.toLowerCase()}-executable-chip`}
-                              className={`font-mono px-2 py-0.5 rounded-full ${
-                                isExecutable
-                                  ? 'bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30 font-semibold'
-                                  : 'bg-[#C45C26]/10 text-[#C45C26] border border-[#C45C26]/30 font-semibold'
-                              }`}
-                            >
-                              {isExecutable ? 'Executable' : 'Halted'}
-                            </span>
+                            {t.isFallback ? (
+                              <span
+                                data-testid={`${t.tokenSymbol.toLowerCase()}-executable-chip`}
+                                className="font-mono px-2 py-0.5 rounded-full bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06]"
+                              >
+                                Status Unavailable
+                              </span>
+                            ) : (
+                              <>
+                                <span className="font-mono px-2 py-0.5 rounded-full bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06] capitalize">
+                                  {marketLabel}
+                                </span>
+                                <span
+                                  data-testid={`${t.tokenSymbol.toLowerCase()}-executable-chip`}
+                                  className={`font-mono px-2 py-0.5 rounded-full ${
+                                    isExecutable
+                                      ? 'bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30 font-semibold'
+                                      : 'bg-[#C45C26]/10 text-[#C45C26] border border-[#C45C26]/30 font-semibold'
+                                  }`}
+                                >
+                                  {isExecutable ? 'Executable' : 'Halted'}
+                                </span>
+                              </>
+                            )}
                           </div>
                         </div>
 
@@ -3794,7 +3840,7 @@ function HomeContent({
                                                   <span className="text-[#3D9A6A] font-semibold">LiquidMesh Router</span>
                                                 </div>
                                                 <div className="flex items-center justify-between gap-1.5 bg-[#121214] p-1.5 rounded border border-white/[0.06]">
-                                                  <span className="font-mono text-[10px] text-[#3D9A6A] truncate max-w-[130px] sm:max-w-[180px]">
+                                                  <span translate="no" className="font-mono text-[10px] text-[#3D9A6A] truncate max-w-[130px] sm:max-w-[180px] notranslate">
                                                     {bc.swapTxHash.slice(0, 10)}...{bc.swapTxHash.slice(-8)}
                                                   </span>
                                                   <div className="flex items-center gap-1 shrink-0">
@@ -3813,7 +3859,8 @@ function HomeContent({
                                                       href={`https://bscscan.com/tx/${bc.swapTxHash}`}
                                                       target="_blank"
                                                       rel="noopener noreferrer"
-                                                      className="px-2 py-0.5 rounded bg-[#3D9A6A]/20 hover:bg-[#3D9A6A]/30 text-[10px] text-[#3D9A6A] font-mono transition flex items-center gap-0.5"
+                                                      translate="no"
+                                                      className="px-2 py-0.5 rounded bg-[#3D9A6A]/20 hover:bg-[#3D9A6A]/30 text-[10px] text-[#3D9A6A] font-mono transition flex items-center gap-0.5 notranslate"
                                                     >
                                                       <span>BSCScan</span>
                                                       <span>↗</span>
@@ -3843,7 +3890,8 @@ function HomeContent({
                                                     href={`https://bscscan.com/tx/${bc.approveTxHash}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="text-[#F5C542] hover:underline flex items-center gap-0.5"
+                                                    translate="no"
+                                                    className="text-[#F5C542] hover:underline flex items-center gap-0.5 notranslate"
                                                   >
                                                     <span>View</span>
                                                     <span>↗</span>
@@ -3917,7 +3965,7 @@ function HomeContent({
                                               </button>
                                             </MetalFx>
                                             {!quote.isFallback && (
-                                              <div className="flex items-center justify-between text-[10px] text-[#A1A1AA] pt-1.5 px-0.5">
+                                              <div className="flex flex-wrap items-center justify-between gap-1.5 text-[10px] text-[#A1A1AA] pt-1.5 px-0.5">
                                                 <span className="flex items-center gap-1 text-[#3D9A6A]">
                                                   <span>🛡️ Allowance:</span>
                                                   <span className="font-semibold text-[#F5F5F4]">
@@ -4015,7 +4063,7 @@ function HomeContent({
                       t.statusInfo?.reasonCode ||
                       t.reasonCode ||
                       '';
-                    const isExecutable = isOpen === true && reasonCode === 'TRADING';
+                    const isExecutable = !t.isFallback && isOpen === true && reasonCode === 'TRADING';
                     const statusStr = marketLabel;
 
                     const quote = quotes[contract];
@@ -4031,7 +4079,7 @@ function HomeContent({
                         className="p-3.5 bg-[#07070A] rounded-xl border border-white/[0.04] space-y-3 text-xs"
                       >
                         <div className="flex justify-between items-center">
-                          <span className="font-bold text-[#F5F5F4] font-mono text-sm">{t.tokenSymbol}</span>
+                          <span translate="no" className="font-bold text-[#F5F5F4] font-mono text-sm notranslate">{t.tokenSymbol}</span>
                           <span className="text-[#A1A1AA]">{t.tokenName || t.underlyingName || 'Tokenized Stock'}</span>
                         </div>
 
@@ -4041,7 +4089,8 @@ function HomeContent({
                             href={`https://bscscan.com/token/${contract}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-[#F5C542] hover:underline"
+                            translate="no"
+                            className="text-[#F5C542] hover:underline notranslate"
                           >
                             {contract ? `${contract.slice(0, 6)}...${contract.slice(-4)}` : 'N/A'}
                           </a>
@@ -4101,19 +4150,30 @@ function HomeContent({
                         <div className="flex justify-between items-center text-[11px]">
                           <span className="text-[#A1A1AA]">Status</span>
                           <div className="flex items-center gap-1.5">
-                            <span className="font-mono px-2 py-0.5 rounded-full bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06] capitalize">
-                              {marketLabel}
-                            </span>
-                            <span
-                              data-testid={`${t.tokenSymbol.toLowerCase()}-executable-chip`}
-                              className={`font-mono px-2 py-0.5 rounded-full ${
-                                isExecutable
-                                  ? 'bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30 font-semibold'
-                                  : 'bg-[#C45C26]/10 text-[#C45C26] border border-[#C45C26]/30 font-semibold'
-                              }`}
-                            >
-                              {isExecutable ? 'Executable' : 'Halted'}
-                            </span>
+                            {t.isFallback ? (
+                              <span
+                                data-testid={`${t.tokenSymbol.toLowerCase()}-executable-chip`}
+                                className="font-mono px-2 py-0.5 rounded-full bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06]"
+                              >
+                                Status Unavailable
+                              </span>
+                            ) : (
+                              <>
+                                <span className="font-mono px-2 py-0.5 rounded-full bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06] capitalize">
+                                  {marketLabel}
+                                </span>
+                                <span
+                                  data-testid={`${t.tokenSymbol.toLowerCase()}-executable-chip`}
+                                  className={`font-mono px-2 py-0.5 rounded-full ${
+                                    isExecutable
+                                      ? 'bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30 font-semibold'
+                                      : 'bg-[#C45C26]/10 text-[#C45C26] border border-[#C45C26]/30 font-semibold'
+                                  }`}
+                                >
+                                  {isExecutable ? 'Executable' : 'Halted'}
+                                </span>
+                              </>
+                            )}
                           </div>
                         </div>
 
@@ -4344,7 +4404,7 @@ function HomeContent({
                                                   <span className="text-[#3D9A6A] font-semibold">LiquidMesh Router</span>
                                                 </div>
                                                 <div className="flex items-center justify-between gap-1.5 bg-[#121214] p-1.5 rounded border border-white/[0.06]">
-                                                  <span className="font-mono text-[10px] text-[#3D9A6A] truncate max-w-[130px] sm:max-w-[180px]">
+                                                  <span translate="no" className="font-mono text-[10px] text-[#3D9A6A] truncate max-w-[130px] sm:max-w-[180px] notranslate">
                                                     {bc.swapTxHash.slice(0, 10)}...{bc.swapTxHash.slice(-8)}
                                                   </span>
                                                   <div className="flex items-center gap-1 shrink-0">
@@ -4363,7 +4423,8 @@ function HomeContent({
                                                       href={`https://bscscan.com/tx/${bc.swapTxHash}`}
                                                       target="_blank"
                                                       rel="noopener noreferrer"
-                                                      className="px-2 py-0.5 rounded bg-[#3D9A6A]/20 hover:bg-[#3D9A6A]/30 text-[10px] text-[#3D9A6A] font-mono transition flex items-center gap-0.5"
+                                                      translate="no"
+                                                      className="px-2 py-0.5 rounded bg-[#3D9A6A]/20 hover:bg-[#3D9A6A]/30 text-[10px] text-[#3D9A6A] font-mono transition flex items-center gap-0.5 notranslate"
                                                     >
                                                       <span>BSCScan</span>
                                                       <span>↗</span>
@@ -4393,7 +4454,8 @@ function HomeContent({
                                                     href={`https://bscscan.com/tx/${bc.approveTxHash}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="text-[#F5C542] hover:underline flex items-center gap-0.5"
+                                                    translate="no"
+                                                    className="text-[#F5C542] hover:underline flex items-center gap-0.5 notranslate"
                                                   >
                                                     <span>View</span>
                                                     <span>↗</span>
@@ -4467,7 +4529,7 @@ function HomeContent({
                                               </button>
                                             </MetalFx>
                                             {!quote.isFallback && (
-                                              <div className="flex items-center justify-between text-[10px] text-[#A1A1AA] pt-1.5 px-0.5">
+                                              <div className="flex flex-wrap items-center justify-between gap-1.5 text-[10px] text-[#A1A1AA] pt-1.5 px-0.5">
                                                 <span className="flex items-center gap-1 text-[#3D9A6A]">
                                                   <span>🛡️ Allowance:</span>
                                                   <span className="font-semibold text-[#F5F5F4]">
@@ -4821,8 +4883,44 @@ export default function Home() {
     (globalThis as any).__AFTERGAP_TEST_MODE__ || 'simple'
   );
 
+  // 1. On first load, default locale to zh when navigator.language starts with "zh", otherwise en.
+  // Read navigator.language in an effect after mount so server and client markup match.
+  // The header toggle still overrides it, and choice persists in localStorage.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const savedLocale = localStorage.getItem('aftergap_locale');
+      if (savedLocale === 'en' || savedLocale === 'zh') {
+        setLocale(savedLocale);
+        return;
+      }
+      if (navigator?.language && navigator.language.toLowerCase().startsWith('zh')) {
+        setLocale('zh');
+      }
+    } catch {
+      // Ignore localStorage access errors (e.g. private browsing)
+    }
+  }, []);
+
+  const handleSetLocale = (newLocale: 'en' | 'zh') => {
+    setLocale(newLocale);
+    try {
+      localStorage.setItem('aftergap_locale', newLocale);
+    } catch {
+      // Ignore localStorage errors
+    }
+  };
+
   // Strict Pro-Mode Isolation: Keep Pro Mode 100% English with zero language leakage
   const activeLocale = viewMode === 'pro' ? 'en' : locale;
+
+  // 2. Keep document.documentElement.lang in sync with the active locale ("zh-CN" or "en").
+  // Pro Mode stays English, so lang reads en there.
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.lang = activeLocale === 'zh' ? 'zh-CN' : 'en';
+    }
+  }, [activeLocale]);
 
   return (
     <NextIntlClientProvider
@@ -4844,7 +4942,7 @@ export default function Home() {
     >
       <HomeContent
         locale={locale}
-        setLocale={setLocale}
+        setLocale={handleSetLocale}
         viewMode={viewMode}
         setViewMode={setViewMode}
       />

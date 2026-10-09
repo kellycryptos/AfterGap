@@ -44,7 +44,18 @@
     "checkingPrice": "正在获取最优报价...",
     "boughtReceipt": "🎉 成功买入 {amount} 股 {ticker}",
     "soldReceipt": "🎉 成功卖出 {ticker}，换得 {amount} USDT",
-    "viewBscScan": "在 BSCScan 上查看 ↗"
+    "viewBscScan": "在 BSCScan 上查看 ↗",
+    "statusTrading": "交易中",
+    "statusRegular": "常规交易",
+    "statusPremarket": "盘前交易",
+    "statusPostmarket": "盘后交易",
+    "statusOvernight": "夜盘交易",
+    "statusClosed": "已休市",
+    "statusPaused": "暂停交易",
+    "statusHalted": "已停牌",
+    "statusUnavailable": "状态不可用",
+    "chipExecutable": "可成交",
+    "chipHalted": "暂停"
   },
   "Assistant": {
     "title": "AfterGap AI 助手",

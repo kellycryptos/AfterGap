@@ -80,8 +80,10 @@ async function verifyI18n() {
   const zhHeroOk = zhHtml.includes('在 BNB Chain 上交易美股');
   const zhCardOk = zhHtml.includes('买入 NVDA') && zhHtml.includes('投资金额');
   const zhSavingsOk = zhHtml.includes('预计比另一版本节省约');
-  const zhDividendOk = zhHtml.includes('的股息将以增发代币形式自动发放');
+  const zhDividendOk = zhHtml.includes('的股息将以增发代币形式自动发放。');
   const zhGuardOk = zhHtml.includes('资金保护机制已生效（基准模式）');
+  const zhStatusUnavailableOk = zhHtml.includes('状态不可用');
+  const zhTranslateNoOk = zhHtml.includes('translate="no"');
   const zhAssistantOk = zhHtml.includes('AfterGap AI 助手') && zhHtml.includes('（AI 回复目前仅支持英文）');
   const zhFooterOk = zhHtml.includes('使用条款') && zhHtml.includes('风险披露');
   const zhNoMissingPlaceholders = !zhHtml.includes('[MISSING:');
@@ -89,17 +91,19 @@ async function verifyI18n() {
   console.log(`ZH Hero Present:             ${zhHeroOk}`);
   console.log(`ZH Card Present:             ${zhCardOk}`);
   console.log(`ZH Savings (Natural Order):  ${zhSavingsOk}`);
-  console.log(`ZH Dividend Mechanism:       ${zhDividendOk}`);
+  console.log(`ZH Dividend Period (。):     ${zhDividendOk}`);
+  console.log(`ZH Status Unavailable Chip:  ${zhStatusUnavailableOk}`);
+  console.log(`ZH Tickers translate="no":   ${zhTranslateNoOk}`);
   console.log(`ZH Fund Guard Active:        ${zhGuardOk}`);
   console.log(`ZH Assistant & Notice:       ${zhAssistantOk}`);
   console.log(`ZH Footer & Legal:           ${zhFooterOk}`);
   console.log(`ZH No [MISSING:] Flags:      ${zhNoMissingPlaceholders}`);
 
-  if (!zhHeroOk || !zhCardOk || !zhSavingsOk || !zhDividendOk || !zhGuardOk || !zhAssistantOk || !zhFooterOk || !zhNoMissingPlaceholders) {
-    console.error('❌ FAIL: Chinese Simple Mode missing expected strings or has missing key placeholders.');
+  if (!zhHeroOk || !zhCardOk || !zhSavingsOk || !zhDividendOk || !zhStatusUnavailableOk || !zhTranslateNoOk || !zhGuardOk || !zhAssistantOk || !zhFooterOk || !zhNoMissingPlaceholders) {
+    console.error('❌ FAIL: Chinese Simple Mode missing expected strings, incorrect punctuation, or missing key placeholders.');
     process.exit(1);
   }
-  console.log('✅ PASS: Chinese Simple Mode renders without missing keys.\n');
+  console.log('✅ PASS: Chinese Simple Mode renders without missing keys and with proper Chinese punctuation.\n');
 
   // --- TEST 3: Strict Pro Mode Isolation ---
   console.log('--- TEST 3: Pro Mode Isolation (Zero Chinese Leakage) ---');
