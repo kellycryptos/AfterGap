@@ -10,6 +10,7 @@ import { AfterGapLogo } from './Logo';
 import { NextIntlClientProvider, useTranslations } from 'next-intl';
 import messagesEn from '../messages/en.json';
 import messagesZh from '../messages/zh.json';
+import { resolveInitialLocale, resolveHtmlLang } from '../i18n/helpers';
 
 const allMessages = {
   en: messagesEn,
@@ -3476,7 +3477,7 @@ function HomeContent({
                       t.statusInfo?.reasonCode ||
                       t.reasonCode ||
                       '';
-                    const isExecutable = !t.isFallback && isOpen === true && reasonCode === 'TRADING';
+                    const isExecutable = isOpen === true && reasonCode === 'TRADING';
                     const statusStr = marketLabel;
 
                     const quote = quotes[contract];
@@ -3563,30 +3564,19 @@ function HomeContent({
                         <div className="flex justify-between items-center text-[11px]">
                           <span className="text-[#A1A1AA]">Status</span>
                           <div className="flex items-center gap-1.5">
-                            {t.isFallback ? (
-                              <span
-                                data-testid={`${t.tokenSymbol.toLowerCase()}-executable-chip`}
-                                className="font-mono px-2 py-0.5 rounded-full bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06]"
-                              >
-                                Status Unavailable
-                              </span>
-                            ) : (
-                              <>
-                                <span className="font-mono px-2 py-0.5 rounded-full bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06] capitalize">
-                                  {marketLabel}
-                                </span>
-                                <span
-                                  data-testid={`${t.tokenSymbol.toLowerCase()}-executable-chip`}
-                                  className={`font-mono px-2 py-0.5 rounded-full ${
-                                    isExecutable
-                                      ? 'bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30 font-semibold'
-                                      : 'bg-[#C45C26]/10 text-[#C45C26] border border-[#C45C26]/30 font-semibold'
-                                  }`}
-                                >
-                                  {isExecutable ? 'Executable' : 'Halted'}
-                                </span>
-                              </>
-                            )}
+                            <span className="font-mono px-2 py-0.5 rounded-full bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06] capitalize">
+                              {marketLabel}
+                            </span>
+                            <span
+                              data-testid={`${t.tokenSymbol.toLowerCase()}-executable-chip`}
+                              className={`font-mono px-2 py-0.5 rounded-full ${
+                                isExecutable
+                                  ? 'bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30 font-semibold'
+                                  : 'bg-[#C45C26]/10 text-[#C45C26] border border-[#C45C26]/30 font-semibold'
+                              }`}
+                            >
+                              {isExecutable ? 'Executable' : 'Halted'}
+                            </span>
                           </div>
                         </div>
 
@@ -4063,7 +4053,7 @@ function HomeContent({
                       t.statusInfo?.reasonCode ||
                       t.reasonCode ||
                       '';
-                    const isExecutable = !t.isFallback && isOpen === true && reasonCode === 'TRADING';
+                    const isExecutable = isOpen === true && reasonCode === 'TRADING';
                     const statusStr = marketLabel;
 
                     const quote = quotes[contract];
@@ -4150,30 +4140,19 @@ function HomeContent({
                         <div className="flex justify-between items-center text-[11px]">
                           <span className="text-[#A1A1AA]">Status</span>
                           <div className="flex items-center gap-1.5">
-                            {t.isFallback ? (
-                              <span
-                                data-testid={`${t.tokenSymbol.toLowerCase()}-executable-chip`}
-                                className="font-mono px-2 py-0.5 rounded-full bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06]"
-                              >
-                                Status Unavailable
-                              </span>
-                            ) : (
-                              <>
-                                <span className="font-mono px-2 py-0.5 rounded-full bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06] capitalize">
-                                  {marketLabel}
-                                </span>
-                                <span
-                                  data-testid={`${t.tokenSymbol.toLowerCase()}-executable-chip`}
-                                  className={`font-mono px-2 py-0.5 rounded-full ${
-                                    isExecutable
-                                      ? 'bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30 font-semibold'
-                                      : 'bg-[#C45C26]/10 text-[#C45C26] border border-[#C45C26]/30 font-semibold'
-                                  }`}
-                                >
-                                  {isExecutable ? 'Executable' : 'Halted'}
-                                </span>
-                              </>
-                            )}
+                            <span className="font-mono px-2 py-0.5 rounded-full bg-white/[0.04] text-[#A1A1AA] border border-white/[0.06] capitalize">
+                              {marketLabel}
+                            </span>
+                            <span
+                              data-testid={`${t.tokenSymbol.toLowerCase()}-executable-chip`}
+                              className={`font-mono px-2 py-0.5 rounded-full ${
+                                isExecutable
+                                  ? 'bg-[#3D9A6A]/10 text-[#3D9A6A] border border-[#3D9A6A]/30 font-semibold'
+                                  : 'bg-[#C45C26]/10 text-[#C45C26] border border-[#C45C26]/30 font-semibold'
+                              }`}
+                            >
+                              {isExecutable ? 'Executable' : 'Halted'}
+                            </span>
                           </div>
                         </div>
 
@@ -4890,13 +4869,8 @@ export default function Home() {
     if (typeof window === 'undefined') return;
     try {
       const savedLocale = localStorage.getItem('aftergap_locale');
-      if (savedLocale === 'en' || savedLocale === 'zh') {
-        setLocale(savedLocale);
-        return;
-      }
-      if (navigator?.language && navigator.language.toLowerCase().startsWith('zh')) {
-        setLocale('zh');
-      }
+      const resolved = resolveInitialLocale(savedLocale, navigator?.language);
+      setLocale(resolved);
     } catch {
       // Ignore localStorage access errors (e.g. private browsing)
     }
@@ -4918,9 +4892,9 @@ export default function Home() {
   // Pro Mode stays English, so lang reads en there.
   useEffect(() => {
     if (typeof document !== 'undefined') {
-      document.documentElement.lang = activeLocale === 'zh' ? 'zh-CN' : 'en';
+      document.documentElement.lang = resolveHtmlLang(viewMode, locale);
     }
-  }, [activeLocale]);
+  }, [viewMode, locale]);
 
   return (
     <NextIntlClientProvider

@@ -1,6 +1,7 @@
 import React from 'react';
 import { renderToString } from 'react-dom/server';
 import Home from '../apps/web/app/page';
+import { resolveInitialLocale, resolveHtmlLang } from '../apps/web/i18n/helpers';
 import enMessages from '../apps/web/messages/en.json';
 import zhMessages from '../apps/web/messages/zh.json';
 
@@ -140,6 +141,67 @@ async function verifyI18n() {
     process.exit(1);
   }
   console.log('✅ PASS: Pro Mode is 100% strictly isolated in English with zero leakage.\n');
+
+  // --- TEST 4: Client Lifecycle, Navigator Detection, LocalStorage & Lang Sync ---
+  console.log('--- TEST 4: Client Lifecycle, Navigator Detection, LocalStorage & Lang Sync ---');
+
+  // Scenario A: Fresh visitor with zh-CN navigator language and empty localStorage
+  const autoDetectZhCN = resolveInitialLocale(null, 'zh-CN');
+  const autoDetectZhTW = resolveInitialLocale(null, 'zh-TW');
+  const autoDetectZh = resolveInitialLocale(null, 'zh');
+  const autoLangZh = resolveHtmlLang('simple', autoDetectZhCN);
+
+  console.log(`Auto-detect 'zh-CN' -> 'zh':   ${autoDetectZhCN === 'zh'}`);
+  console.log(`Auto-detect 'zh-TW' -> 'zh':   ${autoDetectZhTW === 'zh'}`);
+  console.log(`Auto-detect 'zh' -> 'zh':      ${autoDetectZh === 'zh'}`);
+  console.log(`HTML Lang for ZH Simple:       ${autoLangZh === 'zh-CN'}`);
+
+  if (autoDetectZhCN !== 'zh' || autoDetectZhTW !== 'zh' || autoDetectZh !== 'zh' || autoLangZh !== 'zh-CN') {
+    console.error('❌ FAIL: Chinese navigator language auto-detection or HTML lang failed.');
+    process.exit(1);
+  }
+
+  // Scenario B: Fresh visitor with English or other navigator language
+  const autoDetectEn = resolveInitialLocale(null, 'en-US');
+  const autoDetectJa = resolveInitialLocale(null, 'ja-JP');
+  const autoLangEn = resolveHtmlLang('simple', autoDetectEn);
+
+  console.log(`Auto-detect 'en-US' -> 'en':   ${autoDetectEn === 'en'}`);
+  console.log(`Auto-detect 'ja-JP' -> 'en':   ${autoDetectJa === 'en'}`);
+  console.log(`HTML Lang for EN Simple:       ${autoLangEn === 'en'}`);
+
+  if (autoDetectEn !== 'en' || autoDetectJa !== 'en' || autoLangEn !== 'en') {
+    console.error('❌ FAIL: English/other navigator language auto-detection or HTML lang failed.');
+    process.exit(1);
+  }
+
+  // Scenario C: User overrides in localStorage (header toggle persists and overrides navigator)
+  const savedEnOverridesZh = resolveInitialLocale('en', 'zh-CN');
+  const savedZhOverridesEn = resolveInitialLocale('zh', 'en-US');
+
+  console.log(`Saved 'en' overrides 'zh-CN':  ${savedEnOverridesZh === 'en'}`);
+  console.log(`Saved 'zh' overrides 'en-US':  ${savedZhOverridesEn === 'zh'}`);
+
+  if (savedEnOverridesZh !== 'en' || savedZhOverridesEn !== 'zh') {
+    console.error('❌ FAIL: LocalStorage preference did not override navigator.language.');
+    process.exit(1);
+  }
+
+  // Scenario D: Pro Mode HTML lang isolation (Pro Mode stays English even if locale is zh)
+  const proModeHtmlLangWithZh = resolveHtmlLang('pro', 'zh');
+  const proModeHtmlLangWithEn = resolveHtmlLang('pro', 'en');
+  const simpleModeHtmlLangWithZh = resolveHtmlLang('simple', 'zh');
+
+  console.log(`Pro Mode HTML lang (zh user): ${proModeHtmlLangWithZh === 'en'}`);
+  console.log(`Pro Mode HTML lang (en user): ${proModeHtmlLangWithEn === 'en'}`);
+  console.log(`Simple Mode Lang reverts zh:  ${simpleModeHtmlLangWithZh === 'zh-CN'}`);
+
+  if (proModeHtmlLangWithZh !== 'en' || proModeHtmlLangWithEn !== 'en' || simpleModeHtmlLangWithZh !== 'zh-CN') {
+    console.error('❌ FAIL: Pro Mode HTML lang attribute isolation violated.');
+    process.exit(1);
+  }
+
+  console.log('✅ PASS: Client-side locale detection, localStorage persistence, and HTML lang sync verified (100%).\n');
 
   console.log('================================================================');
   console.log('       ALL BILINGUAL & ISOLATION CHECKS PASSED (100%)           ');
