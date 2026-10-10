@@ -110,6 +110,25 @@ interface TxBroadcastState {
   error?: string;
 }
 
+const ALLOWED_LIQUIDMESH_ROUTERS = new Set([
+  '0xb44446b0c8e56988c34f7ff73ae904982b5fdda5',
+]);
+
+function parseToScaledWei(amountStr: string, decimals: number = 18): string {
+  const clean = (amountStr || '0').trim();
+  const parts = clean.split('.');
+  const whole = parts[0] || '0';
+  let fraction = parts[1] || '';
+  if (fraction.length > decimals) {
+    fraction = fraction.slice(0, decimals);
+  } else {
+    fraction = fraction.padEnd(decimals, '0');
+  }
+  const cleanWhole = whole.replace(/^0+(?=\d)/, '') || '0';
+  const val = BigInt(cleanWhole) * (10n ** BigInt(decimals)) + BigInt(fraction);
+  return val.toString();
+}
+
 async function checkAllowance(
   owner: string,
   spender: string,
@@ -1019,8 +1038,33 @@ function HomeContent({
     if (!contract) return;
     const currentQuote = quotes[contract];
     if (!currentQuote?.quoteId) return;
+
+    // Strict Fallback Guard: Execution strictly prohibited on benchmark data
+    if (currentQuote.isFallback || token.isFallback) {
+      setBroadcasts((prev) => ({
+        ...prev,
+        [contract]: { loading: false, step: 'error', error: 'Execution disabled for benchmark simulation data. Live quote required.' },
+      }));
+      return;
+    }
+
     if (!wallet.connected || !wallet.address) {
       setWallet((w) => ({ ...w, error: 'Connect your wallet first.' }));
+      return;
+    }
+
+    // Strict Chain ID Verification: Must be BSC (Chain ID 56)
+    if (wallet.chainId && wallet.chainId !== '56' && wallet.chainId !== '0x38') {
+      setWallet((w) => ({ ...w, error: 'Please switch your wallet to BNB Smart Chain (Chain ID: 56).' }));
+      return;
+    }
+
+    // Strict Quote Expiry Guard (30s TTL)
+    if (currentQuote.fetchedAt && Date.now() - currentQuote.fetchedAt > 30000) {
+      setBroadcasts((prev) => ({
+        ...prev,
+        [contract]: { loading: false, step: 'error', error: 'Quote expired. Please refresh the quote before executing.' },
+      }));
       return;
     }
 
@@ -1029,14 +1073,34 @@ function HomeContent({
 
     const direction = tradeDirections[contract.toLowerCase()] || 'buy';
     const isSell = direction === 'sell';
+
+    // Strict Sell Guard at Root: Locked pending live verification
+    if (isSell) {
+      setBroadcasts((prev) => ({
+        ...prev,
+        [contract]: { loading: false, step: 'error', error: 'Sell execution is currently locked pending live verification. Only Buy execution is enabled in preview.' },
+      }));
+      return;
+    }
+
     const usdtContract = '0x55d398326f99059fF775485246999027B3197955';
     const fromToken = isSell ? contract : usdtContract;
     const toToken = isSell ? usdtContract : contract;
     const tokenToApprove = isSell ? contract : usdtContract;
 
     const inputAmountStr = currentQuote.fromAmount || (isSell ? '0.0218' : '10');
-    const amountInSmallestUnit = (BigInt(Math.floor(Number(inputAmountStr) * 1e6)) * BigInt(1e12)).toString();
+    const amountInSmallestUnit = parseToScaledWei(inputAmountStr, 18);
     const amountNeeded = BigInt(amountInSmallestUnit);
+
+    // Minimum $5 USD Order Value Guard
+    if (!isSell && amountNeeded < 5000000000000000000n) {
+      setBroadcasts((prev) => ({
+        ...prev,
+        [contract]: { loading: false, step: 'error', error: 'Minimum order amount is 5 USDT.' },
+      }));
+      return;
+    }
+
     const mode = currentQuote.executionMode || 'SWAP';
 
     setBroadcasts((prev) => ({ ...prev, [contract]: { loading: true, step: 'preparing' } }));
@@ -1080,6 +1144,14 @@ function HomeContent({
       }
 
       const finalSpender = targetSpender || '0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5';
+
+      // Strict Router Allowlist Verification
+      if (!ALLOWED_LIQUIDMESH_ROUTERS.has(finalSpender.toLowerCase())) {
+        throw new Error(`Untrusted spender address: ${finalSpender}. Transaction aborted for security.`);
+      }
+      if (swapTx?.to && !ALLOWED_LIQUIDMESH_ROUTERS.has(swapTx.to.toLowerCase())) {
+        throw new Error(`Untrusted router destination: ${swapTx.to}. Transaction aborted for security.`);
+      }
 
       // Step 2: Check existing token allowance on BSC for finalSpender
       const currentAllowance = await checkAllowance(wallet.address, finalSpender, tokenToApprove);
@@ -1737,7 +1809,7 @@ function HomeContent({
       setAmounts((prev) => ({ ...prev, [contract]: '5' }));
     }
 
-    const amountInSmallestUnit = (BigInt(Math.floor(Number(inputAmountStr) * 1e6)) * BigInt(1e12)).toString(); // 18 decimals
+    const amountInSmallestUnit = parseToScaledWei(inputAmountStr, 18); // 18 decimals
 
     setQuotes((prev) => ({
       ...prev,
@@ -1981,7 +2053,7 @@ function HomeContent({
       const toToken = isSell ? usdtContract : contract;
 
       const inputAmountStr = currentQuote.fromAmount || (isSell ? '0.0218' : '10');
-      const amountInSmallestUnit = (BigInt(Math.floor(Number(inputAmountStr) * 1e6)) * BigInt(1e12)).toString();
+      const amountInSmallestUnit = parseToScaledWei(inputAmountStr, 18);
 
       let tx: any = null;
 
@@ -2650,8 +2722,19 @@ function HomeContent({
                         disabled
                         className="w-full py-3.5 rounded-2xl text-sm font-bold bg-zinc-800/80 border border-white/[0.08] text-[#A1A1AA] cursor-not-allowed flex items-center justify-center gap-2"
                       >
-                        <span>🔒 Trading Halted</span>
+                        <span>🔒 {tCard('statusHalted')}</span>
                       </button>
+                    ) : isSell ? (
+                      <div className="space-y-2">
+                        <button
+                          type="button"
+                          disabled
+                          className="w-full py-3.5 rounded-2xl text-sm font-bold bg-zinc-800/80 border border-white/[0.08] text-[#A1A1AA] cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                          <span>{tCard('sellLockedButton')}</span>
+                        </button>
+                        <p className="text-[11px] text-[#A1A1AA] text-center">{tCard('sellLockedNote')}</p>
+                      </div>
                     ) : (
                       <button
                         type="button"
@@ -2663,24 +2746,18 @@ function HomeContent({
                           }
                         }}
                         disabled={bc?.loading || quote?.loading}
-                        className={`w-full py-3.5 rounded-2xl text-sm font-bold transition shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 ${
-                          isSell
-                            ? 'bg-[#C45C26] hover:bg-[#A84A1C] text-white'
-                            : 'bg-[#F5C542] hover:bg-[#E0B02E] text-[#07070A]'
-                        }`}
+                        className="w-full py-3.5 rounded-2xl text-sm font-bold transition shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 bg-[#F5C542] hover:bg-[#E0B02E] text-[#07070A]"
                       >
                         {bc?.loading ? (
                           <>
-                            <ThinkingOrb state="working" size={20} theme={isSell ? 'dark' : 'light'} />
+                            <ThinkingOrb state="working" size={20} theme="light" />
                             <span>{tCard('confirmingWallet')}</span>
                           </>
                         ) : quote?.loading ? (
                           <>
-                            <ThinkingOrb state="searching" size={20} theme={isSell ? 'dark' : 'light'} />
+                            <ThinkingOrb state="searching" size={20} theme="light" />
                             <span>{tCard('checkingPrice')}</span>
                           </>
-                        ) : isSell ? (
-                          <span>{tCard('sellTicker', { ticker: cheaperTok.underlyingTicker || selectedSimpleTicker })}</span>
                         ) : (
                           <span>{tCard('buyTicker', { ticker: cheaperTok.underlyingTicker || selectedSimpleTicker })}</span>
                         )}
@@ -2995,6 +3072,19 @@ function HomeContent({
                         >
                           <span>🛡️ Benchmark Mode (Trading Locked)</span>
                         </button>
+                      ) : nlResult.intent.action === 'SELL' ? (
+                        <div className="space-y-2">
+                          <button
+                            type="button"
+                            disabled
+                            className="w-full py-3.5 px-4 rounded-xl font-semibold font-mono text-sm bg-zinc-800/80 border border-white/[0.08] text-[#A1A1AA] cursor-not-allowed flex items-center justify-center gap-2"
+                          >
+                            <span>🔒 Sell Execution (Preview Only — Trading Locked)</span>
+                          </button>
+                          <p className="text-[11px] text-[#A1A1AA] text-center">
+                            Sell execution is in preview mode. Dual-wrapper execution currently supports verified 1-click BUY orders via LiquidMesh.
+                          </p>
+                        </div>
                       ) : (
                         <button
                           type="button"
@@ -3477,7 +3567,7 @@ function HomeContent({
                       t.statusInfo?.reasonCode ||
                       t.reasonCode ||
                       '';
-                    const isExecutable = isOpen === true && reasonCode === 'TRADING';
+                    const isExecutable = !t.isFallback && isOpen === true && reasonCode === 'TRADING';
                     const statusStr = marketLabel;
 
                     const quote = quotes[contract];
@@ -3732,7 +3822,7 @@ function HomeContent({
                                 <span className="text-[#F5C542] font-semibold text-[10px] break-words">
                                   {isSell
                                     ? `${t.tokenSymbol} → USDC → WBTC → BTCB → USDT (LiquidMesh / Elfomofi)`
-                                    : (t.tokenSymbol === 'NVDAon' ? 'USDT → NVDAB → NVDAon' : 'USDT → ASTER → WBNB → USDC → NVDAB')}
+                                    : (t.tokenSymbol === 'NVDAon' ? 'USDT → NVDAB → NVDAon' : 'USDT → ASTER → USDC → NVDAB')}
                                 </span>
                               </div>
 
@@ -3903,14 +3993,14 @@ function HomeContent({
                                                 }}
                                                 disabled={
                                                   bc?.loading ||
+                                                  isSell ||
                                                   (quote.ttlRemaining || 0) <= 0 ||
                                                   Boolean(quote.isFallback) ||
                                                   !isExecutable ||
-                                                  (isSell && walletBalances.nvdab !== '—' && Number(inputAmount) > Number(walletBalances.nvdab)) ||
                                                   (!isSell && walletBalances.usdt !== '—' && Number(inputAmount) > Number(walletBalances.usdt))
                                                 }
                                                 className={`w-full py-1.5 px-3 rounded text-[11px] font-mono font-semibold transition disabled:opacity-50 flex items-center justify-center gap-1.5 ${
-                                                  quote.isFallback
+                                                  quote.isFallback || isSell || !isExecutable
                                                     ? 'bg-white/[0.04] text-[#A1A1AA] border border-white/[0.08] cursor-not-allowed'
                                                     : wallet.connected
                                                     ? 'bg-[#3D9A6A]/15 hover:bg-[#3D9A6A]/25 border border-[#3D9A6A]/40 text-[#3D9A6A]'
@@ -3942,10 +4032,12 @@ function HomeContent({
                                                   <span className="flex items-center justify-center gap-1.5 text-[#A1A1AA]">
                                                     <span>🔒 Trading Halted</span>
                                                   </span>
+                                                ) : isSell ? (
+                                                  <span className="flex items-center justify-center gap-1.5 text-[#A1A1AA]">
+                                                    <span>🔒 Sell Locked (Verification Pending)</span>
+                                                  </span>
                                                 ) : wallet.connected ? (
-                                                  isSell
-                                                    ? `🚀 Execute Live Sell via ${quote.vendorName || 'Route'} (${quote.executionMode || 'SWAP'})`
-                                                    : `🚀 Execute Live Buy via ${quote.vendorName || 'Route'} (${quote.executionMode || 'SWAP'})`
+                                                  `🚀 Execute Live Buy via ${quote.vendorName || 'Route'} (${quote.executionMode || 'SWAP'})`
                                                 ) : (
                                                   <span className="flex items-center justify-center gap-1.5">
                                                     <Wallet className="w-3.5 h-3.5" />
@@ -4053,7 +4145,7 @@ function HomeContent({
                       t.statusInfo?.reasonCode ||
                       t.reasonCode ||
                       '';
-                    const isExecutable = isOpen === true && reasonCode === 'TRADING';
+                    const isExecutable = !t.isFallback && isOpen === true && reasonCode === 'TRADING';
                     const statusStr = marketLabel;
 
                     const quote = quotes[contract];
@@ -4456,14 +4548,14 @@ function HomeContent({
                                                 }}
                                                 disabled={
                                                   bc?.loading ||
+                                                  isSell ||
                                                   (quote.ttlRemaining || 0) <= 0 ||
                                                   Boolean(quote.isFallback) ||
                                                   !isExecutable ||
-                                                  (isSell && walletBalances.nvdab !== '—' && Number(inputAmount) > Number(walletBalances.nvdab)) ||
                                                   (!isSell && walletBalances.usdt !== '—' && Number(inputAmount) > Number(walletBalances.usdt))
                                                 }
                                                 className={`w-full py-1.5 px-3 rounded text-[11px] font-mono font-semibold transition disabled:opacity-50 flex items-center justify-center gap-1.5 ${
-                                                  quote.isFallback || !isExecutable
+                                                  quote.isFallback || isSell || !isExecutable
                                                     ? 'bg-white/[0.04] text-[#A1A1AA] border border-white/[0.08] cursor-not-allowed'
                                                     : wallet.connected
                                                     ? 'bg-[#3D9A6A]/15 hover:bg-[#3D9A6A]/25 border border-[#3D9A6A]/40 text-[#3D9A6A]'
@@ -4495,10 +4587,12 @@ function HomeContent({
                                                   <span className="flex items-center justify-center gap-1.5 text-[#A1A1AA]">
                                                     <span>🔒 Trading Halted</span>
                                                   </span>
+                                                ) : isSell ? (
+                                                  <span className="flex items-center justify-center gap-1.5 text-[#A1A1AA]">
+                                                    <span>🔒 Sell Locked (Verification Pending)</span>
+                                                  </span>
                                                 ) : wallet.connected ? (
-                                                  isSell
-                                                    ? `🚀 Execute Live Sell via ${quote.vendorName || 'Route'} (${quote.executionMode || 'RFQ'})`
-                                                    : `🚀 Execute Live Buy via ${quote.vendorName || 'Route'} (${quote.executionMode || 'RFQ'})`
+                                                  `🚀 Execute Live Buy via ${quote.vendorName || 'Route'} (${quote.executionMode || 'RFQ'})`
                                                 ) : (
                                                   <span className="flex items-center justify-center gap-1.5">
                                                     <Wallet className="w-3.5 h-3.5" />

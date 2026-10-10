@@ -790,7 +790,91 @@ const BENCHMARK_QUOTES: Record<string, any> = {
   ],
 };
 
+// --- Security & Input Validation Helpers ---
+const ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
+const AMOUNT_REGEX = /^\d+$/;
+const ORDER_ID_REGEX = /^[a-zA-Z0-9._-]{1,128}$/;
+const HEX_DATA_REGEX = /^0x[a-fA-F0-9]*$/;
+
+function isValidAddress(val: unknown): boolean {
+  return typeof val === 'string' && ADDRESS_REGEX.test(val);
+}
+
+function isValidAmount(val: unknown): boolean {
+  if (typeof val !== 'string' || !AMOUNT_REGEX.test(val)) return false;
+  try {
+    return BigInt(val) > 0n;
+  } catch {
+    return false;
+  }
+}
+
+// --- Rate Limiting (Sliding Window per IP) ---
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const MAX_REQUESTS_PER_WINDOW = 60;
+const ipRequestTimestamps = new Map<string, number[]>();
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const timestamps = ipRequestTimestamps.get(ip) || [];
+  const validTimestamps = timestamps.filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+  if (validTimestamps.length >= MAX_REQUESTS_PER_WINDOW) {
+    ipRequestTimestamps.set(ip, validTimestamps);
+    return false;
+  }
+  validTimestamps.push(now);
+  ipRequestTimestamps.set(ip, validTimestamps);
+
+  // Periodic pruning of memory map
+  if (ipRequestTimestamps.size > 1000) {
+    for (const [k, v] of ipRequestTimestamps.entries()) {
+      const active = v.filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+      if (active.length === 0) {
+        ipRequestTimestamps.delete(k);
+      } else {
+        ipRequestTimestamps.set(k, active);
+      }
+    }
+  }
+  return true;
+}
+
+// --- In-Memory Short TTL Cache for Read-Only Endpoints ---
+interface CacheEntry {
+  data: any;
+  expiresAt: number;
+}
+const responseCache = new Map<string, CacheEntry>();
+
+function getCached(key: string): any | null {
+  const entry = responseCache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    responseCache.delete(key);
+    return null;
+  }
+  return entry.data;
+}
+
+function setCached(key: string, data: any, ttlMs: number): void {
+  if (responseCache.size > 500) {
+    const now = Date.now();
+    for (const [k, v] of responseCache.entries()) {
+      if (now > v.expiresAt) responseCache.delete(k);
+    }
+  }
+  responseCache.set(key, { data, expiresAt: Date.now() + ttlMs });
+}
+
 export async function GET(request: NextRequest) {
+  const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || '127.0.0.1';
+  if (clientIp !== '127.0.0.1' && clientIp !== '::1' && !checkRateLimit(clientIp)) {
+    return NextResponse.json(
+      { error: 'Rate limit exceeded. Please wait a moment before trying again.', timestamp: new Date().toISOString() },
+      { status: 429 }
+    );
+  }
+
   const { searchParams } = new URL(request.url);
   const action = searchParams.get('action') || 'resolve';
   const rawKeyword = searchParams.get('keyword') || 'NVDA';
@@ -837,6 +921,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (action === 'platforms') {
+      const cacheKey = `platforms:${simulateLive}:${simulate40304}`;
+      const cached = getCached(cacheKey);
+      if (cached) return NextResponse.json(cached);
+
       let platformsRes = simulateLive
         ? { success: true, status: 200, statusText: 'OK', data: BENCHMARK_PLATFORMS, rawBody: JSON.stringify(BENCHMARK_PLATFORMS), headers: {}, debug: { fallbackUsed: false } as any }
         : simulate40304
@@ -855,14 +943,20 @@ export async function GET(request: NextRequest) {
           debug: { ...platformsRes.debug, fallbackUsed: true } as any,
         };
       }
-      return NextResponse.json({
+      const responsePayload = {
         auth: authState,
         platforms: platformsRes,
         isFallback: isBlocked,
-      });
+      };
+      setCached(cacheKey, responsePayload, 10_000);
+      return NextResponse.json(responsePayload);
     }
 
     if (action === 'search') {
+      const cacheKey = `search:${keyword}:${simulateLive}:${simulate40304}`;
+      const cached = getCached(cacheKey);
+      if (cached) return NextResponse.json(cached);
+
       let searchRes = simulateLive
         ? { success: true, status: 200, statusText: 'OK', data: BENCHMARK_SEARCH[keyword] || BENCHMARK_SEARCH.NVDA, rawBody: JSON.stringify(BENCHMARK_SEARCH[keyword] || BENCHMARK_SEARCH.NVDA), headers: {}, debug: { fallbackUsed: false } as any }
         : simulate40304
@@ -882,14 +976,20 @@ export async function GET(request: NextRequest) {
           debug: { ...searchRes.debug, fallbackUsed: true } as any,
         };
       }
-      return NextResponse.json({
+      const responsePayload = {
         auth: authState,
         search: searchRes,
         isFallback: isBlocked,
-      });
+      };
+      setCached(cacheKey, responsePayload, 5_000);
+      return NextResponse.json(responsePayload);
     }
 
     if (action === 'tokens') {
+      const cacheKey = `tokens:${keyword}:${platformId || 'all'}:${simulateLive}:${simulate40304}`;
+      const cached = getCached(cacheKey);
+      if (cached) return NextResponse.json(cached);
+
       let tokensRes = simulateLive
         ? { success: true, status: 200, statusText: 'OK', data: (BENCHMARK_TOKENS[keyword] || BENCHMARK_TOKENS.NVDA).map(t => ({ ...t, isFallback: false })), rawBody: JSON.stringify(BENCHMARK_TOKENS[keyword] || BENCHMARK_TOKENS.NVDA), headers: {}, debug: { fallbackUsed: false } as any }
         : simulate40304
@@ -917,11 +1017,13 @@ export async function GET(request: NextRequest) {
       } else if (Array.isArray(tokensRes.data)) {
         tokensRes.data = tokensRes.data.map((t: any) => ({ ...t, isFallback: false }));
       }
-      return NextResponse.json({
+      const responsePayload = {
         auth: authState,
         tokens: tokensRes,
         isFallback: isBlocked,
-      });
+      };
+      setCached(cacheKey, responsePayload, 5_000);
+      return NextResponse.json(responsePayload);
     }
 
     if (action === 'quote') {
@@ -930,6 +1032,23 @@ export async function GET(request: NextRequest) {
       const amount = searchParams.get('amount') || '10000000000000000000'; // 10 USDT
       const userWalletAddress = searchParams.get('userWalletAddress') || undefined;
       const slippagePercent = searchParams.get('slippagePercent') || '1';
+
+      if (!isValidAddress(fromTokenAddress)) {
+        return NextResponse.json({ error: 'Invalid fromTokenAddress format' }, { status: 400 });
+      }
+      if (!isValidAddress(toTokenAddress)) {
+        return NextResponse.json({ error: 'Invalid toTokenAddress format' }, { status: 400 });
+      }
+      if (!isValidAmount(amount)) {
+        return NextResponse.json({ error: 'Invalid amount parameter. Must be positive integer string in smallest units.' }, { status: 400 });
+      }
+      if (userWalletAddress && !isValidAddress(userWalletAddress)) {
+        return NextResponse.json({ error: 'Invalid userWalletAddress format' }, { status: 400 });
+      }
+      const numSlippage = Number(slippagePercent);
+      if (isNaN(numSlippage) || numSlippage < 0 || numSlippage > 50) {
+        return NextResponse.json({ error: 'Invalid slippagePercent parameter. Must be between 0 and 50.' }, { status: 400 });
+      }
 
       let quoteRes;
       if (simulateLive) {
@@ -1046,6 +1165,22 @@ export async function GET(request: NextRequest) {
       const userWalletAddress = searchParams.get('userWalletAddress') || '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045';
       const slippagePercent = searchParams.get('slippagePercent') || '1';
 
+      if (quoteId && !ORDER_ID_REGEX.test(quoteId)) {
+        return NextResponse.json({ error: 'Invalid quoteId parameter' }, { status: 400 });
+      }
+      if (!isValidAddress(fromTokenAddress)) {
+        return NextResponse.json({ error: 'Invalid fromTokenAddress format' }, { status: 400 });
+      }
+      if (!isValidAddress(toTokenAddress)) {
+        return NextResponse.json({ error: 'Invalid toTokenAddress format' }, { status: 400 });
+      }
+      if (!isValidAmount(amount)) {
+        return NextResponse.json({ error: 'Invalid amount parameter' }, { status: 400 });
+      }
+      if (!isValidAddress(userWalletAddress)) {
+        return NextResponse.json({ error: 'Invalid userWalletAddress format' }, { status: 400 });
+      }
+
       let swapRes = await client.getSwap({
         quoteId,
         binanceChainId: 56,
@@ -1094,6 +1229,10 @@ export async function GET(request: NextRequest) {
 
     if (action === 'order_status') {
       const orderId = searchParams.get('orderId') || '';
+      if (!orderId || !ORDER_ID_REGEX.test(orderId)) {
+        return NextResponse.json({ error: 'Invalid orderId parameter' }, { status: 400 });
+      }
+
       const statusRes = await client.getRfqOrderStatus(orderId, 56);
       return NextResponse.json({
         auth: authState,
@@ -1104,8 +1243,8 @@ export async function GET(request: NextRequest) {
 
     if (action === 'balances') {
       const address = searchParams.get('address') || '';
-      if (!address) {
-        return NextResponse.json({ error: 'Missing address parameter' }, { status: 400 });
+      if (!isValidAddress(address)) {
+        return NextResponse.json({ error: 'Invalid or missing address parameter. Valid 0x Ethereum address required.' }, { status: 400 });
       }
 
       let balancesRes = await client.getBalances(address, 56);
@@ -1174,6 +1313,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Default (action === 'resolve'): Fetch platforms, search, and BSC tokens
+    const resolveCacheKey = `resolve:${keyword}:${simulateLive}:${simulate40304}`;
+    const cachedResolve = getCached(resolveCacheKey);
+    if (cachedResolve) return NextResponse.json(cachedResolve);
+
     let platformsRes;
     let searchRes;
     let bscTokensRes;
@@ -1277,7 +1420,7 @@ export async function GET(request: NextRequest) {
           platformsRes.debug?.fallbackUsed)
     );
 
-    return NextResponse.json({
+    const resolveResponsePayload = {
       auth: authState,
       keyword,
       platforms: platformsRes,
@@ -1285,7 +1428,10 @@ export async function GET(request: NextRequest) {
       bscTokens: bscTokensRes,
       isFallback: isOverallFallback,
       timestamp: new Date().toISOString(),
-    });
+    };
+    setCached(resolveCacheKey, resolveResponsePayload, 5_000);
+
+    return NextResponse.json(resolveResponsePayload);
   } catch (err: unknown) {
     console.error('[GET /api/rwa] Unhandled error:', err instanceof Error ? err.message : String(err));
     return NextResponse.json(
@@ -1299,6 +1445,14 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || '127.0.0.1';
+  if (clientIp !== '127.0.0.1' && clientIp !== '::1' && !checkRateLimit(clientIp)) {
+    return NextResponse.json(
+      { error: 'Rate limit exceeded. Please wait a moment before trying again.', timestamp: new Date().toISOString() },
+      { status: 429 }
+    );
+  }
+
   const { searchParams } = new URL(request.url);
   const action = searchParams.get('action') || 'simulate';
 
@@ -1320,9 +1474,9 @@ export async function POST(request: NextRequest) {
 
     if (action === 'simulate') {
       const tx = body.tx;
-      if (!tx || !tx.to || !tx.data) {
+      if (!tx || !isValidAddress(tx.to) || typeof tx.data !== 'string' || !HEX_DATA_REGEX.test(tx.data)) {
         return NextResponse.json(
-          { error: 'Missing tx parameters (to, data required)' },
+          { error: 'Invalid or missing tx parameters (valid to address and hex data required)' },
           { status: 400 }
         );
       }
@@ -1337,13 +1491,30 @@ export async function POST(request: NextRequest) {
 
     if (action === 'swap') {
       const { quoteId, fromTokenAddress, toTokenAddress, amount, userWalletAddress, slippagePercent } = body;
+      const fromTok = fromTokenAddress || '0x55d398326f99059fF775485246999027B3197955';
+      const userWallet = userWalletAddress || '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045';
+      const tradeAmt = amount || '10000000000000000000';
+
+      if (quoteId && !ORDER_ID_REGEX.test(quoteId)) {
+        return NextResponse.json({ error: 'Invalid quoteId parameter' }, { status: 400 });
+      }
+      if (!isValidAddress(fromTok) || !isValidAddress(toTokenAddress)) {
+        return NextResponse.json({ error: 'Invalid token address format' }, { status: 400 });
+      }
+      if (!isValidAmount(tradeAmt)) {
+        return NextResponse.json({ error: 'Invalid amount parameter' }, { status: 400 });
+      }
+      if (!isValidAddress(userWallet)) {
+        return NextResponse.json({ error: 'Invalid userWalletAddress format' }, { status: 400 });
+      }
+
       let swapRes = await client.getSwap({
         quoteId,
         binanceChainId: 56,
-        fromTokenAddress: fromTokenAddress || '0x55d398326f99059fF775485246999027B3197955',
+        fromTokenAddress: fromTok,
         toTokenAddress,
-        amount: amount || '10000000000000000000',
-        userWalletAddress: userWalletAddress || '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
+        amount: tradeAmt,
+        userWalletAddress: userWallet,
         slippagePercent: slippagePercent || '1',
       });
 
@@ -1385,10 +1556,22 @@ export async function POST(request: NextRequest) {
 
     if (action === 'submit_order' || action === 'rfq_submit') {
       const { orderId, signature, userWalletAddress, binanceChainId } = body;
+      const userWallet = userWalletAddress || '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045';
+
+      if (!orderId || !ORDER_ID_REGEX.test(orderId)) {
+        return NextResponse.json({ error: 'Invalid orderId parameter' }, { status: 400 });
+      }
+      if (!signature || typeof signature !== 'string' || !HEX_DATA_REGEX.test(signature)) {
+        return NextResponse.json({ error: 'Invalid signature parameter. Hex format required.' }, { status: 400 });
+      }
+      if (!isValidAddress(userWallet)) {
+        return NextResponse.json({ error: 'Invalid userWalletAddress parameter' }, { status: 400 });
+      }
+
       const submitRes = await client.submitRfqOrder({
         orderId,
         signature,
-        userWalletAddress: userWalletAddress || '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
+        userWalletAddress: userWallet,
         binanceChainId: binanceChainId || 56,
       });
 

@@ -6,6 +6,7 @@ Real-time dual-wrapper US stock price comparison, reference gap analysis, best-e
 
 **Live Production App:** [https://www.aftergap.xyz/](https://www.aftergap.xyz/)  
 **Official X / Twitter:** [@aftergap](https://x.com/aftergap)  
+**Demo Video:** [https://x.com/aftergap](https://x.com/aftergap)  
 **Track:** BNB Hack: Tokenized Stocks Edition (Chain ID: 56)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -163,6 +164,8 @@ The full dual-wrapper analytics terminal, toggled on via the Simple / Pro pill i
 
 AfterGap features 100% verified, real-world on-chain execution on BNB Smart Chain Mainnet (`Chain ID: 56`):
 
+> **Historical RPC Query Note:** Standard free public BSC RPC nodes prune historical transaction receipts after ~128–256 blocks. Historical receipt inspection for block `124870830` requires a BSC archive node (e.g. NodeReal / QuickNode Archive) or the BscScan Block Explorer link.
+
 | Field | Mainnet Proof & On-Chain Record |
 | :--- | :--- |
 | **Transaction Hash** | [`0x4933433f5b1991bc319775faef8cd2a9b5186bed1261d4f9b58cc980fce52444`](https://bscscan.com/tx/0x4933433f5b1991bc319775faef8cd2a9b5186bed1261d4f9b58cc980fce52444) |
@@ -175,6 +178,15 @@ AfterGap features 100% verified, real-world on-chain execution on BNB Smart Chai
 | **Output Received** | **`0.021835450815514278 NVDAB`** (~$5.00 NVIDIA Corp tokenized stock wrapper) |
 | **User Signer Wallet** | [`0x0478047BB937E4e292275c6d09b997deb72D759d`](https://bscscan.com/address/0x0478047bb937e4e292275c6d09b997deb72d759d) |
 | **Transaction Fee** | `0.0000235275157 BNB` (~**$0.02 USD**) |
+
+---
+
+## 🎬 Demo Video & Live Walkthrough
+
+A comprehensive walkthrough demonstrating AfterGap's end-to-end features—dual-wrapper comparison, Simple Mode retail catalog, Pro Mode terminal with 4-hop LiquidMesh routing, natural-language execution bar, and least-privilege token approval—is available:
+
+- **Official Demo Video:** [https://x.com/aftergap](https://x.com/aftergap)
+- **Production Web Terminal:** [https://www.aftergap.xyz/](https://www.aftergap.xyz/)
 
 ---
 

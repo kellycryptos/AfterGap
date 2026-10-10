@@ -346,7 +346,7 @@ During deployment of AfterGap's web interface to Vercel, we discovered that whil
 }
 ```
 
-To definitively identify the root cause, we ran identical signed requests side-by-side using the same credentials (`BX-94bf3759...`):
+To definitively identify the root cause, we ran identical signed requests side-by-side using the same credentials (`BX-xxxxxxxx...`):
 
 | Environment | Egress IP Type | HTTP Code | API Response | Tokens Returned |
 | :--- | :--- | :--- | :--- | :--- |
@@ -452,9 +452,17 @@ This confirms why single-hop DEX swaps fail: tokenized US equity liquidity on BS
 
 ---
 
+### 5. Fallback Flag Propagation Defect & Resolution
+- **The Finding:** In initial builds, when upstream 40304 compliance errors occurred, the route-level envelope returned `isFallback: true`, but inner token and quote objects lacked explicit `isFallback` properties. This caused certain downstream UI components to mistakenly infer live status based solely on market open status.
+- **The Permanent Fix:** Strict end-to-end fallback stamping is enforced at every hierarchy level (`response.isFallback`, `token.isFallback`, `quote.isFallback`). If any data source fails or falls back to benchmark profiles, all constituent tokens and quote entities are marked `isFallback: true`, and the UI displays unambiguous benchmark disclosures while locking execution.
+
+---
+
 ## 10. Live BSC Mainnet Execution Proof & On-Chain Settlement
 
 AfterGap provides verified, immutable on-chain proof of live execution on **BNB Smart Chain Mainnet (Chain ID: 56)**. The end-to-end user flow—retrieving real-time executable RFQ quotes, least-privilege token approval, and atomic swap execution into tokenized US equities via Binance LiquidMesh—was executed and confirmed on-chain:
+
+> **Historical RPC Query Note:** Standard free public BSC RPC nodes prune historical transaction receipts after ~128–256 blocks. Historical receipt inspection for block `124870830` requires a BSC archive node (e.g. NodeReal / QuickNode Archive) or the BscScan API / Block Explorer link.
 
 ### 1. On-Chain Transaction Parameters
 
